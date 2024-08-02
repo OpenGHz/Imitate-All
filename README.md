@@ -77,9 +77,9 @@ mv path/to/your/task/hdf5_file data/hdf5
 
 If CKPT_DIR and STATS_PATH don't exist, they will be automatically created and relevant files will be written.
 
-## Model Training
+## Policy Training
 
-> Please complete [Model Training Environment Setup](#installation) and [Parameter Configuration](#parameter-configuration) first (training with at least 2 data instances is required; otherwise, an error will occur due to the inability to split the training and validation sets).
+> Please complete [Policy Training Environment Setup](#installation) and [Parameter Configuration](#parameter-configuration) first (training with at least 2 data instances is required; otherwise, an error will occur due to the inability to split the training and validation sets).
 
 Navigate to the repo folder and activate the Conda environment:
 
@@ -109,7 +109,7 @@ After training, by default, you can find two folders in `./my_ckpt/<task_name>/<
 
 For ease of use in the future, it's recommended to **store the core folder in the specified disk's IMITALL/my_ckpt folder**.
 
-## Model Evaluating
+## Policy Evaluating
 
 ### Environment Preparation
 - First, unplug both the teaching arm and execution arm's USB interfaces to refresh the CAN interface. Then, only connect the execution arm's USB interface (this way, the execution arm will use CAN0).
@@ -135,7 +135,7 @@ python3 policy_evaluate.py -tn example_task -ci 0 -ts 20240322-194244
 ```
 
 - -ci: Camera device numbers, corresponding to the device order of the configured camera names. For example, if two cameras are used and their id are 2 and 4, specify `-ci 2 4`.
-- -ts: Timestamp corresponding to the task (check the path where model training results are saved, e.g., ```./my_ckpt/example_task/20240325-153007```).
+- -ts: Timestamp corresponding to the task (check the path where policy training results are saved, e.g., ```./my_ckpt/example_task/20240325-153007```).
 - -can: Specify which CAN to use for control; default is CAN0. Change to CAN1 with -can can1, for example. For dual-arm tasks, specify multiple cans like ```-can can0 can1```.
 - -cki: Don't start the robotic arm, only show captured camera images, useful for verifying if the camera order matches the data collection order.
 
@@ -145,7 +145,7 @@ After each evaluation, you can find evaluation-related files (including process 
 
 ## Information Viewing
 
-After model training, key information is stored in the key_info.pkl file, which can be viewed using the following steps.
+After policy training, key information is stored in the key_info.pkl file, which can be viewed using the following steps.
 
 Navigate to the repo folder and activate the conda environment:
 
