@@ -346,34 +346,21 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
                 # with open(os.path.join(save_dir, f'actions_{rollout_id}.pkl'), 'wb') as f:
                 #     pickle.dump(action_list, f)
                 # save as hdf5
-                compress = True
                 data_dict = {
                     "/observations/qpos": qpos_list,
                     "/action": action_list,
                 }
+                image_dict:Dict[str, list] = {}
                 for cam_name in camera_names:
-                    data_dict[f"/observations/images/{cam_name}"] = []
+                    image_dict[f"/observations/images/{cam_name}"] = []
                 for frame in image_list:
                     for cam_name in camera_names:
-                        data_dict[f"/observations/images/{cam_name}"].append(frame[cam_name])
-                no_base = True
-                if not no_base:
-                    data_dict["/observations/base_vel"] = []
-                    # data_dict['/base_action_t265'].append(ts['/base_action_t265'])
+                        image_dict[f"/observations/images/{cam_name}"].append(frame[cam_name])
                 mid_time = time.time()
-                from hdf5er import save_one_episode
-                save_one_episode(
-                    data_dict,
-                    camera_names,
-                    save_dir,
-                    dataset_name,
-                    overwrite=True,
-                    no_base=no_base,
-                    no_effort=True,
-                    no_velocity=True,
-                    compress=compress,
-                    states_num=state_dim,
-                )
+                from convert_all import compress_images, save_dict_to_hdf5
+                image_dict = compress_images(image_dict)
+                data_dict.update(image_dict)
+                save_dict_to_hdf5(data_dict, save_path, False)
                 end_time = time.time()
                 print(
                     f"{dataset_name}: construct data {mid_time - start_time} s and save data {end_time - mid_time} s"

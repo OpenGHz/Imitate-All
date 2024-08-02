@@ -4,7 +4,7 @@ import json
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
-from typing import Any, Dict, Optional, List, Callable
+from typing import Any, Dict, Optional, List, Callable, Union
 import cv2
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -99,20 +99,24 @@ class Compresser(object):
             raise NotImplementedError(f"Decompress method {method} is not implemented.")
 
     @staticmethod
-    def pad_image_data(data: dict, max_len: int) -> np.ndarray:
-        """Pad image data so that all compressed images have the same length"""
+    def pad_image_data(data:Union[list, dict], max_len: int) -> np.ndarray:
+        """Pad image data so that all compressed images have the same length as the max"""
         # t0 = time.time()
-        padded_size = max_len
         all_padded_data = {}
+        dict_data = isinstance(data, dict)
+        if not dict_data:
+            data = {"images": data}
         for key, value in data.items():
             padded_compressed_image_list = []
             for compressed_image in value:
-                padded_compressed_image = np.zeros(padded_size, dtype="uint8")
+                padded_compressed_image = np.zeros(max_len, dtype="uint8")
                 image_len = len(compressed_image)
                 padded_compressed_image[:image_len] = compressed_image
                 padded_compressed_image_list.append(padded_compressed_image)
             all_padded_data[key] = padded_compressed_image_list
         # print(f"padding: {time.time() - t0:.2f}s")
+        if not dict_data:
+            all_padded_data = all_padded_data["images"]
         return all_padded_data
 
 
@@ -128,7 +132,7 @@ def video_to_dict(
     video_names: Optional[List[str]] = None,
     video_type: Optional[str] = None,
     name_converter: Optional[Dict[str, str]] = None,
-    compress_cfg: Optional[Compresser] = None,
+    compresser: Optional[Compresser] = None,
     pre_process: Optional[Callable] = None,
     max_threads: int = -1,
 ) -> Dict[str, list]:
@@ -174,9 +178,9 @@ def video_to_dict(
             ret, frame = cap.read()
             if not ret:
                 break
-            if compress_cfg is not None:
-                frame = compress_cfg.compress(frame)
-                if compress_cfg.compress_method == "jpg":
+            if compresser is not None:
+                frame = compresser.compress(frame)
+                if compresser.compress_method == "jpg":
                     compressed_len[video_name].append(len(frame))
             frames.append(pre_process(frame))
 
@@ -200,10 +204,10 @@ def video_to_dict(
         as_completed(futures)
 
     compressed_len_list = list(compressed_len.values())
-    compress_cfg.pad_size = np.array(compressed_len_list).max()
     if len(compressed_len_list[0]) > 0:
-        if compress_cfg.padding:
-            video_dict = Compresser.pad_image_data(video_dict, compress_cfg.pad_size)
+        if compresser.padding:
+            compresser.pad_size = np.array(compressed_len_list).max()
+            video_dict = Compresser.pad_image_data(video_dict, compresser.pad_size)
         video_dict["compressed_len"] = compressed_len
 
     return video_dict
@@ -371,7 +375,7 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
     Parameters:
         data(dict)          -- the data dict to be saved, with keys as the data names and values as the array-like data
         target_path(str)    -- the target path to save the data
-        pad_max_len(int)    -- the max length to pad the data
+        pad_max_len(int)    -- the max length to pad all the data to the same episode length
     """
     with h5py.File(target_path, "w", rdcc_nbytes=1024**2 * 2) as root:
         for key, value in data.items():
@@ -412,8 +416,18 @@ def hdf5_to_dict(hdf5_path):
         data = recursively_load_datasets(root)
     return data
 
-# 示例用法
-data = hdf5_to_dict("data/hdf5/act_airbot_play/episode_0.hdf5")
+def compress_images(images: list, compresser: Compresser) -> list:
+    """Compress the images in the list (will modify the input list)."""
+    compressed_len = []
+    for i, img in enumerate(images):
+        compressed_img = compresser.compress(img)
+        compressed_len.append(len(compressed_img))
+        images[i] = compressed_img
+    if compresser.padding:
+        compresser.pad_size = max(compressed_len)
+        images = Compresser.pad_image_data(images, compresser.pad_size)
+    return images
+
 
 def merge_video_and_save(
     raw_data: dict,
