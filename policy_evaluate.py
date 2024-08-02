@@ -94,31 +94,36 @@ def main(args):
             robot.set_joint_position_target([0, 0, 0, 0, 0, 0], [1], blocking=True)
     else:
         # load environment
-        env_type = all_config['env_type']
-        if env_type == "real":
-            if "airbot_play" in robot_name:
-                from envs.airbot_play_real_env import make_env
-            elif "fake" in robot_name:
-                # from airbot_play_fake_env import make_env  # TODO: implement this or pass some param to make_env
-                from envs.airbot_play_real_env import make_env
-            elif "ros" in robot_name:
-                from envs.airbot_play_real_env import make_env
-            elif "mmk" in robot_name:
-                from envs.airbot_mmk_env import make_env
-        elif env_type == "mujoco":
-            from envs.airbot_play_mujoco_env import make_env
-        elif env_type == "isaac":
-            raise NotImplementedError
+        # TODO: the robots and environment should be independent
+        # we should combine the robot and environment instead of passing the robot to the environment
+        # so what's the name of the combination?
+        environment = all_config['environment']
+        if isinstance(environment, str):
+            if environment == "real":
+                if "airbot_play" in robot_name:
+                    from envs.airbot_play_real_env import make_env
+                elif "fake" in robot_name:
+                    # from airbot_play_fake_env import make_env  # TODO: implement this or pass some param to make_env
+                    from envs.airbot_play_real_env import make_env
+                elif "ros" in robot_name:
+                    from envs.airbot_play_real_env import make_env
+                elif "mmk" in robot_name:
+                    from envs.airbot_mmk_env import make_env
+            elif environment == "mujoco":
+                from envs.airbot_play_mujoco_env import make_env
+            elif environment == "isaac":
+                raise NotImplementedError
+            else:
+                raise NotImplementedError
+            camera_names = all_config['camera_names']
+            camera_indices = all_config['camera_indices']
+            if camera_indices != "":
+                cameras = {name: int(index) for name, index in zip(camera_names, camera_indices)}
+            else:
+                cameras = camera_names
+            env = make_env(robot_instance=robot_instances, cameras=cameras)
         else:
-            raise NotImplementedError
-
-        camera_names = all_config['camera_names']
-        camera_indices = all_config['camera_indices']
-        if camera_indices != "":
-            cameras = {name: int(index) for name, index in zip(camera_names, camera_indices)}
-        else:
-            cameras = camera_names
-        env = make_env(robot_instance=robot_instances, cameras=cameras)
+            env = environment
         env.set_reset_position(start_joint)
         results = []
         # multiple ckpt evaluation
@@ -144,7 +149,6 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
     stats_path = config['stats_path']
     save_dir = config['save_dir']
     max_timesteps = config['max_timesteps']
-    env_type = config['env_type']
     camera_names = config['camera_names']
     num_rollouts = config['num_rollouts']
     policy_config:dict = config['policy_config']
@@ -406,8 +410,8 @@ if __name__ == '__main__':
     parser.add_argument('-bat', "--bigarm_type", action='store', nargs='+', type=str, help='bigarm_type', default=("OD", "OD"))
     parser.add_argument('-fat', "--forearm_type", action='store', nargs='+', type=str, help='forearm_type', default=("DM", "DM"))
     parser.add_argument('-ci', "--camera_indices", action='store', nargs='+', type=str, help="camera_indices", default=("0",))
-    # env_type
-    parser.add_argument('-et', "--env_type", action='store', type=str, help='env_type', required=False)
+    # environment
+    parser.add_argument('-et', "--environment", action='store', type=str, help='environment', required=False)
     # config path #TODO
     parser.add_argument('-cp', "--config_path", action='store', type=str, help='config_path', required=False)
     # save_episode

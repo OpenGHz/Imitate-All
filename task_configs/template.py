@@ -126,7 +126,7 @@ EVAL_CONFIG_DEFAULT = {
     # robot and env conigurations
     "robot_name": "airbot_play_v3",
     "robot_description": "<path/to/your/robot_description>",
-    "env_type": "real",  # "real" or "isaac"
+    "environment": "real",  # environment instance or "real", "mujoco" to use the corresponding env
     # "AUTO" will try to get from the key_info.pkl, if failed, use all zero
     "robot_num": 1,  # the number of (follower) robots evoloved in the task
     "joint_num": 7,  # the number of joints of one robot (e.g. arm + end effector)
