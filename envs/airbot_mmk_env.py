@@ -3,7 +3,7 @@ import numpy as np
 import collections
 import dm_env
 from typing import List
-from custom_robot import AssembledMmkRobot as AssembledRobot
+from robots.custom_robot import AssembledMmkRobot as AssembledRobot
 
 
 class AirbotMmkEnv:

@@ -3,7 +3,7 @@ import numpy as np
 import collections
 import dm_env
 from typing import List
-from custom_robot import AssembledRobot
+from robots.custom_robot import AssembledRobot
 from dlabsim.envs.airbot_play_base import AirbotPlayCfg, AirbotPlayBase
 
 

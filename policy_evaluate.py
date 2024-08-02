@@ -10,7 +10,7 @@ from utils import set_seed
 from visualize_episodes import save_videos
 from policyer import make_policy, parser_common, parser_add_ACT, get_all_config
 from envs.common_env import get_image, CommonEnv
-from custom_robot import AssembledRobot
+from robots.custom_robot import AssembledRobot
 
 
 def main(args):
@@ -57,13 +57,13 @@ def main(args):
             robot_instances.append(AssembledRobot(airbot_player, 1/fps, 
                                                   start_joint[joint_num*i:joint_num*(i+1)]))
     elif "fake" in robot_name or "none" in robot_name:
-        from custom_robot import AssembledFakeRobot
+        from robots.custom_robot import AssembledFakeRobot
         if args["check_images"]:
             AssembledFakeRobot.real_camera = True
         for i in range(robot_num):
             robot_instances.append(AssembledFakeRobot(1/fps, start_joint[joint_num*i:joint_num*(i+1)]))
     elif "ros" in robot_name:
-        from custom_robot import AssembledRosRobot
+        from robots.custom_robot import AssembledRosRobot
         import rospy
         rospy.init_node("replay_episodes")
         namespace = "/airbot_play"
@@ -82,7 +82,7 @@ def main(args):
                 )
             )
     elif "mmk" in robot_name:
-        from custom_robot import AssembledMmkRobot
+        from robots.custom_robot import AssembledMmkRobot
         for i in range(robot_num):
             robot_instances.append(AssembledMmkRobot())
     else:

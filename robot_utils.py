@@ -257,11 +257,6 @@ def postprocess_base_action(base_action):
     return np.array([linear_vel, angular_vel])
 
 
-# test
-if __name__ == "__main__":
-    # assemble robots test
-    print("Assembling robots...")
-
 if __name__ == "__main__":
     show_images = False
     recorder = ImageRecorderVideo(cameras=[0], is_debug=False, show_images=show_images)
