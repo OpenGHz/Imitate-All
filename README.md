@@ -45,7 +45,7 @@ conda config --set auto_activate_base false && conda deactivate
 It is recommended to use a conda python environment. If you do not have one, create and activate it by using the following commands:
 
 ```bash
-conda create -n aloha python=3.8.10 && conda activate aloha
+conda create -n imitall python=3.8.10 && conda activate imitall
 ```
 
 Install the necessary packages by running the following commands:
@@ -84,7 +84,7 @@ If CKPT_DIR and STATS_PATH don't exist, they will be automatically created and r
 Navigate to the repo folder and activate the Conda environment:
 
 ```bash
-conda activate aloha
+conda activate imitall
 ```
 
 Then run the training command:
@@ -107,7 +107,7 @@ After training, by default, you can find two folders in `./my_ckpt/<task_name>/<
   <img src="images/train_output_structure.png" />
 </p>
 
-For ease of use in the future, it's recommended to **store the core folder in the specified disk's ALOHA/my_ckpt folder**.
+For ease of use in the future, it's recommended to **store the core folder in the specified disk's IMITALL/my_ckpt folder**.
 
 ## Model Evaluating
 
@@ -125,7 +125,7 @@ For ease of use in the future, it's recommended to **store the core folder in th
 Navigate to the repo folder and activate the conda environment:
 
 ```bash
-conda activate aloha
+conda activate imitall
 ```
 
 Here are the evaluation command and its parameters:
@@ -150,7 +150,7 @@ After model training, key information is stored in the key_info.pkl file, which 
 Navigate to the repo folder and activate the conda environment:
 
 ```bash
-conda activate aloha
+conda activate imitall
 ```
 
 Then, use the following command to view information for a specified timestamp where training results are saved:
