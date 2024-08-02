@@ -18,6 +18,11 @@ conda config --set auto_activate_base false && conda deactivate
 
 ## Repo Structure
 
+- ``data_process`` Tools to process data
+  - ``test_convert_mmk2.ipynb`` Examples for converting mmk2 raw data to hdf5 data for training
+  - ``test_convert_mujoco.ipynb`` Examples for converting airbot mujoco raw data to hdf5 data for training
+  - ``convert_all.py`` Tools to process raw data for training
+  - ``augment_hdf5_images.py`` Pipline of augmenting images from the hdf5 file
 - ``policy_train.py`` Policy training: ACT and yours
 - ``policy_evaluate`` Policy evaluating/inferencing: ACT and yours
 - ``policy.py`` Policy implementation or declaration: ACT, CNNMLP and yours
@@ -26,19 +31,19 @@ conda config --set auto_activate_base false && conda deactivate
 - ``envs`` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
 - ``images`` Images used by README.md
 - ``task_configs`` Configuration files for tasks training and evaluating
-- ``augment_hdf5_images.py`` Pipline of augmenting images from the hdf5 file
 - ``ckpt2onnx`` Example of converting ckpt file to onnx file
 - ``conda_env.yaml`` Used by conda creating env (now requirements.txt is recommend)
-- ``convert_all.py`` Tools to process raw data for training
-- ``custom_robot.py`` Robots classes used by the envs
 - ``requirements.txt`` Used for pip install
 - ``utils.py`` Utils such as data loading and helper functions
 - ``visualize_episodes.py`` Save videos from a .hdf5 dataset
 - ``robot_utils.py`` Useful robot tools to record images and process data
 - ``ros_tools.py`` Tools for ROS
-- ``ros1_robot.py`` General ROS1 robot class used to control the robots
-- ``test_convert_mmk2.ipynb`` Examples for converting mmk2 raw data to hdf5 data for training
-- ``test_convert_mujoco.ipynb`` Examples for converting airbot mujoco raw data to hdf5 data for training
+- ``robots`` Robots classes used by the envs
+  - ``custom_robot.py`` Template and a fake robot
+  - ``ros_robots``
+    - ``ros_robot_config.py`` Used to configure the ros robots
+    - ``ros1_robot.py`` General ROS1 robot class used to control the robots
+    - ``ros2_robot.py`` General ROS2 robot class used to control the robots
 
 ## Installation
 
