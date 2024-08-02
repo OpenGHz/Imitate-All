@@ -1,0 +1,186 @@
+TASK_NAME = "template"  # usually the name of the this file's name
+
+# TODO: change to a class
+
+"""
+The default configs for the template task:
+- The task name is "template" which is the file name.
+- The TASK_NAME is used to easily define the paths since the path usually contains the task name.
+- The default data and ckpt paths are "./data/hdf5/template" and "./my_ckpt/template/ckpt"
+- The default policy config is for ACT (POLICY_CONFIG_ACT_DEFAULT) used in the common config
+- The default "common" config is COMMON_CONFIG_DEFAULT, which should be modified for both training and evaluating.
+- The default "train" config is TRAIN_CONFIG_DEFAULT, which should be modified for training.
+- The default "eval" config is EVAL_CONFIG_DEFAULT, which should be modified for evaluating.
+The default task config is TASK_CONFIG_DEFAULT, which is a dict containing the common, train, and eval configs.
+The final config is TASK_CONFIG, which is used by the training, evaluating and so on.
+"""
+
+def get_task_name(cur_file:str):
+    """Get the task name from the current file __file__ arg."""
+    return cur_file.split("/")[-1].replace(".py", "")
+
+def activator(flag:bool):
+    '''A decorator to add a activated flag to the function.'''
+    from functools import wraps
+    def decorator(func):
+        @wraps(func)
+        def func_add_flag(*args, **kwargs):
+            return func(*args, **kwargs)
+        func_add_flag.__dict__["activated"] = flag
+        return func_add_flag
+    return decorator
+
+def policy_maker(config:dict):
+    """
+    Make the policy function.
+    Arg:
+    - config: the config for the policy containing the policy class and configs
+    Return:
+    - the policy (nn.Module or any funcitonable) or None to use the default policy constructor
+    """
+    # Note: you should not use the "policy_maker" in the config in this function
+    # since it will cause a recursive call
+    print("not use custom policy maker")
+    print("policy_config:", config)
+    return None
+
+@activator(False)  # set to True to use augment_images function
+def augment_images(image):
+    """Augment the images."""
+    # this shows no augmentation
+    return image
+
+def policy_ensembler(grouped_out:dict):
+    """Ensemble the output of all policies and return one to execute."""
+    # this shows equal-weight average ensemble for all groups
+    outputs = tuple(grouped_out.values())
+    group_num = len(outputs)
+    grouped_ave = [sum(x)/len(x) for x in outputs]
+    weights = [1/group_num] * group_num
+    return sum([x * w for x, w in zip(grouped_ave, weights)])
+
+
+# relative to the root of the project where you run the train/eval script
+DATA_DIR_DEFAULT = "./data/hdf5"
+TRAIN_DIR_DEFAULT = "./my_ckpt"  # when training to save and when evaluating to load
+EVAL_DIR_DEFAULT = "./eval_results"
+
+POLICY_CONFIG_ACT_DEFAULT = {
+    "policy_class": "ACT",  # can be ignored if use a custom policy_maker
+    "policy_maker": policy_maker,
+    "kl_weight": 10,
+    "chunk_size": 40,
+    "hidden_dim": 512,
+    "dim_feedforward": 3200,
+    "temporal_agg": False,
+    "num_queries": 40,  # the same as the chunk_size
+}
+
+# TODO: use robot_config class instead of robot_num and joint_num
+COMMON_CONFIG_DEFAULT = {
+    "state_dim": 7,  # the dimension of the state space
+    "action_dim": 7,  # the dimension of the action space
+    "camera_names": [
+        "0",
+        "1",
+        "2",
+    ],
+    "task_type": "static",
+    "seed": 0,
+    "policy_config": POLICY_CONFIG_ACT_DEFAULT,
+    "ckpt_dir": TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/ckpt",
+    # stats_path包含了统计信息、最优/后权重数据等核心文件
+    "stats_path": "",  # "" if not use, TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{TASK_NAME}",
+}
+
+TRAIN_CONFIG_DEFAULT = {
+    "dataset_dir": DATA_DIR_DEFAULT + f"/{TASK_NAME}",  # directory containing the hdf5 files
+    # 0/"ALL" if use all episodes or a number to use the first n episodes
+    # or a tuple of (start, end) to use the episodes from start to end, e.g. (50, 100)
+    # or a tuple of (start, end, postfix) to use the episodes from start to end with the postfix, 
+    # e.g. (50, 100, "augmented")
+    # or a list(not tuple!) of multi tuples e.g. [(0, 49), (100, 199)]
+    # TODO: not implemented; support custom name postfix, e.g. "episode_0_augmented"
+    "num_episodes": "ALL",
+    "check_episodes": True,  # check the existence of all episodes
+    "batch_size": 16,
+    "learning_rate": 2e-5,
+    "num_epochs": 7000,
+    "pretrain_ckpt_path": "",  # "" if not use
+    # "AUTO" if set according to the pretrain_ckpt_path (last/best from 0 and others from the epoch number in the path); any uint number if set manually
+    "pretrain_epoch_base": "AUTO",
+    # not used for now
+    "eval_every": 0,  # 0 if not use
+    "validate_every": 500,
+    "save_every": 500,
+    "skip_mirrored_data": False,
+    # for cotraining (not used for now)
+    "sample_weights": [7.5, 2.5],
+    "train_ratio": 0.8,  # ratio of train data from the first dataset_dir,
+    "cotrain_dir": "",
+    "sample_weights": None,  # TODO: change to 1 or 0?
+    "parallel": None,  # {"mode":str, "device_ids":list}, mode: "DP" or "DDP"; device_ids: e.g. [0, 1] or None for all
+}
+
+EVAL_CONFIG_DEFAULT = {
+    # robot and env conigurations
+    "robot_name": "airbot_play_v3",
+    "robot_description": "<path/to/your/robot_description>",
+    "env_type": "real",  # "real" or "isaac"
+    # "AUTO" will try to get from the key_info.pkl, if failed, use all zero
+    "robot_num": 1,  # the number of (follower) robots evoloved in the task
+    "joint_num": 7,  # the number of joints of one robot (e.g. arm + end effector)
+    "start_joint": [0.0] * 7,  # the start joint angles of the robot
+    "max_timesteps": 400,  # 一般可以设置跟数据采集时的episode_len相等
+    "num_rollouts": 50,  # 程序一次运行最大的推理次数
+    "save_dir": EVAL_DIR_DEFAULT, # "" if not save the evaluation results, AUTO means the same as the ckpt_dir
+    "time_stamp": None,  # None if not used
+    "fps": 25,  # the frequency for executing actions (should > inference frequency)
+    "ckpt_names": ["policy_best.ckpt"],  # policy_last or any other ckpts to evaluate 'num_rollouts' times in sequence
+    "ensemble": {  # will replace the corresponding configs in the other configs; None if not used
+        "Group1":{  # the name of the ensemble group
+            "policies": [POLICY_CONFIG_ACT_DEFAULT],
+            "ckpt_dirs": [TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/ckpt"], 
+            "ckpt_names": [("policy_best.ckpt",)],
+            "fps": [25]
+        },
+        "ensembler": policy_ensembler
+    }
+}
+
+TASK_CONFIG_DEFAULT = {
+    "common": COMMON_CONFIG_DEFAULT,
+    "train": TRAIN_CONFIG_DEFAULT,
+    "eval": EVAL_CONFIG_DEFAULT,
+}
+
+def get_time_stamp():
+    from datetime import datetime
+    return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+def replace_task_name(name: str, stats_name="dataset_stats.pkl", time_stamp="now"):
+    """Replace the task name in the default dirs/paths."""
+    global TASK_NAME
+    TASK_NAME = name
+    if time_stamp == "now":
+        ts = get_time_stamp() + "/"
+    elif time_stamp is not None:
+        ts = time_stamp + "/"
+    else:
+        ts = ""
+    TRAIN_CONFIG_DEFAULT["dataset_dir"] = DATA_DIR_DEFAULT + f"/{TASK_NAME}"
+    COMMON_CONFIG_DEFAULT["ckpt_dir"] = TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{ts}ckpt"
+    EVAL_CONFIG_DEFAULT["save_dir"] = EVAL_DIR_DEFAULT + f"/{TASK_NAME}/{ts}"
+    if stats_name not in ["", None]:
+        COMMON_CONFIG_DEFAULT["stats_path"] = TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{ts}{TASK_NAME}/{ts}{stats_name}"
+
+def set_paths(data_dir: str, ckpt_dir: str, stats_path: str = "", save_dir: str = "AUTO"):
+    """Replace the default data, ckpt, stats and eval dirs/paths."""
+    TRAIN_CONFIG_DEFAULT["dataset_dir"] = data_dir
+    COMMON_CONFIG_DEFAULT["ckpt_dir"] = ckpt_dir
+    COMMON_CONFIG_DEFAULT["stats_path"] = stats_path
+    EVAL_CONFIG_DEFAULT["save_dir"] = save_dir
+
+# finally choose one of the data and model configs
+replace_task_name(TASK_NAME)
+TASK_CONFIG = TASK_CONFIG_DEFAULT
