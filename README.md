@@ -26,7 +26,7 @@ conda config --set auto_activate_base false && conda deactivate
 - ``policy_train.py`` Policy training: ACT and yours
 - ``policy_evaluate`` Policy evaluating/inferencing: ACT and yours
 - ``policy.py`` Policy implementation or declaration: ACT, CNNMLP and yours
-- ``policyer.py`` Tools for configuration and making policies
+- ``policyer.py`` Tools to configure and make policies
 - ``detr`` Model definitions modified from DETR: ACT, CNNMLP
 - ``envs`` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
 - ``images`` Images used by README.md

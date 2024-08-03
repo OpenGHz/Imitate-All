@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 from utils import set_seed
 from visualize_episodes import save_videos
-from policyer import make_policy, parser_common, parser_add_ACT, get_all_config
+from task_configs.config_tools.basic_configer import parser_common, get_all_config
+from policyer import make_policy, parser_add_ACT
 from envs.common_env import get_image, CommonEnv
 from robots.custom_robot import AssembledRobot
 

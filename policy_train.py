@@ -10,7 +10,8 @@ import time
 import argparse
 
 from utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer, pretty_print_dict
-from policyer import get_all_config, make_policy, parser_common, parser_add_ACT
+from task_configs.config_tools.basic_configer import parser_common, get_all_config
+from policyer import make_policy, parser_add_ACT
 
 
 def main(args:dict):

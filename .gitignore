@@ -146,6 +146,7 @@ task_configs/*
 !task_configs/example_task.py
 !task_configs/loader.py
 !task_configs/config_augmentation/
+!task_configs/config_tools/
 test.*
 test/
 demonstrations/
