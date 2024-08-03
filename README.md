@@ -66,7 +66,9 @@ What's more, for policy evaluation, make sure you have set up the robot control 
 
 **Before training or inference**, parameter configuration is necessary. **Create a Python file in the ./task_configs directory with the same name as the task ( not recommended to modify or rename the example_task.py file directly)** to configure the task. This configuration mainly involves modifying various paths (using the replace_task_name function to **use default paths** or manually specifying paths), camera names (camera_names), robot number (robot_num, **set to 2 for dual-arm tasks**), and so on. Below is an example from example_task.py, which demonstrates how to modify configs based on the default configuration in template.py without needing to rewrite everything (for more adjustable configurations, refer to ./task_configs/template.py):
 
-![](images/basic_config.png)
+<p align="center">
+  <img src="images/basic_config.png" />
+</p>
 
 When training with default paths, place the converted HDF5 format data in the ./data/hdf5/<task_name> folder. You can create the directory with the following command:
 
@@ -166,7 +168,9 @@ python3 policy_train.py -tn example_task -sti 20240420-214215
 
 You will see information related to that task in the terminal, including:
 
-![](images/train_info.png)
+<p align="center">
+  <img src="images/train_info.png" />
+</p>
 
 This includes the absolute path to the HDF5 data used during training, training parameter configurations, initial joint angles for inference, and other information. 
 
