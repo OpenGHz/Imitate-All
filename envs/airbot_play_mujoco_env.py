@@ -5,6 +5,35 @@ import dm_env
 from typing import List
 from robots.custom_robot import AssembledRobot
 from dlabsim.envs.airbot_play_base import AirbotPlayCfg, AirbotPlayBase
+import mujoco
+
+
+class SimNode(AirbotPlayBase):
+    def resetState(self):
+        mujoco.mj_resetData(self.mj_model, self.mj_data)
+        if self.teleop:
+            self.teleop.reset()
+
+        self.jq = np.zeros(self.nj)
+        self.jv = np.zeros(self.nj)
+        self.mj_data.qpos[:self.nj] = self.init_joint_pose.copy()
+        self.mj_data.ctrl[:self.nj] = self.init_joint_pose.copy()
+        
+        self.mj_data.qpos[self.nj+1] = np.random.random() * 0.2 + 0.00
+        self.mj_data.qpos[self.nj+2] = np.random.random() * 0.3 - 0.1
+
+        self.mj_data.qpos[self.nj+8] = np.random.random() * 0.2 + 0.27
+        self.mj_data.qpos[self.nj+9] = np.random.random() * 0.3 - 0.1
+
+        mujoco.mj_forward(self.mj_model, self.mj_data)
+
+    def getObservation(self):
+        self.obs = {
+            "jq"       : self.jq.tolist(),
+            "img"      : self.img_rgb_obs,
+        }
+        self.obs["jq"][6] *= 25.0 # gripper normalization
+        return self.obs
 
 
 class MujocoEnv:
@@ -24,13 +53,34 @@ class MujocoEnv:
 
     def __init__(
         self,
-        setup_robots=True,
-        setup_base=False,
-        record_images=True,
         robot_instances: List[AssembledRobot] = None,
         cameras=None,
     ):
-        self.exec_node = AirbotPlayBase(AirbotPlayCfg())
+
+        cfg = AirbotPlayCfg()
+        cfg.expreriment  = "act_airbot_play"
+        cfg.rb_link_list = []
+        cfg.obj_list     = []
+        cfg.sync         = False
+        cfg.headless     = False
+        cfg.put_text     = False
+        cfg.decimation   = 4
+        cfg.render_set   = {
+            "fps"    : 50,
+            "width"  : 640,
+            "height" : 480
+        }
+        cfg.obs_camera_id   = 1
+        cfg.init_joint_pose = {
+            "joint1"  :  0.06382703,
+            "joint2"  : -0.71966516,
+            "joint3"  :  1.2772779,
+            "joint4"  : -1.5965166,
+            "joint5"  :  1.72517278,
+            "joint6"  :  1.80462028,
+            "gripper" :  0.5
+        }
+        self.exec_node = SimNode(cfg)
         self.exec_node.cam_id = self.exec_node.config.obs_camera_id
         self.reset_position = None
 
@@ -160,5 +210,5 @@ def make_env(
     robot_instance=None,
     cameras=None,
 ):
-    env = MujocoEnv(setup_robots, setup_base, record_images, robot_instance, cameras)
+    env = MujocoEnv(robot_instance, cameras)
     return env
