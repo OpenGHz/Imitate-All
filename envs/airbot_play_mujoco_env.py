@@ -19,11 +19,11 @@ class SimNode(AirbotPlayBase):
         self.mj_data.qpos[:self.nj] = self.init_joint_pose.copy()
         self.mj_data.ctrl[:self.nj] = self.init_joint_pose.copy()
         
-        self.mj_data.qpos[self.nj+1] = np.random.random() * 0.2 + 0.00
-        self.mj_data.qpos[self.nj+2] = np.random.random() * 0.3 - 0.1
+        self.mj_data.qpos[self.nj+1] = 0.2 + (np.random.random() - 1) * 0.1 - 0.06
+        self.mj_data.qpos[self.nj+2] = 0.1 + (np.random.random() - 0.5) * 0.1
 
-        self.mj_data.qpos[self.nj+8] = np.random.random() * 0.2 + 0.27
-        self.mj_data.qpos[self.nj+9] = np.random.random() * 0.3 - 0.1
+        self.mj_data.qpos[self.nj+8] = 0.2 + (np.random.random() - 0) * 0.1 + 0.06
+        self.mj_data.qpos[self.nj+9] = 0.1 + (np.random.random() - 0.5) * 0.1
 
         mujoco.mj_forward(self.mj_model, self.mj_data)
 
@@ -78,7 +78,7 @@ class MujocoEnv:
             "joint4"  : -1.5965166,
             "joint5"  :  1.72517278,
             "joint6"  :  1.80462028,
-            "gripper" :  0.5
+            "gripper" :  1
         }
         self.exec_node = SimNode(cfg)
         self.exec_node.cam_id = self.exec_node.config.obs_camera_id
@@ -169,17 +169,11 @@ class MujocoEnv:
         # print("action", action)
         for index, jn in enumerate(all_joints_num):
             one_action = action[jn * index : jn * (index + 1)]
-            # if one_action[-1] < 0:
-            #     one_action[-1] = 0
-            # elif one_action[-1] > 1:
-            #     one_action[-1] = 1
-            # one_action[-1] *= 0.04  # undo the normalization
-            # if one_action[-1] < 0.02:  # TODO: remove this
-            #     one_action[-1] = 0
-            print("one_action gripper", one_action[-1])
+            # print("one_action", one_action)
+            # print("one_action gripper", one_action[-1])
             # one_action[-1] = 0
             raw_obs, pri_obs, rew, ter, info = self.exec_node.step(one_action)
-            print("obs gripper", raw_obs["jq"][-1])
+            # print("obs gripper", raw_obs["jq"][-1])
         time.sleep(sleep_time)
 
         if get_obs:
