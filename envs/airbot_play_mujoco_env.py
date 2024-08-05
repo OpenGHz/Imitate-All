@@ -147,7 +147,7 @@ class MujocoEnv:
         # print("post_obs", obs["qpos"])
         # obs["qvel"] = raw_obs["jv"]
         obs["images"] = {}
-        obs["images"]["0"] = raw_obs["img"]
+        obs["images"]["0"] = raw_obs["img"][:, :, ::-1]
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
             reward=self.get_reward(),
@@ -186,7 +186,7 @@ class MujocoEnv:
             #     obs["qpos"][-1] = 1
             # obs["qvel"] = raw_obs["jv"]
             obs["images"] = {}
-            obs["images"]["0"] = raw_obs["img"]
+            obs["images"]["0"] = raw_obs["img"][:, :, ::-1]
         else:
             obs = None
         return dm_env.TimeStep(
