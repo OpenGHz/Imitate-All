@@ -52,16 +52,5 @@ def parser_add(policy_class: str, parser: argparse.ArgumentParser):
 def make_policy(config):
     policy_maker = config["policy_maker"]
     policy = policy_maker(config)
-    if policy is None:  # use default policy by policy_class
-        policy_class = config["policy_class"]
-        if policy_class == "ACT":
-            from policy import ACTPolicy
-
-            policy = ACTPolicy(config)
-        elif policy_class == "CNNMLP":
-            from policy import CNNMLPPolicy
-
-            policy = CNNMLPPolicy(config)
-        else:
-            raise NotImplementedError(f"{policy_class}")
+    assert policy is not None, "Please use the make_policy function in the config file"
     return policy

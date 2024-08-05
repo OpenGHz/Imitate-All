@@ -7,7 +7,7 @@ from task_configs.template import (
 )
 
 def policy_maker(config:dict):
-    from policy import ACTPolicy
+    from policies.act.act import ACTPolicy
     return ACTPolicy(config)
 
 @activator(False)

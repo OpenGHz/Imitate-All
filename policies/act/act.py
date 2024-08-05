@@ -1,10 +1,8 @@
 import torch.nn as nn
 from torch.nn import functional as F
 import torchvision.transforms as transforms
-
-from detr.main import build_ACT_model, build_CNNMLP_model, build_optimizer
-import IPython
-e = IPython.embed
+from detr.main import build_ACT_model, build_optimizer
+from policies.common.loss import kl_divergence
 
 
 class ACTPolicy(nn.Module):
@@ -48,52 +46,3 @@ class ACTPolicy(nn.Module):
 
     def deserialize(self, model_dict):
         return self.load_state_dict(model_dict)
-
-class CNNMLPPolicy(nn.Module):
-    def __init__(self, args_override):
-        super().__init__()
-        model, self._args = build_CNNMLP_model(args_override)
-        self.model = model # decoder
-
-    def __call__(self, qpos, image, actions=None, is_pad=None):
-        env_state = None # TODO
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         std=[0.229, 0.224, 0.225])
-        image = normalize(image)
-        if actions is not None: # training time
-            actions = actions[:, 0]
-            a_hat = self.model(qpos, image, env_state, actions)
-            mse = F.mse_loss(actions, a_hat)
-            loss_dict = dict()
-            loss_dict['mse'] = mse
-            loss_dict['loss'] = loss_dict['mse']
-            return loss_dict
-        else: # inference time
-            a_hat = self.model(qpos, image, env_state) # no action, sample from prior
-            return a_hat
-
-    def configure_optimizers(self):
-        self.optimizer = build_optimizer(self.model, self._args)
-        return self.optimizer
-
-    def serialize(self):
-        return self.state_dict()
-
-    def deserialize(self, model_dict):
-        return self.load_state_dict(model_dict)
-
-
-def kl_divergence(mu, logvar):
-    batch_size = mu.size(0)
-    assert batch_size != 0
-    if mu.data.ndimension() == 4:
-        mu = mu.view(mu.size(0), mu.size(1))
-    if logvar.data.ndimension() == 4:
-        logvar = logvar.view(logvar.size(0), logvar.size(1))
-
-    klds = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())
-    total_kld = klds.sum(1).mean(0, True)
-    dimension_wise_kld = klds.mean(0)
-    mean_kld = klds.mean(1).mean(0, True)
-
-    return total_kld, dimension_wise_kld, mean_kld
