@@ -19,9 +19,7 @@ if __name__ == "__main__":
     # some configurations are missing or misplaced in the TASK_CONFIG dictionary
     TASK_CONFIG["common"]["policy_config"]["state_dim"] = 7
     TASK_CONFIG["common"]["policy_config"]["camera_names"] = ["0"]
-    TASK_CONFIG["common"]["policy_config"]["enc_layers"] = 4
-    TASK_CONFIG["common"]["policy_config"]["dec_layers"] = 7
-    TASK_CONFIG["common"]["policy_config"]["nheads"] = 8
+    TASK_CONFIG["common"]["policy_config"]["temporal_agg"] = True
 
     print(TASK_CONFIG["common"]["policy_config"])
     """

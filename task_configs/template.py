@@ -74,6 +74,11 @@ POLICY_CONFIG_ACT_DEFAULT = {
     "dim_feedforward": 3200,
     "temporal_agg": False,
     "num_queries": 40,  # the same as the chunk_size
+    "enc_layers": 4,
+    "dec_layers": 7,
+    "nheads": 8,
+    "backbone": "resnet18",
+    "lr_backbone": 1e-5
 }
 
 # TODO: use robot_config class instead of robot_num and joint_num

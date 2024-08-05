@@ -82,6 +82,9 @@ def build_optimizer(model, args):
             "lr": args.lr_backbone,
         },
     ]
+    # TODO: use lr to build an optimizer
+    # 优化器传入的args应该是训练参数，而不是模型参数
+    # 根据训练时的学习率来生成训练时对应的优化器
     optimizer = torch.optim.AdamW(param_dicts, lr=args.lr,
                                   weight_decay=args.weight_decay)
     return optimizer
