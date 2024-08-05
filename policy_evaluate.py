@@ -230,6 +230,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
         filters = [OneEuroFilter(**config) for _ in range(action_dim)]
 
     # init pre/post process functions
+    # TODO: move to policy maker
     if use_stats:
         with open(stats_path, 'rb') as f:
             stats = pickle.load(f)
@@ -279,7 +280,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
                     # query policy
                     if config['policy_class'] == "ACT":
                         if t % query_frequency == 0:
-                            all_actions = policy(qpos, curr_image)  # (1, chunk_size, 7)
+                            all_actions = policy(qpos, curr_image)  # (chunk_size, 7)
                         # smooth
                         if temporal_agg:
                             all_time_actions[[t], t:t+num_queries] = all_actions
@@ -362,7 +363,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
                     for cam_name in camera_names:
                         image_dict[f"/observations/images/{cam_name}"].append(frame[cam_name])
                 mid_time = time.time()
-                from convert_all import compress_images, save_dict_to_hdf5
+                from data_process.convert_all import compress_images, save_dict_to_hdf5
                 image_dict = compress_images(image_dict)
                 data_dict.update(image_dict)
                 save_dict_to_hdf5(data_dict, save_path, False)

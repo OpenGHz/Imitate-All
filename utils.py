@@ -104,10 +104,11 @@ class EpisodicDataset(torch.utils.data.Dataset):
         if self.augment_images is not None and self.augment_images.activated:
             image_data = self.augment_images(image_data)
 
-        # normalize image and change dtype to float
+        # TODO: configure the normalization in the config file
+        # floatize image to [0, 1]
+        # TODO: will normalize image in the loss function, not good
         image_data = image_data / 255.0
-
-        # normalize other data
+        # normalize lowdim data
         action_data = (action_data - self.norm_stats["action_mean"]) / self.norm_stats[
             "action_std"
         ]

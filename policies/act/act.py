@@ -17,11 +17,13 @@ class ACTPolicy(nn.Module):
         if (image.ndim == 4):
             image = image.unsqueeze(1)
         env_state = None
+        # TODO: imagenet norm, move this outside
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
         image = normalize(image)
         if actions is not None: # training time
             actions = actions[:, :self.model.num_queries]
+            assert is_pad is not None, "is_pad should not be None"
             is_pad = is_pad[:, :self.model.num_queries]
 
             a_hat, is_pad_hat, (mu, logvar) = self.model(qpos, image, env_state, actions, is_pad)
