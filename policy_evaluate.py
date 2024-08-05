@@ -173,6 +173,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
     if ensemble is None:
         print("policy_config:", policy_config)
         # if ensemble is not None:
+        policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
         policy = make_policy(policy_config)
         policies['Group1'] = (policy,)
     else:
@@ -248,8 +249,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
     for rollout_id in range(num_rollouts):
 
         # evaluation loop
-        if temporal_agg:
-            all_time_actions = torch.zeros([max_timesteps, max_timesteps+num_queries, action_dim]).cuda()
+        all_time_actions = torch.zeros([max_timesteps, max_timesteps+num_queries, action_dim]).cuda()
 
         qpos_history = torch.zeros((1, max_timesteps, state_dim)).cuda()
         image_list = []  # for visualization
@@ -264,6 +264,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
             if v == 'z':
                 break
             ts = env.reset()
+            policy.reset()
             try:
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
@@ -280,30 +281,22 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
                     # query policy
                     if config['policy_class'] == "ACT":
                         if t % query_frequency == 0:
-                            all_actions = policy(qpos, curr_image)  # (chunk_size, 7)
+                            all_actions:torch.Tensor = policy(qpos, curr_image)  # (1, chunk_size, 7)
+                        all_time_actions[[t], t:t+num_queries] = all_actions
                         # smooth
                         if temporal_agg:
-                            all_time_actions[[t], t:t+num_queries] = all_actions
-                            actions_for_curr_step = all_time_actions[:, t]
-                            actions_populated = torch.all(actions_for_curr_step != 0, axis=1)  # ??
-                            actions_for_curr_step = actions_for_curr_step[actions_populated]
-                            k = 0.01
-                            exp_weights = np.exp(-k * np.arange(len(actions_for_curr_step)))
-                            exp_weights = exp_weights / exp_weights.sum()
-                            exp_weights = torch.from_numpy(exp_weights).cuda().unsqueeze(dim=1)
-                            raw_action = (actions_for_curr_step * exp_weights).sum(dim=0, keepdim=True)
+                            raw_action = all_actions[0][0]
+                            # print("use temporal_agg", raw_action)
                         else:
                             raw_action = all_actions[:, t % query_frequency]
+                            # print("no temporal_agg", raw_action)
                     else:
                         if qpos_mode == 1:  # TODO
                             qpos = torch.from_numpy(qpos_numpy[np.newaxis, :]).float()
                         raw_action = policy(qpos, curr_image)
 
                     # post-process actions
-                    try:
-                        raw_action = raw_action.squeeze(0).cpu().numpy()
-                    except:
-                        pass
+                    raw_action = raw_action.squeeze(0).cpu().numpy()
                     action = post_process(raw_action)  # de-normalize action
                     # filter
                     if filter_type is not None:
