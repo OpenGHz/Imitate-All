@@ -8,7 +8,7 @@ class ActionChunkingExcutor(object):
         self.chunk_size = chunk_size
         self.all_actions = None
 
-    def reset(self):
+    def _reset(self):
         self.t = 0
 
     def __call__(self, policy) -> None:
@@ -18,12 +18,12 @@ class ActionChunkingExcutor(object):
 
             def reset(*args, **kwargs):
                 raw_reset(*args, **kwargs)
-                self.reset()
+                self._reset()
 
         else:
 
             def reset(*args, **kwargs):
-                self.reset()
+                self._reset()
 
         policy.reset = reset
 
@@ -42,7 +42,6 @@ class ActionChunkingExcutor(object):
         policy.__class__.__call__ = call
 
 
-# TODO: only change the method in the policy class
 class TemporalEnsembling(object):
     """Temporal Ensembling to filter out the actions over time"""
 
