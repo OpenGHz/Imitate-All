@@ -266,32 +266,31 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
             try:
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
+                    image_list.append(ts.observation['images'])
 
-                    # process previous timestep to get qpos and image_list
-                    obs = ts.observation
-                    image_list.append(obs['images'])
-                    qpos_numpy = np.array(obs['qpos'])
+                    # pre-process current observations
+                    curr_image = get_image(ts, camera_names, image_mode)
+                    qpos_numpy = np.array(ts.observation['qpos'])
                     qpos = pre_process(qpos_numpy)  # normalize qpos
                     qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
                     qpos_history[:, t] = qpos
-                    curr_image = get_image(ts, camera_names, image_mode)
 
-                    # query policy
+                    # wrap policy
                     target_t = t % num_queries
                     if temporal_agg or target_t == 0:
-                        all_actions:torch.Tensor = policy(qpos, curr_image)  # (1, chunk_size, 7)
+                        # (1, chunk_size, 7) for act
+                        all_actions:torch.Tensor = policy(qpos, curr_image)
                     all_time_actions[[t], t:t+num_queries] = all_actions
                     index = 0 if temporal_agg else target_t
                     raw_action = all_actions[:, index]
-                    # dim: (1,7) -> (7,)
-                    raw_action = raw_action.squeeze(0).cpu().numpy()
 
-                    # post-process actions
+                    # post-process predicted action
+                    raw_action = raw_action.squeeze(0).cpu().numpy()  # dim: (1,7) -> (7,)
                     action = post_process(raw_action)  # de-normalize action
-                    # filter
-                    if filter_type is not None:
+                    if filter_type is not None:  # filt action
                         for i, filter in enumerate(filters):
                             action[i] = filter(action[i], time.time())
+
                     # step the environment
                     sleep_time = max(0, dt - (time.time() - start_time))
                     ts = env.step(action, sleep_time=sleep_time, arm_vel=arm_velocity)
