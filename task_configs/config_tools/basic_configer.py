@@ -9,7 +9,7 @@ import argparse
 from typing import Union
 
 
-def parser_common():
+def basic_parser():
     parser = argparse.ArgumentParser()
     # common
     parser.add_argument(

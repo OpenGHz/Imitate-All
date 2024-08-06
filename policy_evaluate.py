@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 from utils import set_seed
 from visualize_episodes import save_videos
-from task_configs.config_tools.basic_configer import parser_common, get_all_config
-from policies.common.maker import make_policy, parser_add_ACT
+from task_configs.config_tools.basic_configer import basic_parser, get_all_config
+from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 from robots.custom_robot import AssembledRobot
 
@@ -91,51 +91,46 @@ def main(args):
     else:
         raise NotImplementedError(f"{robot_name} is not implemented")
     time.sleep(2)
-    if args['go_zero']:
-        print("Going home...")
-        for robot in robot_instances:
-            robot.set_joint_position_target([0, 0, 0, 0, 0, 0], [1], blocking=True)
-    else:
-        # load environment
-        # TODO: the robots and environment should be independent
-        # we should combine the robot and environment instead of passing the robot to the environment
-        # so what's the name of the combination?
-        environment = all_config['environment']
-        if isinstance(environment, str):
-            if environment == "real":
-                if "airbot_play" in robot_name:
-                    from envs.airbot_play_real_env import make_env
-                elif "fake" in robot_name:
-                    # from airbot_play_fake_env import make_env  # TODO: implement this or pass some param to make_env
-                    from envs.airbot_play_real_env import make_env
-                elif "ros" in robot_name:
-                    from envs.airbot_play_real_env import make_env
-                elif "mmk" in robot_name:
-                    from envs.airbot_mmk_env import make_env
-            elif environment == "mujoco":
-                from envs.airbot_play_mujoco_env import make_env
-            elif environment == "isaac":
-                raise NotImplementedError
-            else:
-                raise NotImplementedError
-            camera_names = all_config['camera_names']
-            camera_indices = all_config['camera_indices']
-            if camera_indices != "":
-                cameras = {name: int(index) for name, index in zip(camera_names, camera_indices)}
-            else:
-                cameras = camera_names
-            env = make_env(robot_instance=robot_instances, cameras=cameras)
+    # load environment
+    # TODO: the robots and environment should be independent
+    # we should combine the robot and environment instead of passing the robot to the environment
+    # so what's the name of the combination?
+    environment = all_config['environment']
+    if isinstance(environment, str):
+        if environment == "real":
+            if "airbot_play" in robot_name:
+                from envs.airbot_play_real_env import make_env
+            elif "fake" in robot_name:
+                # from airbot_play_fake_env import make_env  # TODO: implement this or pass some param to make_env
+                from envs.airbot_play_real_env import make_env
+            elif "ros" in robot_name:
+                from envs.airbot_play_real_env import make_env
+            elif "mmk" in robot_name:
+                from envs.airbot_mmk_env import make_env
+        elif environment == "mujoco":
+            from envs.airbot_play_mujoco_env import make_env
+        elif environment == "isaac":
+            raise NotImplementedError
         else:
-            env = environment
-        env.set_reset_position(start_joint)
-        results = []
-        # multiple ckpt evaluation
-        for ckpt_name in ckpt_names:
-            success_rate, avg_return = eval_bc(all_config, ckpt_name, env)
-            results.append([ckpt_name, success_rate, avg_return])
+            raise NotImplementedError
+        camera_names = all_config['camera_names']
+        camera_indices = all_config['camera_indices']
+        if camera_indices != "":
+            cameras = {name: int(index) for name, index in zip(camera_names, camera_indices)}
+        else:
+            cameras = camera_names
+        env = make_env(robot_instance=robot_instances, cameras=cameras)
+    else:
+        env = environment
+    env.set_reset_position(start_joint)
+    results = []
+    # multiple ckpt evaluation
+    for ckpt_name in ckpt_names:
+        success_rate, avg_return = eval_bc(all_config, ckpt_name, env)
+        results.append([ckpt_name, success_rate, avg_return])
 
-        for ckpt_name, success_rate, avg_return in results:
-            print(f'{ckpt_name}: {success_rate=} {avg_return=}')
+    for ckpt_name, success_rate, avg_return in results:
+        print(f'{ckpt_name}: {success_rate=} {avg_return=}')
     # 为保证安全性，退出时将机械臂归零
     if "mmk" not in robot_name:
         for robot in robot_instances:
@@ -380,38 +375,32 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
 
 
 if __name__ == '__main__':
-    parser = parser_common()
-    parser_add_ACT(parser)
+
+    parser = basic_parser()
 
     # change roll out num
     parser.add_argument('-nr', '--num_rollouts', action='store', type=int, help='Maximum number of evaluation rollouts', required=False)
     # change max time steps
     parser.add_argument('-mts', '--max_timesteps', action='store', type=int, help='max_timesteps', required=False)
-    # just go zero
-    parser.add_argument('-go', '--go_zero', action='store_true')
-    # robot config
+    # robot config #TODO: move to robot config
     parser.add_argument('-can', "--can_buses", action='store', nargs='+', type=str, help='can_bus', default=("can0", "can1"), required=False)
     parser.add_argument('-rn', "--robot_name", action='store', type=str, help='robot_name', required=False)
     parser.add_argument('-em', "--eef_mode", action='store', nargs='+', type=str, help='eef_mode', default=("gripper", "gripper"))
     parser.add_argument('-bat', "--bigarm_type", action='store', nargs='+', type=str, help='bigarm_type', default=("OD", "OD"))
     parser.add_argument('-fat', "--forearm_type", action='store', nargs='+', type=str, help='forearm_type', default=("DM", "DM"))
     parser.add_argument('-ci', "--camera_indices", action='store', nargs='+', type=str, help="camera_indices", default=("0",))
+    parser.add_argument("-av", "--arm_velocity", action="store", type=float, help="arm_velocity", required=False)
     # environment
     parser.add_argument('-et', "--environment", action='store', type=str, help='environment', required=False)
-    # config path #TODO
-    parser.add_argument('-cp', "--config_path", action='store', type=str, help='config_path', required=False)
-    # save_episode
-    parser.add_argument('-sd', "--save_dir", action='store', type=str, help='save_dir', required=False)
     # check_images
     parser.add_argument('-cki', "--check_images", action='store_true')
     # set time_stamp
     parser.add_argument("-ts", "--time_stamp", action="store", type=str, help="time_stamp", required=False)
-    # set arm velocity
-    parser.add_argument("-av", "--arm_velocity", action="store", type=float, help="arm_velocity", required=False)
-    # save all
+    # save
+    parser.add_argument('-sd', "--save_dir", action='store', type=str, help='save_dir', required=False)
     parser.add_argument("-sa", "--save_all", action="store_true", help="save_all")
     parser.add_argument("-sta", "--save_time_actions", action="store_true", help="save_time_actions")
-    # action filter type
+    # action filter type TODO: move to post process; and will use obs filter?
     parser.add_argument("-ft", "--filter", action="store", type=str, help="filter_type", required=False)
 
     main(vars(parser.parse_args()))

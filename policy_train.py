@@ -10,8 +10,8 @@ import time
 import argparse
 
 from utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer, pretty_print_dict
-from task_configs.config_tools.basic_configer import parser_common, get_all_config
-from policies.common.maker import make_policy, parser_add_ACT
+from task_configs.config_tools.basic_configer import basic_parser, get_all_config
+from policies.common.maker import make_policy
 
 
 def main(args:dict):
@@ -262,18 +262,15 @@ if __name__ == '__main__':
     """
     参数优先级：命令行 > config文件
     """
-    parser = parser_common()
+    parser = basic_parser()
     # training
     parser_add_train(parser)
-    # set time_stamp
+    # set time_stamp  # TODO: used to load pretrain model
     parser.add_argument("-ts", "--time_stamp", action="store", type=str, help="time_stamp", required=False)
 
-    # these for what??
     # parser.add_argument('--actuator_network_dir', action='store', type=str, help='actuator_network_dir', required=False)
     # parser.add_argument('--history_len', action='store', type=int)
     # parser.add_argument('--future_len', action='store', type=int)
     # parser.add_argument('--prediction_len', action='store', type=int)
 
-    # for ACT
-    parser_add_ACT(parser)
     main(vars(parser.parse_args()))
