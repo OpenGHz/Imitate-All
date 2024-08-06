@@ -15,7 +15,7 @@ from policies.common.maker import make_policy, parser_add_ACT
 
 
 def main(args:dict):
-    set_seed(1)
+    set_seed(1)  # TODO: why set seed here?
 
     # get all config
     all_config = get_all_config(args, 'train')
@@ -276,8 +276,4 @@ if __name__ == '__main__':
 
     # for ACT
     parser_add_ACT(parser)
-
-    # show train info by setting target time_stamp and exit
-    parser.add_argument("-sti", "--show_train_info", action="store", type=str, help="show target time_stamp train_info")
-
     main(vars(parser.parse_args()))

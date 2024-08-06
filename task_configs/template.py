@@ -30,11 +30,12 @@ def activator(flag:bool):
         return func_add_flag
     return decorator
 
-def policy_maker(config:dict):
+def policy_maker(config:dict, stage=None):
     """
     Make the policy function.
     Arg:
     - config: the config for the policy containing the policy class and configs
+    - stage: the stage of the policy, e.g. "train", "eval". None means both the same
     Return:
     - the policy (nn.Module or any funcitonable) or None to use the default policy constructor
     """
@@ -42,6 +43,7 @@ def policy_maker(config:dict):
     # since it will cause a recursive call
     print("not use custom policy maker")
     print("policy_config:", config)
+    print("stage", stage)
     return None
 
 @activator(False)  # set to True to use augment_images function
@@ -125,10 +127,18 @@ TRAIN_CONFIG_DEFAULT = {
     "cotrain_dir": "",
     "sample_weights": None,  # TODO: change to 1 or 0?
     "parallel": None,  # {"mode":str, "device_ids":list}, mode: "DP" or "DDP"; device_ids: e.g. [0, 1] or None for all
+    # "habitates": {  # TODO: not used for now
+    #     # the env and robot instances for the offline training
+    #     # e.g. "envs": ["env1", "env2"], "robots": [["robot1", "robot2"], "robot2"]
+    #     "envs": [],
+    #     "robots": [],
+    # },
 }
 
 EVAL_CONFIG_DEFAULT = {
     # robot and env conigurations
+    # TODO: since there is online training, these should be moved to the common config?
+    # or use a maker to make the robot and env instances separately for training and evaluation
     "robot_name": "airbot_play_v3",
     "robot_description": "<path/to/your/robot_description>",
     "environment": "real",  # environment instance or "real", "mujoco" to use the corresponding env

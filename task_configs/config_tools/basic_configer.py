@@ -3,9 +3,7 @@ import importlib
 from utils import (
     find_all_hdf5,
     get_init_states,
-    get_key_info,
     replace_timestamp,
-    pretty_print_dict,
 )
 import argparse
 from typing import Union
@@ -16,14 +14,6 @@ def parser_common():
     # common
     parser.add_argument(
         "-tn", "--task_name", action="store", type=str, help="task_name", required=True
-    )
-    parser.add_argument(
-        "-pc",
-        "--policy_class",
-        action="store",
-        type=str,
-        help="policy_class, capitalize",
-        required=False,
     )
     parser.add_argument("--seed", action="store", type=int, help="seed", required=False)
     return parser
@@ -141,7 +131,7 @@ def get_all_config(args: dict, stage: str):
     """
     Get all config for train or eval stage from args directly and task config file.
     - args: command line args dict
-    - stage: train or eval
+    - stage: train, eval
     # TODO: import a config class instead of dict and change it to dict(all members or just properties)
     """
     assert stage in ["train", "eval"], f"Invalid stage: {stage}"
@@ -168,17 +158,6 @@ def get_all_config(args: dict, stage: str):
         all_config["stats_path"] = os.path.abspath(all_config["stats_path"])
     else:
         use_stats = False
-    if args.get("show_train_info", None):  # if show_train_info, print key info and exit
-        time_stamp = args["show_train_info"]
-        all_config["ckpt_dir"] = replace_timestamp(all_config["ckpt_dir"], time_stamp)
-        stats_path_config = replace_timestamp(
-            all_config["stats_path"], time_stamp
-        )
-        assert use_stats, "show_train_info requires stats_path"
-        stats_dir, stats_path = get_stats_path(stats_path_config, all_config["task_name"])
-        key_info = get_key_info(os.path.dirname(stats_path))
-        pretty_print_dict(key_info)
-        exit(0)
     if stage == "train":
         assert use_stats, "now training must use stats"
         all_config["dataset_dir"] = os.path.abspath(all_config["dataset_dir"])

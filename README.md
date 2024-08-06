@@ -152,7 +152,7 @@ After each evaluation, you can find evaluation-related files (including process 
 
 ## Information Viewing
 
-After policy training, key information is stored in the key_info.pkl file, which can be viewed using the following steps.
+After policy training, key information and dataset stats will be stored in the key_info.pkl file and dataset_stats.pkl, which can be viewed using the following steps.
 
 Navigate to the repo folder and activate the conda environment:
 
@@ -160,18 +160,20 @@ Navigate to the repo folder and activate the conda environment:
 conda activate imitall
 ```
 
-Then, use the following command to view information for a specified timestamp where training results are saved:
+Then, use the following command to view information for a specified timestamp:
 
 ```bash
-python3 policy_train.py -tn example_task -sti 20240420-214215
+python3 policy_train.py -tn example_task -ts 20240420-214215 -in key_info
 ```
 
-You will see information related to that task in the terminal, including:
+You will see key information related to that task in the terminal, including:
 
 <p align="center">
   <img src="images/train_info.png" />
 </p>
 
-This includes the absolute path to the HDF5 data used during training, training parameter configurations, initial joint angles for inference, and other information. 
+This includes the absolute path to the HDF5 data used during training, training parameter configurations, initial joint values of the first episode for inference, and other information. 
 
 This information ensures experiment reproducibility. If the camera is rigidly attached to the robotic arm, replicating the robotic arm's behavior is relatively straightforward. Object placement can be determined through retraining data replication.
+
+For dataset stats, just set `-in stats` in the above command.

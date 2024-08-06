@@ -15,7 +15,7 @@ from robots.custom_robot import AssembledRobot
 
 
 def main(args):
-    set_seed(1)
+    set_seed(1)  # TODO: why set seed here?
 
     all_config = get_all_config(args, "eval")
     ckpt_names = all_config['ckpt_names']

@@ -169,9 +169,7 @@ def get_norm_stats(dataset_dir, num_episodes, other_config={}):
     return stats
 
 
-def get_key_info(path):
-    if ".pkl" not in path:
-        path = os.path.join(path, f"key_info.pkl")
+def get_pkl_info(path):
     with open(path, "rb") as f:
         key_info = pickle.load(f)
     return key_info
@@ -191,42 +189,6 @@ def get_init_states(dir, episode_idx=None):
             qpos = key_info["init_info"]["init_joint"]
             action = key_info["init_info"]["init_action"]
     return qpos, action
-
-
-# def check_init_states(dataset_dir, num_episodes, other_config=()):
-#     """检测所有episode的初始状态是否一致"""
-#     all_qpos_data = []
-#     all_action_data = []
-#     for episode_idx in range(num_episodes):
-#         dataset_path = os.path.join(dataset_dir, f'episode_{episode_idx}.hdf5')
-#         with h5py.File(dataset_path, 'r') as root:
-#             qpos = root['/observations/qpos'][0]
-#             action = root['/action'][0]
-#             if 'qvel' in other_config:
-#                 qvel = root['/observations/qvel'][()]
-#             all_qpos_data.append(torch.from_numpy(qpos))
-#             all_action_data.append(torch.from_numpy(action))
-#     all_qpos_data = torch.stack(all_qpos_data)
-#     all_qpos_data = all_qpos_data
-#     qpos_mean = all_qpos_data.mean(dim=[0, 1], keepdim=True)
-#     qpos_std = all_qpos_data.std(dim=[0, 1], keepdim=True)
-#     qpos_std = torch.clip(qpos_std, 1e-2, np.inf) # clipping
-
-#     all_action_data = torch.stack(all_action_data)
-#     all_action_data = all_action_data
-#     action_mean = all_action_data.mean(dim=[0, 1], keepdim=True)
-#     action_std = all_action_data.std(dim=[0, 1], keepdim=True)
-#     action_std = torch.clip(action_std, 1e-2, np.inf) # clipping
-
-#     stats = {"qpos_mean": qpos_mean.numpy().squeeze(),
-#              "qpos_std": qpos_std.numpy().squeeze(),
-#              "qpos_min": all_qpos_data.min(dim=[0, 1], keepdim=True).values.numpy().squeeze(),
-#              "qpos_max": all_qpos_data.max(dim=[0, 1], keepdim=True).values.numpy().squeeze(),
-#              "action_mean": action_mean.numpy().squeeze(),
-#              "action_std": action_std.numpy().squeeze(),
-#              "action_min": all_action_data.min(dim=[0, 1], keepdim=True).values.numpy().squeeze(),
-#              "action_max": all_action_data.max(dim=[0, 1], keepdim=True).values.numpy().squeeze(),}
-#     return stats
 
 
 def load_data(
