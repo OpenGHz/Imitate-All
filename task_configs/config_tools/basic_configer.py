@@ -117,6 +117,25 @@ def config_policy(args: dict):
     policy_config["action_dim"] = action_dim
     return policy_config
 
+def get_stats_path(stats_path_config:str, task_name:str):
+    dir_level = stats_path_config.count(task_name)
+    stats_name = os.path.basename(stats_path_config)
+    stats_dir: str = os.path.dirname(stats_path_config)
+    stats_path = os.path.join(os.path.dirname(stats_dir), stats_name)
+    print(f"stats_dir={stats_dir}, stats_name={stats_name}")
+    if not os.path.exists(stats_dir):
+        if dir_level == 2:
+            # 降级一级再检查
+            index = stats_dir.rfind(task_name)
+            stats_dir = stats_dir[:index]
+            print(f"Warning: stats_dir {stats_dir} not found, try {stats_dir}")
+            if not os.path.exists(stats_dir):
+                raise FileNotFoundError(f"stats_dir also {stats_dir} not found")
+            else:
+                stats_path = os.path.join(stats_dir, stats_name)
+        else:
+            raise FileNotFoundError(f"stats_dir {stats_dir} not found")
+    return stats_dir, stats_path
 
 def get_all_config(args: dict, stage: str):
     """
@@ -152,14 +171,12 @@ def get_all_config(args: dict, stage: str):
     if args.get("show_train_info", None):  # if show_train_info, print key info and exit
         time_stamp = args["show_train_info"]
         all_config["ckpt_dir"] = replace_timestamp(all_config["ckpt_dir"], time_stamp)
-        all_config["stats_path"] = replace_timestamp(
+        stats_path_config = replace_timestamp(
             all_config["stats_path"], time_stamp
         )
-        assert use_stats, "show_train_info=True requires stats_path"
-        assert os.path.exists(
-            all_config["stats_path"]
-        ), f"stats_path {all_config['stats_path']} must exist"
-        key_info = get_key_info(os.path.dirname(all_config["stats_path"]))
+        assert use_stats, "show_train_info requires stats_path"
+        stats_dir, stats_path = get_stats_path(stats_path_config, all_config["task_name"])
+        key_info = get_key_info(os.path.dirname(stats_path))
         pretty_print_dict(key_info)
         exit(0)
     if stage == "train":
@@ -198,24 +215,8 @@ def get_all_config(args: dict, stage: str):
                 all_config["stats_path"], time_stamp
             )
         # 检查路径（支持task_name/ts/task_name/ts两级嵌套和仅task_name/ts一级两种目录结构）
-        dir_level = all_config["stats_path"].count(args["task_name"])
-        stats_name = os.path.basename(all_config["stats_path"])
-        stats_dir: str = os.path.dirname(all_config["stats_path"])
-        stats_path = os.path.join(os.path.dirname(stats_dir), stats_name)
-        print(f"stats_dir={stats_dir}, stats_name={stats_name}")
-        if not os.path.exists(stats_dir):
-            if dir_level == 2:
-                # 降级一级再检查
-                index = stats_dir.rfind(args["task_name"])
-                stats_dir = stats_dir[:index]
-                print(f"Warning: stats_dir {stats_dir} not found, try {stats_dir}")
-                if not os.path.exists(stats_dir):
-                    raise FileNotFoundError(f"stats_dir also {stats_dir} not found")
-                else:
-                    stats_path = os.path.join(stats_dir, stats_name)
-                    all_config["stats_path"] = stats_path
-            else:
-                raise FileNotFoundError(f"stats_dir {stats_dir} not found")
+        stats_dir, stats_path = get_stats_path(all_config["stats_path"], all_config["task_name"])
+        all_config["stats_path"] = stats_path
         # 评估时如果start_joint为AUTO，则从统计数据中读取初始动作
         if all_config["start_joint"] == "AUTO":
             assert use_stats, "start_joint=AUTO requires stats_path"
