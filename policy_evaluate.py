@@ -54,8 +54,10 @@ def main(args):
             #     if not CAN_Tools.check_can_status(can):
             #        success, error = CAN_Tools.activate_can_interface(can, 1000000)
             #        if not success: raise Exception(error)
-            airbot_player = airbot.create_agent("down", can_list[i], vel, eef_mode[i], bigarm_type[i], forearm_type[i])
-            robot_instances.append(AssembledRobot(airbot_player, 1/fps, 
+            airbot_player = airbot.create_agent("/usr/share/airbot_models/airbot_play_with_gripper.urdf",
+                                                "down", can_list[i], vel, eef_mode[i], bigarm_type[i], 
+                                                forearm_type[i])
+            robot_instances.append(AssembledRobot(airbot_player, 1/fps,
                                                   start_joint[joint_num*i:joint_num*(i+1)]))
     elif "fake" in robot_name or "none" in robot_name:
         from robots.custom_robot import AssembledFakeRobot
