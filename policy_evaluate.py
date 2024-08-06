@@ -28,18 +28,13 @@ def main(args):
     joint_num = all_config['joint_num']
     robot_num = all_config['robot_num']
     can_list = args['can_buses']
-
-    # get start joint
-    print("stats_path:", all_config['stats_path'])
-    if isinstance(start_joint, str) and start_joint == "AUTO":
-        info_dir = os.path.dirname(all_config['stats_path'])
-        key_info_path = os.path.join(info_dir, "key_info.pkl")
-        with open(key_info_path, 'rb') as f:
-            key_info = pickle.load(f)
-            start_joint = key_info['init_info']["init_joint"]
-    if len(start_joint) == joint_num:
-        start_joint = start_joint * robot_num
     assert len(start_joint) == robot_num * joint_num, "The length of start_joint should be equal to joint_num or joint_num*robot_num"
+    print(f"Start joint: {start_joint}")
+
+    # # debug
+    # with open(all_config['stats_path'], 'rb') as f:
+    #     stats = pickle.load(f)
+    #     print(f"stats: {stats}")
 
     # init robots (sim and real are the same for airbot_play)
     robot_instances:List[AssembledRobot] = []
