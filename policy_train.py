@@ -254,7 +254,12 @@ def parser_add_train(parser:argparse.ArgumentParser):
     parser.add_argument('-ve', '--validate_every', action='store', type=int, help='validate_every', required=False)
     parser.add_argument('-se', '--save_every', action='store', type=int, help='save_every', required=False)
     parser.add_argument('-smd','--skip_mirrored_data', action='store', type=bool, help='skip_mirrored_data', required=False)
-
+    # set time_stamp  # TODO: used to load pretrain model
+    parser.add_argument("-ts", "--time_stamp", action="store", type=str, help="time_stamp", required=False)
+    # parser.add_argument('--actuator_network_dir', action='store', type=str, help='actuator_network_dir', required=False)
+    # parser.add_argument('--history_len', action='store', type=int)
+    # parser.add_argument('--future_len', action='store', type=int)
+    # parser.add_argument('--prediction_len', action='store', type=int)
     return parser
 
 
@@ -263,14 +268,5 @@ if __name__ == '__main__':
     参数优先级：命令行 > config文件
     """
     parser = basic_parser()
-    # training
     parser_add_train(parser)
-    # set time_stamp  # TODO: used to load pretrain model
-    parser.add_argument("-ts", "--time_stamp", action="store", type=str, help="time_stamp", required=False)
-
-    # parser.add_argument('--actuator_network_dir', action='store', type=str, help='actuator_network_dir', required=False)
-    # parser.add_argument('--history_len', action='store', type=int)
-    # parser.add_argument('--future_len', action='store', type=int)
-    # parser.add_argument('--prediction_len', action='store', type=int)
-
     main(vars(parser.parse_args()))
