@@ -159,7 +159,6 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
     num_queries = policy_config['num_queries']  # i.e. chunk_size
     dt = 1 / config['fps']
     image_mode = config.get('image_mode', 0)
-    qpos_mode = config.get('qpos_mode', 0)
     arm_velocity = config.get('arm_velocity', 6)
     save_all = config.get('save_all', False)
     save_time_actions = config.get('save_time_actions', False)
@@ -231,7 +230,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
         filters = [OneEuroFilter(**config) for _ in range(action_dim)]
 
     # init pre/post process functions
-    # TODO: move to policy maker
+    # TODO: move to policy maker as wrappers
     if use_stats:
         with open(stats_path, 'rb') as f:
             stats = pickle.load(f)
@@ -242,7 +241,6 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
         post_process = lambda a: a
 
     # evaluation loop
-    query_frequency = 1 if temporal_agg else num_queries
     env_max_reward = 0
     episode_returns = []
     highest_rewards = []
@@ -279,24 +277,16 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
                     curr_image = get_image(ts, camera_names, image_mode)
 
                     # query policy
-                    if config['policy_class'] == "ACT":
-                        if t % query_frequency == 0:
-                            all_actions:torch.Tensor = policy(qpos, curr_image)  # (1, chunk_size, 7)
-                        all_time_actions[[t], t:t+num_queries] = all_actions
-                        # smooth
-                        if temporal_agg:
-                            raw_action = all_actions[0][0]
-                            # print("use temporal_agg", raw_action)
-                        else:
-                            raw_action = all_actions[:, t % query_frequency]
-                            # print("no temporal_agg", raw_action)
-                    else:
-                        if qpos_mode == 1:  # TODO
-                            qpos = torch.from_numpy(qpos_numpy[np.newaxis, :]).float()
-                        raw_action = policy(qpos, curr_image)
+                    target_t = t % num_queries
+                    if temporal_agg or target_t == 0:
+                        all_actions:torch.Tensor = policy(qpos, curr_image)  # (1, chunk_size, 7)
+                    all_time_actions[[t], t:t+num_queries] = all_actions
+                    index = 0 if temporal_agg else target_t
+                    raw_action = all_actions[:, index]
+                    # dim: (1,7) -> (7,)
+                    raw_action = raw_action.squeeze(0).cpu().numpy()
 
                     # post-process actions
-                    raw_action = raw_action.squeeze(0).cpu().numpy()
                     action = post_process(raw_action)  # de-normalize action
                     # filter
                     if filter_type is not None:

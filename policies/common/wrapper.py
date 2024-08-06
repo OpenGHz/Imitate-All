@@ -60,7 +60,7 @@ class TemporalEnsembling(object):
 
     def update(self, raw_actions: torch.Tensor) -> torch.Tensor:
         # raw_actions is a tensor of shape [1, chunk_size, action_dim]
-        print(raw_actions.shape)
+        # print(raw_actions.shape)
         self.all_time_actions[[self.t], self.t : self.t + self.chunk_size] = raw_actions
         bias = self.t - self.chunk_size + 1
         start = int(max(0, bias))
