@@ -17,11 +17,16 @@ from pathlib import Path
 if __name__ == "__main__":
 
     # some configurations are missing or misplaced in the TASK_CONFIG dictionary
-    TASK_CONFIG["common"]["policy_config"]["state_dim"] = 7
-    TASK_CONFIG["common"]["policy_config"]["camera_names"] = ["0"]
-    TASK_CONFIG["common"]["policy_config"]["temporal_agg"] = True
-
+    policy_config = TASK_CONFIG["common"]["policy_config"]
+    policy_config["state_dim"] = 7
+    policy_config["action_dim"] = 7
+    policy_config["max_timesteps"] = 250
+    policy_config["camera_names"] = ["0"]
+    policy_config["temporal_agg"] = False  # can not be True
+    policy_config["chunk_size"] = 25
+    policy_config["num_queries"] = 25
     print(TASK_CONFIG["common"]["policy_config"])
+
     """
     >>> {'policy_class': 'ACT',
         'policy_maker': <function task_configs.example_task.policy_maker(config: dict)>,
@@ -39,7 +44,7 @@ if __name__ == "__main__":
     """
 
     # load policy
-    act_policy = policy_maker(TASK_CONFIG["common"]["policy_config"])
+    act_policy = policy_maker(policy_config)
     ckpt_root = Path("my_ckpt/stack_cups/20240623-004841")
     ckpt_path = ckpt_root / "policy_best.ckpt"
 
@@ -52,7 +57,9 @@ if __name__ == "__main__":
     # export to onnx
     onnx_root = Path("./onnx_output")
     onnx_root.mkdir(parents=True, exist_ok=True)
-    onnx_path = onnx_root / "act_policy.onnx"
+    onnx_path = onnx_root / "act_policy_te.onnx"
+    act_policy.eval()
+    # print(act_policy(qpos, img).shape)
 
     torch.onnx.export(act_policy, (qpos, img), onnx_path, opset_version=11)
     print("\nSuccessfullt exported to: ", onnx_path)

@@ -65,7 +65,7 @@ class TemporalEnsembling(object):
         actions_for_curr_step = actions_for_curr_step[actions_populated]
         # TODO: configure the weight function when initiating the class
         k = 0.01
-        exp_weights = np.exp(-k * np.arange(len(actions_for_curr_step)))
+        exp_weights = np.exp(-k * np.arange(actions_for_curr_step.shape[0]))
         exp_weights = exp_weights / exp_weights.sum()
         exp_weights = torch.from_numpy(exp_weights).cuda().unsqueeze(dim=1)
         new_action = (actions_for_curr_step * exp_weights).sum(dim=0, keepdim=True)
