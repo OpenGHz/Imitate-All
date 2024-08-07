@@ -7,6 +7,9 @@ from tqdm import tqdm
 from typing import Any, Dict, Optional, List, Callable, Union
 import cv2
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
+
+logging.basicConfig(level=logging.NOTSET)
 
 
 def is_nested(data):
@@ -99,7 +102,7 @@ class Compresser(object):
             raise NotImplementedError(f"Decompress method {method} is not implemented.")
 
     @staticmethod
-    def pad_image_data(data:Union[list, dict], max_len: int) -> np.ndarray:
+    def pad_image_data(data: Union[list, dict], max_len: int) -> np.ndarray:
         """Pad image data so that all compressed images have the same length as the max"""
         # t0 = time.time()
         all_padded_data = {}
@@ -114,7 +117,7 @@ class Compresser(object):
                 padded_compressed_image[:image_len] = compressed_image
                 padded_compressed_image_list.append(padded_compressed_image)
             all_padded_data[key] = padded_compressed_image_list
-        # print(f"padding: {time.time() - t0:.2f}s")
+        # logging.debug(f"padding: {time.time() - t0:.2f}s")
         if not dict_data:
             all_padded_data = all_padded_data["images"]
         return all_padded_data
@@ -208,6 +211,8 @@ def video_to_dict(
         if compresser.padding:
             compresser.pad_size = np.array(compressed_len_list).max()
             video_dict = Compresser.pad_image_data(video_dict, compresser.pad_size)
+        logging.debug(f"compressed_len_list: {compressed_len_list}")
+        logging.debug("compressed_len", compressed_len)
         video_dict["compressed_len"] = compressed_len
 
     return video_dict
@@ -308,7 +313,7 @@ def raw_to_dict(
             with open(ep_dir / state_file, "r") as f:
                 # read the raw data
                 if ".json" in state_file:
-                    raw_data:dict = json.load(f)
+                    raw_data: dict = json.load(f)
                 else:
                     raise NotImplementedError(
                         f"File type {state_file} is not supported."
@@ -379,9 +384,10 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
     """
     with h5py.File(target_path, "w", rdcc_nbytes=1024**2 * 2) as root:
         for key, value in data.items():
-            if isinstance(value, dict):
+            is_dict_value = isinstance(value, dict)
+            if is_dict_value:  # e.g. compress_len
                 value = list(value.values())
-            # print(f"key:{key} ||| value:{value}")
+                # print(f"key:{key} ||| value:{value}")
             if "images" in key:
                 dtype = "uint8"
                 chunks = (1, *value[0].shape)
@@ -392,14 +398,24 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
                 array_type = np.float32
             # padding the data with the last N values
             if pad_max_len is not None:
-                size_to_pad = pad_max_len - len(value)
-                if size_to_pad > 0:
-                    value = value + value[-size_to_pad:]
+
+                def pad(value):
+                    size_to_pad = pad_max_len - len(value)
+                    if size_to_pad > 0:
+                        value = value + value[-size_to_pad:]
+                    return value
+
+                if is_dict_value:
+                    for i, v in enumerate(value):
+                        value[i] = pad(v)
+                else:
+                    value = pad(value)
             root.create_dataset(
                 key, data=np.array(value, dtype=array_type), dtype=dtype, chunks=chunks
             )
         root.attrs["sim"] = False
         root.attrs["compress"] = True
+
 
 def hdf5_to_dict(hdf5_path):
     def recursively_load_datasets(hdf5_group):
@@ -411,10 +427,11 @@ def hdf5_to_dict(hdf5_path):
             elif isinstance(item, h5py.Group):
                 data_dict[key] = recursively_load_datasets(item)
         return data_dict
-    
+
     with h5py.File(hdf5_path, "r") as root:
         data = recursively_load_datasets(root)
     return data
+
 
 def compress_images(images: list, compresser: Compresser) -> list:
     """Compress the images in the list (will modify the input list)."""
