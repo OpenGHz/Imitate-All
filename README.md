@@ -1,4 +1,4 @@
-# Imitate All: Imitation Learning Platform For Embedded AI.
+# Imitate All: Imitation Learning Platform For Embodied AI.
 
 ## Introduction
 
