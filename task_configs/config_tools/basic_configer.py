@@ -136,13 +136,13 @@ def get_all_config(args: dict, stage: str):
     """
     assert stage in ["train", "eval"], f"Invalid stage: {stage}"
     # import config script according to task_name
-    config_path: str = args.get("config_path", None)
-    if config_path is None:
-        config_path = f"task_configs.{args['task_name'].replace('/','.')}"
+    config_rela_path: str = args.get("config_path", None)
+    if config_rela_path is None:
+        config_rela_path = f"task_configs.{args['task_name'].replace('/','.')}"
     else:
         # e.g. jimu/dmil or jimu.dmil
-        config_path = "task_configs." + config_path.replace("/", ".")
-    TASK_CONFIG, task_funcs, config_sys_path = load_task_config(config_path)
+        config_rela_path = "task_configs." + config_rela_path.replace("/", ".")
+    TASK_CONFIG, task_funcs, config_sys_path = load_task_config(config_rela_path)
     print(f"config_file_sys_path={config_sys_path}")
     # assert os.path.exists(config_sys_path), f"config file {config_sys_path} not found"
     # merge configs to all_config
