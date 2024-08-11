@@ -107,11 +107,14 @@ def config_policy(args: dict):
     policy_config["action_dim"] = action_dim
     return policy_config
 
+def get_ckpt_dir(ckpt_dir_config, task_name):
+    pass
+
 def get_stats_path(stats_path_config:str, task_name:str):
     dir_level = stats_path_config.count(task_name)
     stats_name = os.path.basename(stats_path_config)
     stats_dir: str = os.path.dirname(stats_path_config)
-    stats_path = os.path.join(os.path.dirname(stats_dir), stats_name)
+    stats_path = os.path.join(stats_dir, stats_name)
     print(f"stats_dir={stats_dir}, stats_name={stats_name}")
     if not os.path.exists(stats_dir):
         if dir_level == 2:
