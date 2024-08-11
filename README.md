@@ -25,8 +25,10 @@ conda config --set auto_activate_base false && conda deactivate
   - ``augment_hdf5_images.py`` Pipline of augmenting images from the hdf5 file
 - ``policy_train.py`` Policy training: ACT and yours
 - ``policy_evaluate`` Policy evaluating/inferencing: ACT and yours
-- ``policy.py`` Policy implementation or declaration: ACT, CNNMLP and yours
-- ``policyer.py`` Tools to configure and make policies
+- `Policies`
+  - `common` Utils for all policies.
+  - `traditional` Traditional policies implementation: cnnmlp
+  - `act`&`diffusion` Policy implementation: ACT, Diffusion Policy
 - ``detr`` Model definitions modified from DETR: ACT, CNNMLP
 - ``envs`` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
 - ``images`` Images used by README.md
