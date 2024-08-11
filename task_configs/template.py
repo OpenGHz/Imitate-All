@@ -93,7 +93,6 @@ COMMON_CONFIG_DEFAULT = {
         "2",
     ],
     "task_type": "static",
-    "seed": 0,
     "policy_config": POLICY_CONFIG_ACT_DEFAULT,
     "ckpt_dir": TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/ckpt",
     # stats_path包含了统计信息、最优/后权重数据等核心文件
@@ -108,6 +107,7 @@ TRAIN_CONFIG_DEFAULT = {
     # e.g. (50, 100, "augmented")
     # or a list(not tuple!) of multi tuples e.g. [(0, 49), (100, 199)]
     # TODO: not implemented; support custom name postfix, e.g. "episode_0_augmented"
+    "seed": 1,
     "num_episodes": "ALL",
     "check_episodes": True,  # check the existence of all episodes
     "batch_size": 16,
@@ -139,6 +139,7 @@ EVAL_CONFIG_DEFAULT = {
     # robot and env conigurations
     # TODO: since there is online training, these should be moved to the common config?
     # or use a maker to make the robot and env instances separately for training and evaluation
+    "seed": 1000,
     "robot_name": "airbot_play_v3",
     "robot_description": "<path/to/your/robot_description>",
     "environment": "real",  # environment instance or "real", "mujoco" to use the corresponding env
