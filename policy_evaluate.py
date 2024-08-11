@@ -180,21 +180,14 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
     # check the existence of ckpt
     ckpt_path = os.path.join(ckpt_dir, ckpt_name)
     raw_ckpt_path = ckpt_path
-    use_stats = stats_path not in ["", None]
     if not os.path.exists(ckpt_path):
         ckpt_dir = os.path.dirname(ckpt_dir)  # check the upper dir
         ckpt_path = os.path.join(ckpt_dir, ckpt_name)
         print(f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}...")
         if not os.path.exists(ckpt_path):
-            ckpt_path = None
-            if use_stats:
-                ckpt_dir = os.path.dirname(stats_path)
-                ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-                print(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
-                if not os.path.exists(ckpt_path):
-                    ckpt_path = None
-            if ckpt_path is None:
-                print(f"Warning: also not found ckpt_path: {ckpt_path}, assume not using ckpt")
+            ckpt_dir = os.path.dirname(stats_path)
+            ckpt_path = os.path.join(ckpt_dir, ckpt_name)
+            print(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
 
     # configure policy
     if hasattr(policy, 'load_state_dict'):
@@ -221,6 +214,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
 
     # init pre/post process functions
     # TODO: move to policy maker as wrappers
+    use_stats = True
     if use_stats:
         with open(stats_path, 'rb') as f:
             stats = pickle.load(f)
