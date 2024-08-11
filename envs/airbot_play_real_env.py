@@ -52,7 +52,7 @@ class RealEnv:
             [robot.end_effector_close for robot in self.airbot_players]
         )
         self.all_joints_num = self.airbot_players[0].all_joints_num
-        self.arm_joints_num = 6
+        self.arm_joints_num = self.airbot_players[0].arm_joints_num
         if use_fake_robot:
             print("AIRBOT Play Fake Env Created.")
         else:
