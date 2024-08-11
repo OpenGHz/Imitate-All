@@ -48,7 +48,7 @@ def get_arm_joint_positions(bot: AssembledRobot):
 
 
 def get_arm_gripper_positions(bot: AssembledRobot):
-    return bot.get_current_joint_positions()[6]
+    return bot.get_end_effector_value()
 
 
 def move_arms(bot_list: List[AssembledRobot], target_pose_list, move_time=1):

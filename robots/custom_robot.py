@@ -45,6 +45,9 @@ class AssembledRobot(object):
         # 若不默认归一化，则需要对末端进行归一化操作
         self.robot.set_target_end(value)
 
+    def get_end_effector_value(self):
+        return [self.robot.get_current_end()]
+
 
 class AssembledFakeRobot(object):
     real_camera = False
@@ -90,6 +93,8 @@ class AssembledFakeRobot(object):
         if self._show:
             print(f"Setting end effector value to {value}")
 
+    def get_end_effector_value(self):
+        return [self.end_effector_open]
 
 try:
     import rospy
