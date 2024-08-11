@@ -15,8 +15,6 @@ from policies.common.maker import make_policy
 
 
 def main(args:dict):
-    set_seed(1)  # TODO: why set seed here?
-
     # get all config
     all_config = get_all_config(args, 'train')
     ckpt_dir = all_config['ckpt_dir']
@@ -77,6 +75,7 @@ def main(args:dict):
             print('No free GPU, waiting...')
             time.sleep(60)
     # train policy
+    set_seed(all_config['seed'])
     best_ckpt_info = train_bc(train_dataloader, val_dataloader, all_config)
     best_epoch, min_val_loss, best_state_dict = best_ckpt_info
     print(f'Best ckpt, val loss {min_val_loss:.6f} @ epoch{best_epoch}')
@@ -103,8 +102,6 @@ def train_bc(train_dataloader, val_dataloader, config):
     parallel = config["parallel"]
     if config["eval_every"] != 0:
         from policy_evaluate import eval_bc
-
-    set_seed(seed)
 
     policy = make_policy(policy_config)
     # load pretrain model if needed

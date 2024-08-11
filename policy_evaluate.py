@@ -15,18 +15,16 @@ from robots.custom_robot import AssembledRobot
 
 
 def main(args):
-    set_seed(1)  # TODO: why set seed here?
-
     all_config = get_all_config(args, "eval")
     ckpt_names = all_config['ckpt_names']
     robot_name = all_config['robot_name'] if not args["check_images"] else "fake_robot"
-    eef_mode = all_config['eef_mode']
-    bigarm_type = args['bigarm_type']
-    forearm_type = args['forearm_type']
     fps = all_config['fps']
     start_joint = all_config['start_joint']
     joint_num = all_config['joint_num']
     robot_num = all_config['robot_num']
+    eef_mode = args['eef_mode']
+    bigarm_type = args['bigarm_type']
+    forearm_type = args['forearm_type']
     can_list = args['can_buses']
     assert len(start_joint) == robot_num * joint_num, "The length of start_joint should be equal to joint_num or joint_num*robot_num"
     print(f"Start joint: {start_joint}")
@@ -91,7 +89,7 @@ def main(args):
     # we should combine the robot and environment instead of passing the robot to the environment
     # so what's the name of the combination?
     environment = all_config['environment']
-    if isinstance(environment, str):
+    if isinstance(environment, str):  # TODO: remove this
         if environment == "real":
             if "airbot_play" in robot_name:
                 from envs.airbot_play_real_env import make_env
@@ -120,6 +118,7 @@ def main(args):
     env.set_reset_position(start_joint)
     results = []
     # multiple ckpt evaluation
+    set_seed(all_config['seed'])
     for ckpt_name in ckpt_names:
         success_rate, avg_return = eval_bc(all_config, ckpt_name, env)
         results.append([ckpt_name, success_rate, avg_return])
@@ -136,7 +135,6 @@ def main(args):
     print()
 
 def eval_bc(config, ckpt_name, env:CommonEnv):
-    set_seed(1000)
     # 显式获得配置
     ckpt_dir = config['ckpt_dir']
     stats_path = config['stats_path']
