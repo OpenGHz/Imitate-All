@@ -68,7 +68,7 @@ TRAIN_DIR_DEFAULT = "./my_ckpt"  # when training to save and when evaluating to 
 EVAL_DIR_DEFAULT = "./eval_results"
 
 POLICY_CONFIG_ACT_DEFAULT = {
-    "policy_class": "ACT",  # can be ignored if use a custom policy_maker
+    "policy_class": "ACT",  # TODO:can be ignored if use a custom policy_maker
     "policy_maker": policy_maker,
     "kl_weight": 10,
     "chunk_size": 40,
@@ -95,7 +95,7 @@ COMMON_CONFIG_DEFAULT = {
     "task_type": "static",
     "policy_config": POLICY_CONFIG_ACT_DEFAULT,
     "ckpt_dir": TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/ckpt",
-    # stats_path包含了统计信息、最优/后权重数据等核心文件
+    # stats_path所在路径包含了统计信息、最优/后权重数据等核心文件
     "stats_path": "",  # "" if not use, TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{TASK_NAME}",
 }
 

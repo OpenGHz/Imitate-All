@@ -24,7 +24,7 @@ def main(args:dict):
     if image_augmentor.activated:
         print("Use image augmentor")
     # 加载数据及统计信息
-    train_dataloader, val_dataloader, stats, _ = load_data(dataset_dir, all_config["num_episodes"], all_config['camera_names'], all_config['batch_size'], all_config['batch_size'], {'image':image_augmentor}, all_config)
+    train_dataloader, val_dataloader, stats = load_data(dataset_dir, all_config["num_episodes"], all_config['camera_names'], all_config['batch_size'], all_config['batch_size'], {'image':image_augmentor}, all_config)
     # 创建保存路径
     if not os.path.isdir(ckpt_dir):
         os.makedirs(ckpt_dir)

@@ -134,6 +134,19 @@ def main(args):
             del robot
     print()
 
+def get_ckpt_path(ckpt_dir, ckpt_name, stats_path):
+    ckpt_path = os.path.join(ckpt_dir, ckpt_name)
+    raw_ckpt_path = ckpt_path
+    if not os.path.exists(ckpt_path):
+        ckpt_dir = os.path.dirname(ckpt_dir)  # check the upper dir
+        ckpt_path = os.path.join(ckpt_dir, ckpt_name)
+        print(f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}...")
+        if not os.path.exists(ckpt_path):
+            ckpt_dir = os.path.dirname(stats_path)
+            ckpt_path = os.path.join(ckpt_dir, ckpt_name)
+            print(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
+    return ckpt_path
+
 def eval_bc(config, ckpt_name, env:CommonEnv):
     # 显式获得配置
     ckpt_dir = config['ckpt_dir']
@@ -157,7 +170,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
     save_dir = save_dir if save_dir != "AUTO" else ckpt_dir
     result_prefix = "result_" + ckpt_name.split('.')[0]
 
-    # load policies
+    # load and configure policies
     policies:Dict[str, list] = {}
     if ensemble is None:
         print("policy_config:", policy_config)
@@ -176,20 +189,7 @@ def eval_bc(config, ckpt_name, env:CommonEnv):
                     gr_cfg["policies"][index]["policy_class"],
 
                 ))
-
-    # check the existence of ckpt
-    ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-    raw_ckpt_path = ckpt_path
-    if not os.path.exists(ckpt_path):
-        ckpt_dir = os.path.dirname(ckpt_dir)  # check the upper dir
-        ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-        print(f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}...")
-        if not os.path.exists(ckpt_path):
-            ckpt_dir = os.path.dirname(stats_path)
-            ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-            print(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
-
-    # configure policy
+    ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
     if hasattr(policy, 'load_state_dict'):
         assert ckpt_path is not None, "ckpt_path must exist for loading policy"
         # TODO: all policies should load the ckpt (policy maker should return a class)

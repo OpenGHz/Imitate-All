@@ -1,8 +1,8 @@
-import numpy as np
 import torch
+from torch.utils.data import DataLoader
+import numpy as np
 import os
 import h5py
-from torch.utils.data import DataLoader
 import fnmatch
 import subprocess
 import pickle
@@ -28,17 +28,16 @@ class EpisodicDataset(torch.utils.data.Dataset):
         self.dataset_dir = dataset_dir
         self.camera_names = camera_names
         self.norm_stats = norm_stats
-        self.is_sim = None
         self.other_config = other_config
         self.augmentors = augmentors
         self.augment_images = augmentors.get("image", None)
-        self.__getitem__(0)  # initialize self.is_sim
+        self.__getitem__(0)
 
     def __len__(self):
         return len(self.episode_ids)
 
     def __getitem__(self, index):
-        sample_full_episode = False  # hardcode
+        sample_full_episode = False  # TODO:hardcode
         episode_id = self.episode_ids[index]
         dataset_path = os.path.join(self.dataset_dir, f"episode_{episode_id}.hdf5")
         with h5py.File(dataset_path, "r") as root:
@@ -65,19 +64,15 @@ class EpisodicDataset(torch.utils.data.Dataset):
                     decompressed_image = cv2.imdecode(image_dict[cam_name], 1)
                     image_dict[cam_name] = np.array(decompressed_image)
             # get all actions after and including start_ts
-            is_sim = root.attrs["sim"]
-            if is_sim:
-                action = root["/action"][start_ts:]
-                action_len = episode_len - start_ts
-            else:
-                action = root["/action"][
-                    max(0, start_ts - 1) :
-                ]  # hack, to make timesteps more aligned
-                action_len = episode_len - max(
-                    0, start_ts - 1
-                )  # hack, to make timesteps more aligned
-
-        self.is_sim = is_sim
+            # TODO: remove this hack or make it configurable
+            # hack, to make timesteps more aligned
+            bias = 1
+            action = root["/action"][
+                max(0, start_ts - bias) :
+            ]
+            action_len = episode_len - max(
+                0, start_ts - bias
+            )
         padded_action = np.zeros(original_action_shape, dtype=np.float32)
         padded_action[:action_len] = action
         is_pad = np.zeros(episode_len)
@@ -104,11 +99,11 @@ class EpisodicDataset(torch.utils.data.Dataset):
         if self.augment_images is not None and self.augment_images.activated:
             image_data = self.augment_images(image_data)
 
-        # TODO: configure the normalization in the config file
-        # floatize image to [0, 1]
-        # TODO: will normalize image in the loss function, not good
+        # TODO: configure the data process in the config file
+        # normalize image to [0, 1]
+        # TODO: will standardize image in the loss function, not good
         image_data = image_data / 255.0
-        # normalize lowdim data
+        # standardize lowdim data
         action_data = (action_data - self.norm_stats["action_mean"]) / self.norm_stats[
             "action_std"
         ]
@@ -235,48 +230,7 @@ def load_data(
         prefetch_factor=1,
     )
 
-    return train_dataloader, val_dataloader, norm_stats, train_dataset.is_sim
-
-
-"""env utils"""
-
-
-def sample_box_pose():
-    x_range = [0.0, 0.2]
-    y_range = [0.4, 0.6]
-    z_range = [0.05, 0.05]
-
-    ranges = np.vstack([x_range, y_range, z_range])
-    cube_position = np.random.uniform(ranges[:, 0], ranges[:, 1])
-
-    cube_quat = np.array([1, 0, 0, 0])
-    return np.concatenate([cube_position, cube_quat])
-
-
-def sample_insertion_pose():
-    # Peg
-    x_range = [0.1, 0.2]
-    y_range = [0.4, 0.6]
-    z_range = [0.05, 0.05]
-
-    ranges = np.vstack([x_range, y_range, z_range])
-    peg_position = np.random.uniform(ranges[:, 0], ranges[:, 1])
-
-    peg_quat = np.array([1, 0, 0, 0])
-    peg_pose = np.concatenate([peg_position, peg_quat])
-
-    # Socket
-    x_range = [-0.2, -0.1]
-    y_range = [0.4, 0.6]
-    z_range = [0.05, 0.05]
-
-    ranges = np.vstack([x_range, y_range, z_range])
-    socket_position = np.random.uniform(ranges[:, 0], ranges[:, 1])
-
-    socket_quat = np.array([1, 0, 0, 0])
-    socket_pose = np.concatenate([socket_position, socket_quat])
-
-    return peg_pose, socket_pose
+    return train_dataloader, val_dataloader, norm_stats
 
 
 """helper functions"""
