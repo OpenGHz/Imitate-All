@@ -84,14 +84,14 @@ def config_policy(args: dict):
     if policy_class == "ACT":
         policy_config = {
             # TODO: should lr in policy config here?
+            # TODO: build_backbone function will use lr_backbone > 0 means train_backbone=True
+            # TODO: build_optimizer function will use lr_backbone to build an optimizer
             "lr_backbone": args["lr_backbone"],
             "lr": args["learning_rate"],
             "camera_names": camera_names,
         }
     elif policy_class == "CNNMLP":
         backbone = "resnet18"
-        # TODO: build_backbone function will use lr_backbone > 0 means train_backbone=True
-        # TODO: 
         policy_config = {
             "lr": args["learning_rate"],
             "lr_backbone": args["lr_backbone"],

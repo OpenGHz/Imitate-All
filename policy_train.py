@@ -84,6 +84,7 @@ def make_optimizer(policy):
     if hasattr(policy, 'configure_optimizers'):
         optimizer = policy.configure_optimizers()
     else:
+        # TODO: 默认使用Adam优化器
         print('Warning: Using default optimizer')
     return optimizer
 

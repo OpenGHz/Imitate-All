@@ -75,7 +75,7 @@ def build_CNNMLP_model(args_override):
     return model, args
 
 def build_optimizer(model, args):
-    param_dicts = [
+    param_dicts = [  # TDOO
         {"params": [p for n, p in model.named_parameters() if "backbone" not in n and p.requires_grad]},
         {
             "params": [p for n, p in model.named_parameters() if "backbone" in n and p.requires_grad],
