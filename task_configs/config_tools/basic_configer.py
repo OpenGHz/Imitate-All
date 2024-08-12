@@ -107,9 +107,6 @@ def config_policy(args: dict):
     policy_config["action_dim"] = action_dim
     return policy_config
 
-def get_ckpt_dir(ckpt_dir_config, task_name):
-    pass
-
 def get_stats_path(stats_path_config:str, task_name:str):
     dir_level = stats_path_config.count(task_name)
     stats_name = os.path.basename(stats_path_config)
