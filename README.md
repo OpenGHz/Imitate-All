@@ -120,7 +120,7 @@ For ease of use in the future, it's recommended to **store the core folder in th
 
 > Make sure you have installed the required dependencies for controlling your robots in simulation or reality. The following example shows how to use a AIRBOT Play robotic arm to evaluate a policy.
 
-### Environment Preparation
+### Environment Setup
 - First, unplug both the teaching arm and execution arm's USB interfaces to refresh the CAN interface. Then, only connect the execution arm's USB interface (this way, the execution arm will use CAN0).
 - Connect the cameras in the same order as that of data collection and so if you haven't unplugged them since data collection, you can skip this step.
 - Long-press the power button of each robotic arm to turn them on.
