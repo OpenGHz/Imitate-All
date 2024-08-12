@@ -66,13 +66,13 @@ What's more, for policy evaluation, make sure you have set up the robot control 
 
 ## Parameter Configuration
 
-**Before training or inference**, parameter configuration is necessary. **Create a Python file in the ./task_configs directory with the same name as the task ( not recommended to modify or rename the example_task.py file directly)** to configure the task. This configuration mainly involves modifying various paths (using the replace_task_name function to **use default paths** or manually specifying paths), camera names (camera_names), robot number (robot_num, **set to 2 for dual-arm tasks**), and so on. Below is an example from example_task.py, which demonstrates how to modify configs based on the default configuration in template.py without needing to rewrite everything (for more adjustable configurations, refer to ./task_configs/template.py):
+**Before training or inference**, parameter configuration is necessary. **Create a Python file in the ./task_configs directory with the same name as the task ( not recommended to modify or rename the example_task.py file directly)** to configure the task. This configuration mainly involves modifying various paths (using the replace_task_name function to **use default paths** or manually specifying paths), camera names (camera_names), robot number (robot_num, **set to 2 for dual-arm tasks**), and so on. Below is an example from example_task.py, which demonstrates how to modify configs based on the default configuration in template.py without rewriting everything (for more adjustable configurations, refer to ./task_configs/template.py):
 
 <p align="center">
   <img src="images/basic_config.png" />
 </p>
 
-When training with default paths, place the converted HDF5 format data in the ./data/hdf5/<task_name> folder. You can create the directory with the following command:
+When training with default paths, place the .hdf5 data files in the ./data/hdf5/<task_name> folder. You can create the directory with the following command:
 
 ```bash
 mkdir -p data/hdf5
@@ -81,10 +81,8 @@ mkdir -p data/hdf5
 You can then copy the data manually or using a command like this (remember to modify the paths in the command):
 
 ```bash
-mv path/to/your/task/hdf5_file data/hdf5
+cp path/to/your/task/hdf5_file data/hdf5
 ```
-
-If CKPT_DIR and STATS_PATH don't exist, they will be automatically created and relevant files will be written.
 
 ## Policy Training
 
