@@ -80,7 +80,6 @@ POLICY_CONFIG_ACT_DEFAULT = {
     "dec_layers": 7,
     "nheads": 8,
     "backbone": "resnet18",
-    "lr_backbone": 1e-5
 }
 
 # TODO: use robot_config class instead of robot_num and joint_num
@@ -112,6 +111,7 @@ TRAIN_CONFIG_DEFAULT = {
     "check_episodes": True,  # check the existence of all episodes
     "batch_size": 16,
     "learning_rate": 2e-5,
+    "lr_backbone": 1e-5,
     "num_epochs": 7000,
     "pretrain_ckpt_path": "",  # "" if not use
     # "AUTO" if set according to the pretrain_ckpt_path (last/best from 0 and others from the epoch number in the path); any uint number if set manually

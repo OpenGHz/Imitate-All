@@ -81,19 +81,20 @@ def config_policy(args: dict):
     policy_class = policy_args["policy_class"]
     state_dim = args["state_dim"]
     action_dim = args["action_dim"]
-    # fixed parameters to construct policy# TODO: 去掉额外的固定处理或者加上某种覆盖机制
     if policy_class == "ACT":
         policy_config = {
-            # TODO: should lr in policy config?
+            # TODO: should lr in policy config here?
+            "lr_backbone": args["lr_backbone"],
             "lr": args["learning_rate"],
             "camera_names": camera_names,
         }
     elif policy_class == "CNNMLP":
         backbone = "resnet18"
-        lr_backbone = 1e-5  # 实际作为一个bool值使用 > 0 means True
+        # TODO: build_backbone function will use lr_backbone > 0 means train_backbone=True
+        # TODO: 
         policy_config = {
             "lr": args["learning_rate"],
-            "lr_backbone": lr_backbone,
+            "lr_backbone": args["lr_backbone"],
             "backbone": backbone,
             "num_queries": 1,
             "camera_names": camera_names,
