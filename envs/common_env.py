@@ -43,18 +43,10 @@ def get_image(ts: dm_env.TimeStep, camera_names, mode=0):
     return curr_image
 
 
-def get_arm_joint_positions(bot: AssembledRobot):
-    return bot.get_current_joint_positions()[:6]
-
-
-def get_arm_gripper_positions(bot: AssembledRobot):
-    return bot.get_end_effector_value()
-
-
 def move_arms(bot_list: List[AssembledRobot], target_pose_list, move_time=1):
     DT = max([bot.dt for bot in bot_list])
     num_steps = int(move_time / DT)
-    curr_pose_list = [get_arm_joint_positions(bot) for bot in bot_list]
+    curr_pose_list = [bot.get_current_joint_positions() for bot in bot_list]
     # 进行关节插值，保证平稳运动
     traj_list = [
         np.linspace(curr_pose, target_pose, num_steps)
@@ -70,7 +62,7 @@ def move_arms(bot_list: List[AssembledRobot], target_pose_list, move_time=1):
 def move_grippers(bot_list: List[AssembledRobot], target_pose_list, move_time):
     DT = max([bot.dt for bot in bot_list])
     num_steps = int(move_time / DT)
-    curr_pose_list = [get_arm_gripper_positions(bot) for bot in bot_list]
+    curr_pose_list = [bot.get_end_effector_value() for bot in bot_list]
     traj_list = [
         np.linspace(curr_pose, target_pose, num_steps)
         for curr_pose, target_pose in zip(curr_pose_list, target_pose_list)
