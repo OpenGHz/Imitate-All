@@ -32,17 +32,33 @@ def activator(flag:bool):
 
 def policy_maker(config:dict, stage=None):
     """
-    Make the policy function.
+    Make the policy instance.
     Arg:
     - config: the config for the policy containing the policy class and configs
     - stage: the stage of the policy, e.g. "train", "eval". None means both the same
     Return:
-    - the policy (nn.Module or any funcitonable) or None to use the default policy constructor
+    - the policy (nn.Module or any funcitonable)
     """
     # Note: you should not use the "policy_maker" in the config in this function
     # since it will cause a recursive call
     print("not use custom policy maker")
     print("policy_config:", config)
+    print("stage", stage)
+    return None
+
+def environment_maker(config:dict, stage=None):
+    """
+    Make the environment instance. A environment is the combination of the habitat and robot.
+    Arg:
+    - config: the config for the habitat containing the env and robot configs
+    - stage: the stage of the environment, e.g. "train", "eval". None means both the same
+    Return:
+    - the environment instance (must have the reset and step methods)
+    """
+    # Note: you should not use the "habitat_maker" in the config in this function
+    # since it will cause a recursive call
+    print("not use custom environment maker")
+    print("environment_config:", config)
     print("stage", stage)
     return None
 
@@ -55,6 +71,7 @@ def augment_images(image):
 def policy_ensembler(grouped_out:dict):
     """Ensemble the output of all policies and return one to execute."""
     # this shows equal-weight average ensemble for all groups
+    # TODO: move to the wrapper class
     outputs = tuple(grouped_out.values())
     group_num = len(outputs)
     grouped_ave = [sum(x)/len(x) for x in outputs]
@@ -68,8 +85,6 @@ TRAIN_DIR_DEFAULT = "./my_ckpt"  # when training to save and when evaluating to 
 EVAL_DIR_DEFAULT = "./eval_results"
 
 POLICY_CONFIG_ACT_DEFAULT = {
-    "policy_class": "ACT",  # TODO:can be ignored if use a custom policy_maker
-    "policy_maker": policy_maker,
     "kl_weight": 10,
     "chunk_size": 40,
     "hidden_dim": 512,
@@ -81,6 +96,22 @@ POLICY_CONFIG_ACT_DEFAULT = {
     "nheads": 8,
     "backbone": "resnet18",
     "lr_backbone": 1e-5,
+    "policy_class": "ACT",  # TODO:remove this
+    "policy_maker": policy_maker,
+}
+
+ENV_EVAL_CONFIG_DEFAULT = {
+    # the habitat and robot configs for evaluating
+    # e.g. "habitats": ["habitat1", "habitat2"], "robots": [["robot1", "robot2"], "robot2"]
+    "habitats": [],
+    "robots": [],
+    "environment_maker": environment_maker
+}
+ENV_TRAIN_CONFIG_DEFAULT = {
+    # TODO:the habitat and robot configs for training
+    "habitats": ["CKPT_PATH"],
+    "robots": ["DataLoader"],
+    "environment_maker": None
 }
 
 # TODO: use robot_config class instead of robot_num and joint_num
@@ -92,7 +123,10 @@ COMMON_CONFIG_DEFAULT = {
         "1",
         "2",
     ],
-    "task_type": "static",
+    # the state_dim and action_dim are used in policy_config
+    # TODO: the policy_config should be used by others so that
+    # state_dim and action_dim should be moved to policy_config
+    # and camera_names should be used by the dataloader env or the real/sim env
     "policy_config": POLICY_CONFIG_ACT_DEFAULT,
     "ckpt_dir": TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/ckpt",
     # stats_path所在路径包含了统计信息、最优/后权重数据等核心文件
@@ -128,12 +162,7 @@ TRAIN_CONFIG_DEFAULT = {
     "cotrain_dir": "",
     "sample_weights": None,  # TODO: change to 1 or 0?
     "parallel": None,  # {"mode":str, "device_ids":list}, mode: "DP" or "DDP"; device_ids: e.g. [0, 1] or None for all
-    # "habitates": {  # TODO: not used for now
-    #     # the env and robot instances for the offline training
-    #     # e.g. "envs": ["env1", "env2"], "robots": [["robot1", "robot2"], "robot2"]
-    #     "envs": [],
-    #     "robots": [],
-    # },
+    "environments": ENV_TRAIN_CONFIG_DEFAULT
 }
 
 EVAL_CONFIG_DEFAULT = {
@@ -143,7 +172,7 @@ EVAL_CONFIG_DEFAULT = {
     "seed": 1000,
     "robot_name": "airbot_play_v3",
     "robot_description": "<path/to/your/robot_description>",
-    "environment": "real",  # environment instance or "real", "mujoco" to use the corresponding env
+    "habitat": "real",  # TODO:habitat instance or "real", "mujoco" to use the corresponding env
     # "AUTO" will try to get from the key_info.pkl, if failed, use all zero
     "robot_num": 1,  # the number of (follower) robots evoloved in the task
     "joint_num": 7,  # the number of joints of one robot (e.g. arm + end effector)
@@ -162,7 +191,8 @@ EVAL_CONFIG_DEFAULT = {
             "fps": [25]
         },
         "ensembler": policy_ensembler
-    }
+    },
+    "environments": ENV_EVAL_CONFIG_DEFAULT
 }
 
 TASK_CONFIG_DEFAULT = {

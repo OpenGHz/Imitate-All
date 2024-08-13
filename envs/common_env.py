@@ -43,7 +43,7 @@ def get_image(ts: dm_env.TimeStep, camera_names, mode=0):
     return curr_image
 
 
-def move_arms(bot_list: List[AssembledRobot], target_pose_list, move_time=1):
+def move_robots(bot_list: List[AssembledRobot], target_pose_list, move_time=1):
     DT = max([bot.dt for bot in bot_list])
     num_steps = int(move_time / DT)
     curr_pose_list = [bot.get_current_joint_positions() for bot in bot_list]
@@ -56,18 +56,4 @@ def move_arms(bot_list: List[AssembledRobot], target_pose_list, move_time=1):
         for bot_id, bot in enumerate(bot_list):
             # blocking为False用于多台臂可以同时移动
             bot.set_joint_position_target(traj_list[bot_id][t], [6], blocking=False)
-        time.sleep(DT)
-
-
-def move_grippers(bot_list: List[AssembledRobot], target_pose_list, move_time):
-    DT = max([bot.dt for bot in bot_list])
-    num_steps = int(move_time / DT)
-    curr_pose_list = [bot.get_end_effector_value() for bot in bot_list]
-    traj_list = [
-        np.linspace(curr_pose, target_pose, num_steps)
-        for curr_pose, target_pose in zip(curr_pose_list, target_pose_list)
-    ]
-    for t in range(num_steps):
-        for bot_id, bot in enumerate(bot_list):
-            bot.set_end_effector_value(traj_list[bot_id][t])
         time.sleep(DT)

@@ -88,42 +88,6 @@ class MujocoEnv:
         self.reset_position = reset_position
         print("Resetting to the given position: ", self.reset_position)
 
-    def get_qpos(self, normalize_gripper=False):
-        """7 dof: 6 arm joints + 1 gripper joint"""
-        qpos = []
-        for airbot in self.airbot_players:
-            qpos.append(airbot.get_current_joint_positions())
-        return np.hstack(qpos)
-
-    def get_qvel(self):
-        qvel = []
-        for airbot in self.airbot_players:
-            qvel.append(airbot.get_current_joint_velocities())
-        return np.hstack(qvel)
-
-    def get_effort(self):
-        effort = []
-        for airbot in self.airbot_players:
-            effort.append(airbot.get_current_joint_efforts())
-        return np.hstack(effort)
-
-    def get_images(self):
-        return self.image_recorder.get_images()
-
-    def get_base_vel(self):
-        raise NotImplementedError
-        vel, right_vel = 0.1, 0.1
-        right_vel = -right_vel  # right wheel is inverted
-        base_linear_vel = (vel + right_vel) * self.wheel_r / 2
-        base_angular_vel = (right_vel - vel) * self.wheel_r / self.base_r
-
-        return np.array([base_linear_vel, base_angular_vel])
-
-    def get_tracer_vel(self):
-        raise NotImplementedError
-        linear_vel, angular_vel = 0.1, 0.1
-        return np.array([linear_vel, angular_vel])
-
     def get_reward(self):
         return 0
 
@@ -141,7 +105,7 @@ class MujocoEnv:
         time.sleep(sleep_time)
         obs = collections.OrderedDict()
         obs["qpos"] = list(raw_obs["jq"])
-        print("obs gripper", raw_obs["jq"][-1])
+        # print("obs gripper", raw_obs["jq"][-1])
         # print("pre_obs", obs["qpos"])
         # obs["qpos"][-1] *= 25  # undo the normalization
         # print("post_obs", obs["qpos"])
@@ -165,7 +129,6 @@ class MujocoEnv:
         arm_vel=0,
     ):
         all_joints_num = (7, )
-        eef_joints_num = (1, )
         # print("action", action)
         for index, jn in enumerate(all_joints_num):
             one_action = action[jn * index : jn * (index + 1)]
@@ -179,12 +142,6 @@ class MujocoEnv:
         if get_obs:
             obs = collections.OrderedDict()
             obs["qpos"] = list(raw_obs["jq"])
-            # obs["qpos"][-1] *= 25
-            # if obs["qpos"][-1] < 0:
-            #     obs["qpos"][-1] = 0
-            # elif obs["qpos"][-1] > 1:
-            #     obs["qpos"][-1] = 1
-            # obs["qvel"] = raw_obs["jv"]
             obs["images"] = {}
             obs["images"]["0"] = raw_obs["img"][:, :, ::-1]
         else:

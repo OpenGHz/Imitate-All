@@ -4,7 +4,7 @@ import collections
 import dm_env
 from typing import List
 from robots.custom_robot import AssembledRobot, AssembledFakeRobot
-from envs.common_env import move_arms, move_grippers
+from envs.common_env import move_robots
 
 
 class RealEnv:
@@ -45,14 +45,7 @@ class RealEnv:
                     rospy.init_node("real_env", anonymous=True)
             self.image_recorder = ImageRecorder(cameras)
         self.reset_position = None
-        self.eefs_open = np.array(
-            [robot.end_effector_open for robot in self.airbot_players]
-        )
-        self.eefs_close = np.array(
-            [robot.end_effector_close for robot in self.airbot_players]
-        )
-        self.all_joints_num = self.airbot_players[0].all_joints_num
-        self.arm_joints_num = self.airbot_players[0].arm_joints_num
+        self.joints_num = self.airbot_players[0].joints_num
         if use_fake_robot:
             print("AIRBOT Play Fake Env Created.")
         else:
@@ -83,24 +76,15 @@ class RealEnv:
     def get_images(self):
         return self.image_recorder.get_images()
 
-    def _reset_arms_eefs(self):
-        if self.reset_position is None:
-            arm_reset_position = [robot.default_joints[:6] for robot in self.airbot_players]
-            eef_reset_position = self.eefs_open
-        else:
-            arm_reset_position = []
-            eef_reset_position = []
-            all_n = self.all_joints_num
-            eef_n = all_n - self.arm_joints_num
-            for i in range(self.robot_num):
-                start = i * all_n
-                end = start + self.arm_joints_num
-                arm_reset_position.append(self.reset_position[start:end])
-                end = (i + 1) * all_n
-                start = end - eef_n
-                eef_reset_position.append(self.reset_position[start:end])
-        move_arms(self.airbot_players, arm_reset_position, move_time=1)
-        move_grippers(self.airbot_players, eef_reset_position, move_time=1)
+    def _reset_joints(self):
+        assert self.reset_position is not None, "Reset position is not set."
+        arms_reset_position = []
+        all_n = self.joints_num
+        for i in range(self.robot_num):
+            start = i * all_n
+            end = start + all_n
+            arms_reset_position.append(self.reset_position[start:end])
+        move_robots(self.airbot_players, arms_reset_position, move_time=1)
 
     def _get_observation(self):
         obs = collections.OrderedDict()
@@ -113,7 +97,7 @@ class RealEnv:
 
     def reset(self, fake=False, sleep_time=0):
         if not fake:
-            self._reset_arms_eefs()
+            self._reset_joints()
             time.sleep(sleep_time)
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
@@ -129,10 +113,9 @@ class RealEnv:
         sleep_time=0,
         arm_vel=0,
     ):
-        action = action
         use_planning = False
         for index, robot in enumerate(self.airbot_players):
-            jn = robot.all_joints_num
+            jn = robot.joints_num
             robot.set_joint_position_target(
                 action[jn * index : jn * (index + 1)], [arm_vel], use_planning,
             )

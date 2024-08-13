@@ -43,6 +43,7 @@ def main(args:dict):
     print(f'Saving key info into {key_info_path}...')
     all_config_cp = deepcopy(all_config)
     all_config_cp["policy_config"].pop('policy_maker')
+    all_config_cp["environments"].pop('environment_maker')
     all_config_cp.pop('image_augmentor')
     key_info = {
         "init_info": {"init_joint": all_config_cp["start_joint"], "init_action": all_config_cp["start_action"]},

@@ -10,6 +10,12 @@ def policy_maker(config:dict):
     from policies.act.act import ACTPolicy
     return ACTPolicy(config)
 
+def environment_maker(config:dict):
+    from envs.make_env import make_environment
+    env_config = config["environments"]
+    # TODO: use env_config only
+    return make_environment(config)
+
 @activator(False)
 def augment_images(image):
     from task_configs.config_augmentation.image.basic import color_transforms_1
@@ -47,6 +53,7 @@ TASK_CONFIG_DEFAULT["eval"]["joint_num"] = joint_num
 TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
 TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 300
 TASK_CONFIG_DEFAULT["eval"]["ensemble"] = None
+TASK_CONFIG_DEFAULT["eval"]["environments"]["environment_maker"] = environment_maker
 
 # final config
 TASK_CONFIG = TASK_CONFIG_DEFAULT
