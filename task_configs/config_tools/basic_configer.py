@@ -86,7 +86,7 @@ def config_policy(args: dict):
             # TODO: should lr in policy config here?
             # TODO: build_backbone function will use lr_backbone > 0 means train_backbone=True
             # TODO: build_optimizer function will use lr_backbone to build an optimizer
-            "lr_backbone": args["lr_backbone"],
+            "lr_backbone": policy_args["lr_backbone"],
             "lr": args["learning_rate"],
             "camera_names": camera_names,
         }

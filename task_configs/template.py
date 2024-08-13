@@ -80,6 +80,7 @@ POLICY_CONFIG_ACT_DEFAULT = {
     "dec_layers": 7,
     "nheads": 8,
     "backbone": "resnet18",
+    "lr_backbone": 1e-5,
 }
 
 # TODO: use robot_config class instead of robot_num and joint_num
