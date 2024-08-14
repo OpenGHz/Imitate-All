@@ -94,6 +94,22 @@ def forward_pass(data:torch.Tensor, policy):
     image_data, qpos_data, action_data, is_pad = image_data.cuda(), qpos_data.cuda(), action_data.cuda(), is_pad.cuda()
     return policy(qpos_data, image_data, action_data, is_pad)  # TODO remove None
 
+def get_epoch_base(pretrain_path, epoch_base):
+    if pretrain_path == "":
+        epoch_base = 0
+    elif epoch_base == 'AUTO':
+        if pretrain_path in ["best", "last"] or "best" in pretrain_path or "last" in pretrain_path:
+            epoch_base = 0
+        else:
+            try:
+                epoch_base = int(pretrain_path.split('_')[-3])
+            except:
+                try:
+                    epoch_base = int(pretrain_path.split('_')[-2])
+                except:
+                    raise ValueError(f'Invalid pretrain_ckpt_path to auto get epoch bias: {pretrain_path}')
+    return epoch_base
+
 def train_bc(train_dataloader, val_dataloader, config):
     num_epochs = config['num_epochs']
     ckpt_dir = config['ckpt_dir']
@@ -105,35 +121,15 @@ def train_bc(train_dataloader, val_dataloader, config):
     if config["eval_every"] != 0:
         from policy_evaluate import eval_bc
 
-    policy = make_policy(policy_config)
-    # load pretrain model if needed
+    # make policy
     pretrain_path = config["pretrain_ckpt_path"]
-    if pretrain_path != "":  # load pretrained model
-        if pretrain_path in ["best", "last"]:  # 默认使用ckpt路径下的policy_best.ckpt继续训练
-            from utils import replace_timestamp
-            # TODO: 目前仅支持指定完整路径
-            pretrain_dir = replace_timestamp(ckpt_dir, config['time_stamp'])
-            loading_status = policy.deserialize(torch.load(os.path.join(pretrain_dir, f'policy_{pretrain_path}.ckpt')))
-            print(f'loaded! {loading_status}')
-        elif pretrain_path != "":  # 使用指定完整路径的ckpt继续训练
-            loading_status = policy.deserialize(torch.load(pretrain_path))
-            print(f'Resume policy from: {pretrain_path}, Status: {loading_status}')
-        epoch_base = config['pretrain_epoch_base']
-        if epoch_base == 'AUTO':
-            if pretrain_path in ["best", "last"] or "best" in pretrain_path or "last" in pretrain_path:
-                epoch_base = 0
-            else:
-                try:
-                    epoch_base = int(pretrain_path.split('_')[-3])
-                except:
-                    try:
-                        epoch_base = int(pretrain_path.split('_')[-2])
-                    except:
-                        raise ValueError(f'Invalid pretrain_ckpt_path to auto get epoch bias: {pretrain_path}')
-    else:
-        epoch_base = 0
+    policy_config["ckpt_path"] = pretrain_path
+    policy = make_policy(policy_config, "train")
+
+    # get epoch base
+    epoch_base = get_epoch_base(pretrain_path, config["pretrain_epoch_base"])
+
     # set GPU device
-    policy.cuda()
     if parallel is not None:
         if parallel["mode"] == "DP":
             policy = torch.nn.DataParallel(policy, device_ids=parallel["device_ids"])
@@ -158,7 +154,7 @@ def train_bc(train_dataloader, val_dataloader, config):
         if step % config["validate_every"] == 0:
             print('validating')
             with torch.inference_mode():
-                policy.eval()
+                policy.eval()  # this is useless?
                 epoch_dicts = []
                 for batch_idx, data in enumerate(val_dataloader):
                     forward_dict = forward_pass(data, policy)

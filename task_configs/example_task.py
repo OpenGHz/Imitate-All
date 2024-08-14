@@ -8,21 +8,13 @@ from task_configs.template import (
 
 def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
+    from policies.common.maker import post_init_policies
     import logging
     import torch
     # TODO: add stage param to the policy class for convenience and simplicity
     # that is, do the following in the policy class __init__ method.
     policy = ACTPolicy(config)
-    if stage == "train":
-        pass  # TODO: add the training policy initialization
-    elif stage == "eval":
-        ckpt_path = config["ckpt_path"]
-        assert ckpt_path is not None, "ckpt_path must exist for loading policy"
-        loading_status = policy.load_state_dict(torch.load(ckpt_path))
-        logging.info(loading_status)
-        logging.info(f"Loaded: {ckpt_path}")
-        policy.cuda()
-        policy.eval()
+    post_init_policies([policy], stage, [config["ckpt_path"]])
     return policy
 
 def environment_maker(config:dict):

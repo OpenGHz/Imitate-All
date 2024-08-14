@@ -11,9 +11,9 @@ from envs.common_env import get_image, CommonEnv
 
 
 def main(args):
-    set_seed(all_config["seed"])
 
     all_config = get_all_config(args, "eval")
+    set_seed(all_config["seed"])
     ckpt_names = all_config["ckpt_names"]
 
     # make environment
@@ -71,6 +71,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     ensemble: dict = config.get("ensemble", None)
     save_dir = save_dir if save_dir != "AUTO" else ckpt_dir
     result_prefix = "result_" + ckpt_name.split(".")[0]
+
+    # TODO: remove this
     ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
     policy_config["ckpt_path"] = ckpt_path
 
@@ -122,6 +124,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         post_process = lambda a: a
 
     # evaluation loop
+    if hasattr(policy, "eval"): policy.eval()
     env_max_reward = 0
     episode_returns = []
     highest_rewards = []
@@ -146,8 +149,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             if v == "z":
                 break
             ts = env.reset()
-            if hasattr(policy, "reset"):
-                policy.reset()
+            if hasattr(policy, "reset"): policy.reset()
             try:
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
