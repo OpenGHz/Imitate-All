@@ -1,11 +1,8 @@
 import torch
 import numpy as np
-import os
-import pickle
-import time
+import os, time, logging, pickle, inspect
 from typing import Dict
 from tqdm import tqdm
-import logging
 from utils import set_seed
 from visualize_episodes import save_videos
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
@@ -124,6 +121,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     env_max_reward = 0
     episode_returns = []
     highest_rewards = []
+    policy_sig = inspect.signature(policy).parameters
     for rollout_id in range(num_rollouts):
 
         # evaluation loop
@@ -144,7 +142,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             if v == "z":
                 break
             ts = env.reset()
-            policy.reset()
+            if hasattr(policy, "reset"):
+                policy.reset()
             try:
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
