@@ -37,7 +37,7 @@ def policy_maker(config:dict, stage=None):
     - config: the config for the policy containing the policy class and configs
     - stage: the stage of the policy, e.g. "train", "eval". None means both the same
     Return:
-    - the policy (nn.Module or any funcitonable)
+    - the policy (nn.Module or any instance and funcitonable which has one input param corresponding to the envrionment step output and returns the loss dict for trainning or the action tensor for inferencing)
     """
     # Note: you should not use the "policy_maker" in the config in this function
     # since it will cause a recursive call
