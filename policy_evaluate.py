@@ -71,14 +71,16 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     ensemble: dict = config.get("ensemble", None)
     save_dir = save_dir if save_dir != "AUTO" else ckpt_dir
     result_prefix = "result_" + ckpt_name.split(".")[0]
+    ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
+    policy_config["ckpt_path"] = ckpt_path
 
-    # load and configure policies
+    # make and configure policies
     policies: Dict[str, list] = {}
     if ensemble is None:
         logging.info("policy_config:", policy_config)
         # if ensemble is not None:
         policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
-        policy = make_policy(policy_config)
+        policy = make_policy(policy_config, "eval")
         policies["Group1"] = (policy,)
     else:
         logging.info("ensemble config:", ensemble)
@@ -92,16 +94,6 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         gr_cfg["policies"][index]["policy_class"],
                     )
                 )
-    ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
-    if hasattr(policy, "load_state_dict"):
-        assert ckpt_path is not None, "ckpt_path must exist for loading policy"
-        # TODO: all policies should load the ckpt (policy maker should return a class)
-        loading_status = policy.load_state_dict(torch.load(ckpt_path))
-        logging.info(loading_status)
-        logging.info(f"Loaded: {ckpt_path}")
-    if hasattr(policy, "cuda"):
-        policy.cuda()
-        policy.eval()
 
     # add action filter
     if filter_type is not None:

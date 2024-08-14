@@ -6,9 +6,22 @@ from task_configs.template import (
     TASK_CONFIG_DEFAULT,
 )
 
-def policy_maker(config:dict):
+def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
-    return ACTPolicy(config)
+    import logging
+    import torch
+    policy = ACTPolicy(config)
+    if stage == "train":
+        pass  # TODO: add the training policy initialization
+    elif stage == "eval":
+        ckpt_path = config["ckpt_path"]
+        assert ckpt_path is not None, "ckpt_path must exist for loading policy"
+        loading_status = policy.load_state_dict(torch.load(ckpt_path))
+        logging.info(loading_status)
+        logging.info(f"Loaded: {ckpt_path}")
+        policy.cuda()
+        policy.eval()
+    return policy
 
 def environment_maker(config:dict):
     from envs.make_env import make_environment
