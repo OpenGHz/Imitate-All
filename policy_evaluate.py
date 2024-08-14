@@ -11,6 +11,8 @@ from envs.common_env import get_image, CommonEnv
 
 
 def main(args):
+    set_seed(all_config["seed"])
+
     all_config = get_all_config(args, "eval")
     ckpt_names = all_config["ckpt_names"]
 
@@ -21,7 +23,6 @@ def main(args):
 
     results = []
     # multiple ckpt evaluation
-    set_seed(all_config["seed"])
     for ckpt_name in ckpt_names:
         success_rate, avg_return = eval_bc(all_config, ckpt_name, env)
         results.append([ckpt_name, success_rate, avg_return])
@@ -47,6 +48,8 @@ def get_ckpt_path(ckpt_dir, ckpt_name, stats_path):
 
 
 def eval_bc(config, ckpt_name, env: CommonEnv):
+    # TODO: eval only contains the logic, data flow and visualization
+    # remove other not general processing code outside in policy and env maker
     # 显式获得配置
     ckpt_dir = config["ckpt_dir"]
     stats_path = config["stats_path"]
@@ -93,6 +96,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 )
 
     # add action filter
+    # TODO: move to policy maker as wrappers
     if filter_type is not None:
         # init filter
         from OneEuroFilter import OneEuroFilter

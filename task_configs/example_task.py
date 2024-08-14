@@ -10,6 +10,8 @@ def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
     import logging
     import torch
+    # TODO: add stage param to the policy class for convenience and simplicity
+    # that is, do the following in the policy class __init__ method.
     policy = ACTPolicy(config)
     if stage == "train":
         pass  # TODO: add the training policy initialization
