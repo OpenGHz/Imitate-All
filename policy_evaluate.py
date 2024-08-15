@@ -57,7 +57,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     save_dir = config["save_dir"]
     max_timesteps = config["max_timesteps"]
     camera_names = config["camera_names"]
-    num_rollouts = config["num_rollouts"]
+    max_rollouts = config["num_rollouts"]
     policy_config: dict = config["policy_config"]
     state_dim = policy_config["state_dim"]
     action_dim = policy_config["action_dim"]
@@ -129,8 +129,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     env_max_reward = 0
     episode_returns = []
     highest_rewards = []
+    num_rollouts = 0
     policy_sig = inspect.signature(policy).parameters
-    for rollout_id in range(num_rollouts):
+    for rollout_id in range(max_rollouts):
 
         # evaluation loop
         all_time_actions = torch.zeros(
@@ -209,13 +210,11 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     # debug
                     # input(f"Press Enter to continue...")
                     # break
-            except KeyboardInterrupt as e:
-                logging.error(e)
-                logging.error("Evaluation interrupted by user...")
-                num_rollouts = rollout_id
-                break
+            except KeyboardInterrupt:
+                print(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
+                continue
             else:
-                pass
+                num_rollouts += 1
 
         rewards = np.array(rewards)
         episode_return = np.sum(rewards[rewards != None])
@@ -269,28 +268,30 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     f"{dataset_name}: construct data {mid_time - start_time} s and save data {end_time - mid_time} s"
                 )
 
-    success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
-    avg_return = np.mean(episode_returns)
-    summary_str = f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
-    for r in range(env_max_reward + 1):
-        more_or_equal_r = (np.array(highest_rewards) >= r).sum()
-        more_or_equal_r_rate = more_or_equal_r / num_rollouts
-        summary_str += f"Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate*100}%\n"
+    if num_rollouts > 0:
+        success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
+        avg_return = np.mean(episode_returns)
+        summary_str = f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
+        for r in range(env_max_reward + 1):
+            more_or_equal_r = (np.array(highest_rewards) >= r).sum()
+            more_or_equal_r_rate = more_or_equal_r / num_rollouts
+            summary_str += f"Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate*100}%\n"
 
-    logging.info(summary_str)
+        logging.info(summary_str)
 
-    # save success rate to txt
-    if save_dir != "" and rollout_id > 0:
-        with open(os.path.join(save_dir, dataset_name + ".txt"), "w") as f:
-            f.write(summary_str)
-            f.write(repr(episode_returns))
-            f.write("\n\n")
-            f.write(repr(highest_rewards))
-        logging.info(
-            f'Success rate and average return saved to {os.path.join(save_dir, dataset_name + ".txt")}'
-        )
-    # print("Stopping image recorder...")
-    # env.image_recorder.close()
+        # save success rate to txt
+        if save_dir != "":
+            with open(os.path.join(save_dir, dataset_name + ".txt"), "w") as f:
+                f.write(summary_str)
+                f.write(repr(episode_returns))
+                f.write("\n\n")
+                f.write(repr(highest_rewards))
+            logging.info(
+                f'Success rate and average return saved to {os.path.join(save_dir, dataset_name + ".txt")}'
+            )
+    else:
+        success_rate = 0
+        avg_return = 0
     return success_rate, avg_return
 
 
