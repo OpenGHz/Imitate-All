@@ -9,6 +9,7 @@ from task_configs.config_tools.basic_configer import basic_parser, get_all_confi
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 
+logging.basicConfig(level=logging.INFO)
 
 def main(args):
 
@@ -211,7 +212,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     # input(f"Press Enter to continue...")
                     # break
             except KeyboardInterrupt:
-                print(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
+                logging.info(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
                 continue
             else:
                 num_rollouts += 1
