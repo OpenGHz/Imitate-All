@@ -9,11 +9,8 @@ from task_configs.template import (
 def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
     from policies.common.maker import post_init_policies
-    import logging
-    import torch
-    # TODO: add stage param to the policy class for convenience and simplicity
-    # that is, do the following in the policy class __init__ method.
     policy = ACTPolicy(config)
+    # TODO: now the ckpt_path are set automatically in train and eval
     post_init_policies([policy], stage, [config["ckpt_path"]])
     return policy
 

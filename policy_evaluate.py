@@ -20,6 +20,7 @@ def main(args):
     env_config = all_config["environments"]
     env_maker = env_config.pop("environment_maker")
     env = env_maker(all_config)  # use all_config for more flexibility
+    assert env is not None, "Environment is not created..."
 
     results = []
     # multiple ckpt evaluation

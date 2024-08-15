@@ -30,9 +30,3 @@ class CNNMLPPolicy(nn.Module):
     def configure_optimizers(self):
         self.optimizer = build_optimizer(self.model, self._args)
         return self.optimizer
-
-    def serialize(self):
-        return self.state_dict()
-
-    def deserialize(self, model_dict):
-        return self.load_state_dict(model_dict)

@@ -174,13 +174,13 @@ class DiffusionPolicy(nn.Module):
 
             return naction
 
-    def serialize(self):
+    def state_dict(self):
         return {
             "nets": self.nets.state_dict(),
             "ema": self.ema.averaged_model.state_dict() if self.ema is not None else None,
         }
 
-    def deserialize(self, model_dict):
+    def load_state_dict(self, model_dict):
         status = self.nets.load_state_dict(model_dict["nets"])
         print('Loaded model')
         if model_dict.get("ema", None) is not None:

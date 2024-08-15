@@ -177,7 +177,7 @@ def train_bc(train_dataloader, val_dataloader, config):
             # first save then eval
             ckpt_name = f'policy_step_{step}_seed_{seed}.ckpt'
             ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-            torch.save(policy.serialize(), ckpt_path)
+            torch.save(policy.state_dict(), ckpt_path)
             success, _ = eval_bc(config, ckpt_name, save_episode=True, num_rollouts=10)
 
         # training
@@ -201,13 +201,13 @@ def train_bc(train_dataloader, val_dataloader, config):
 
         if step % config["save_every"] == 0:
             ckpt_path = os.path.join(ckpt_dir, f'policy_epoch_{epoch}_seed_{seed}.ckpt')
-            torch.save(policy.serialize(), ckpt_path)
+            torch.save(policy.state_dict(), ckpt_path)
             plot_history(train_history, validation_history, epoch, stats_dir, seed)
 
     # training finished
     # save last and best ckpts
     ckpt_path = os.path.join(stats_dir, f'policy_last.ckpt')
-    torch.save(policy.serialize(), ckpt_path)
+    torch.save(policy.state_dict(), ckpt_path)
     best_epoch, min_val_loss, best_state_dict = best_ckpt_info
     policy_best_path = os.path.join(stats_dir, f'policy_best.ckpt')
     torch.save(best_state_dict, policy_best_path)
