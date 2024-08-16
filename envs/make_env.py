@@ -1,5 +1,5 @@
 from typing import List
-from robots.custom_robot import AssembledRobot
+from robots.common_robot import AssembledRobot
 
 
 def make_environment(env_config):
@@ -51,7 +51,7 @@ def make_environment(env_config):
                 )
             )
     elif "fake" in robot_name or "none" in robot_name:
-        from robots.custom_robot import AssembledFakeRobot
+        from robots.common_robot import AssembledFakeRobot
 
         if check_images:
             AssembledFakeRobot.real_camera = True
@@ -62,7 +62,7 @@ def make_environment(env_config):
                 )
             )
     elif "ros" in robot_name:
-        from robots.custom_robot import AssembledRosRobot
+        from robots.common_robot import AssembledRosRobot
         import rospy
 
         rospy.init_node("replay_episodes")
@@ -82,7 +82,7 @@ def make_environment(env_config):
                 )
             )
     elif "mmk" in robot_name:
-        from robots.custom_robot import AssembledMmkRobot
+        from robots.common_robot import AssembledMmkRobot
 
         for i in range(robot_num):
             robot_instances.append(AssembledMmkRobot())

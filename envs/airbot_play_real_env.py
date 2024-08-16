@@ -3,7 +3,7 @@ import numpy as np
 import collections
 import dm_env
 from typing import List
-from robots.custom_robot import AssembledRobot, AssembledFakeRobot
+from robots.common_robot import AssembledRobot, AssembledFakeRobot
 from envs.common_env import move_robots
 
 

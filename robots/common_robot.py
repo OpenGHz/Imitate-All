@@ -1,3 +1,13 @@
+class Configer(object):
+    @staticmethod
+    def config2dict(config):
+        return {key: value for key, value in config.__dict__.items()}
+
+    @staticmethod
+    def config2tuple(config):
+        return tuple(config.__dict__.values())
+
+
 class AssembledRobot(object):
     def __init__(self, airbot_player, dt, default_joints):
         self.robot = airbot_player
@@ -40,13 +50,6 @@ class AssembledRobot(object):
         self.robot.set_target_joint_t(qeffort[: self._arm_joints_num])
         if len(qeffort) == self.joints_num:
             self.robot.set_target_end_t(qeffort[self._arm_joints_num])
-
-    def set_end_effector_value(self, value):
-        # 若不默认归一化，则需要对末端进行归一化操作
-        self.robot.set_target_end(value)
-
-    def get_end_effector_value(self):
-        return [self.robot.get_current_end()]
 
 
 class AssembledFakeRobot(object):
@@ -94,6 +97,7 @@ class AssembledFakeRobot(object):
 
     def get_end_effector_value(self):
         return [self.end_effector_open]
+
 
 try:
     import rospy

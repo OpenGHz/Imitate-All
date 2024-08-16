@@ -5,7 +5,12 @@ import torch
 from typing import List
 from einops import rearrange
 import dm_env
-from robots.custom_robot import AssembledRobot
+from robots.common_robot import AssembledRobot
+
+
+class CommonEnvConfig(object):
+    def __init__(self) -> None:
+        pass
 
 
 class CommonEnv:
