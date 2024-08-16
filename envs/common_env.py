@@ -10,10 +10,14 @@ from robots.common_robot import AssembledRobot
 
 class CommonEnvConfig(object):
     def __init__(self) -> None:
-        pass
+        self.robots = []
 
 
 class CommonEnv:
+    """
+    An environment is a combination of robots, scenes and objects. It should be able to reset and step.
+    The environment will return observations based on the state of the robot, the position of the sensors, and the current scene and object conditions. And for RL and data collection, it should also send rewards and done signals.
+    """
     def __init__(self, *args, **kwargs) -> None:
         raise NotImplementedError
 
@@ -28,6 +32,7 @@ class CommonEnv:
 
 
 def get_image(ts: dm_env.TimeStep, camera_names, mode=0):
+    # TODO: remove this function
     if mode == 0:  # 输出拼接之后的张量图
         curr_images = []
         for cam_name in camera_names:
@@ -49,7 +54,7 @@ def get_image(ts: dm_env.TimeStep, camera_names, mode=0):
 
 
 def move_robots(bot_list: List[AssembledRobot], target_pose_list, move_time=1):
-    DT = max([bot.dt for bot in bot_list])
+    DT = max([bot.dt for bot in bot_list])  # TODO: change dt to arg as dt_list
     num_steps = int(move_time / DT)
     curr_pose_list = [bot.get_current_joint_positions() for bot in bot_list]
     # 进行关节插值，保证平稳运动

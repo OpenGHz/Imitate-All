@@ -28,6 +28,13 @@ class RealEnv:
         robot_instances: List[AssembledRobot] = None,
         cameras=None,
     ):
+        """
+        当指定多个机器人时，将会对step输入的action按照机器人数量均分并按顺序依次分配执行，获取观测时同理。
+        :param record_images: 是否记录图像
+        :param robot_instances: 机器人实例列表
+        :param cameras: 相机实例字典
+        环境将根据机器人的外部传感器配置信息自动启动相应的接口来获取数据，例如USB相机和RealSense等。
+        """
         self.airbot_players = robot_instances
         self.robot_num = len(self.airbot_players)
         self.use_base = False
