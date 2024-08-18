@@ -80,22 +80,27 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     policies: Dict[str, list] = {}
     if ensemble is None:
         logging.info("policy_config:", policy_config)
-        # if ensemble is not None:
+        # if ensemble is None:
         policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
         policy = make_policy(policy_config, "eval")
         policies["Group1"] = (policy,)
     else:
-        logging.info("ensemble config:", ensemble)
-        ensembler = ensemble.pop("ensembler")
-        for gr_name, gr_cfgs in ensemble.items():
-            policies[gr_name] = []
-            for index, gr_cfg in enumerate(gr_cfgs):
+        logging.info("policy_config:", policy_config)
+        # if ensemble is not None:
+        policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
+        policy = make_policy(policy_config, "eval")
+        #policy group:
+        # logging.info("ensemble config:", ensemble)
+        # ensembler = ensemble.pop("ensembler")
+        # for gr_name, gr_cfgs in ensemble.items():
+        #     policies[gr_name] = []
+        #     for index, gr_cfg in enumerate(gr_cfgs):
 
-                policies[gr_name].append(
-                    make_policy(
-                        gr_cfg["policies"][index]["policy_class"],
-                    )
-                )
+        #         policies[gr_name].append(
+        #             make_policy(
+        #                 gr_cfg["policies"][index]["policy_class"],
+        #             )
+        #         )
 
     # add action filter
     # TODO: move to policy maker as wrappers
@@ -124,12 +129,12 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         post_process = lambda a: a
 
     # evaluation loop
-    if hasattr(policy, "eval"): policy.eval()
+    if hasattr(policy, "eval"): policy.eval() #method from torch.nn.Module
     env_max_reward = 0
     episode_returns = []
     highest_rewards = []
     policy_sig = inspect.signature(policy).parameters
-    for rollout_id in range(num_rollouts):
+    for rollout_id in range(num_rollouts): #start one evaluation
 
         # evaluation loop
         all_time_actions = torch.zeros(
@@ -141,7 +146,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         qpos_list = []
         action_list = []
         rewards = []
-        with torch.inference_mode():
+        with torch.inference_mode():#禁用梯度计算
             logging.info("Reset environment...")
             env.reset(sleep_time=1)
             logging.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
@@ -150,7 +155,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 break
             ts = env.reset()
             if hasattr(policy, "reset"): policy.reset()
-            try:
+            try:    #start evaluation
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
                     image_list.append(ts.observation["images"])
@@ -398,6 +403,15 @@ if __name__ == "__main__":
         help="time_stamp",
         required=False,
     )
+    parser.add_argument(
+        "-ts_1",
+        "--time_stamp_1",
+        action="store",
+        type=str,
+        help="time_stamp_1",
+        required=False,
+    )
+
     # save
     parser.add_argument(
         "-sd", "--save_dir", action="store", type=str, help="save_dir", required=False
