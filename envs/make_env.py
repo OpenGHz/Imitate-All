@@ -1,5 +1,5 @@
 from typing import List
-from robots.common_robot import AssembledRobot
+from robots.common import Robot
 
 
 def make_environment(env_config):
@@ -22,47 +22,44 @@ def make_environment(env_config):
     ), "The length of start_joint should be equal to joint_num or joint_num*robot_num"
     print(f"Start joint: {start_joint}")
 
-    robot_instances: List[AssembledRobot] = []
+    robot_instances: List[Robot] = []
     if "airbot_play" in robot_name:
-        # set up can
-        # from utils import CAN_Tools
-        import airbot
-
+        from robots.airbots.airbot_play.airbot_play import AIRBOTPlayPos, AIRBOTPlayConfig
         vel = 2.0
         for i in range(robot_num):
-            # if 'v' not in can:
-            #     if not CAN_Tools.check_can_status(can):
-            #        success, error = CAN_Tools.activate_can_interface(can, 1000000)
-            #        if not success: raise Exception(error)
-            airbot_player = airbot.create_agent(
-                "/usr/share/airbot_models/airbot_play_with_gripper.urdf",
-                "down",
-                can_buses[i],
-                vel,
-                eef_mode[i],
-                bigarm_type[i],
-                forearm_type[i],
+            airbot_player = AIRBOTPlayPos(
+                AIRBOTPlayConfig(
+                    model_path="/usr/share/airbot_models/airbot_play_with_gripper.urdf",
+                    gravity_mode="down",
+                    can_bus=can_buses[i],
+                    vel=vel,
+                    eef_mode=eef_mode,
+                    bigarm_type=bigarm_type,
+                    forearm_type=forearm_type,
+                    joint_vel=6.0,
+                    dt=25,
+                )
             )
             robot_instances.append(
-                AssembledRobot(
+                Robot(
                     airbot_player,
                     1 / fps,
                     start_joint[joint_num * i : joint_num * (i + 1)],
                 )
             )
     elif "fake" in robot_name or "none" in robot_name:
-        from robots.common_robot import AssembledFakeRobot
+        from robots.airbots.airbot_play.airbot_play import AIRBOTPlayPosFake
 
         if check_images:
-            AssembledFakeRobot.real_camera = True
+            AIRBOTPlayPosFake.real_camera = True
         for i in range(robot_num):
             robot_instances.append(
-                AssembledFakeRobot(
+                AIRBOTPlayPosFake(
                     1 / fps, start_joint[joint_num * i : joint_num * (i + 1)]
                 )
             )
     elif "ros" in robot_name:
-        from robots.common_robot import AssembledRosRobot
+        from robots.airbots.airbot_play.airbot_play_ros1 import AIRBOTPlayPos
         import rospy
 
         rospy.init_node("replay_episodes")
@@ -72,7 +69,7 @@ def make_environment(env_config):
         gripper_action_topic = f"{namespace}/gripper_group_position_controller/command"
         for i in range(robot_num):
             robot_instances.append(
-                AssembledRosRobot(
+                AIRBOTPlayPos(
                     states_topic,
                     arm_action_topic,
                     gripper_action_topic,
@@ -82,10 +79,10 @@ def make_environment(env_config):
                 )
             )
     elif "mmk" in robot_name:
-        from robots.common_robot import AssembledMmkRobot
+        from robots.airbots.airbot_kits.airbot_mmk import AIRBOTMMK2, AIRBOTMMK2Config
 
         for i in range(robot_num):
-            robot_instances.append(AssembledMmkRobot())
+            robot_instances.append(AIRBOTMMK2())
     elif robot_name == "none":
         print("No direct robot is used")
     else:
