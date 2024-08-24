@@ -23,17 +23,20 @@ conda config --set auto_activate_base false && conda deactivate
   - ``test_convert_mujoco.ipynb`` Examples for converting airbot mujoco raw data to hdf5 data for training
   - ``convert_all.py`` Tools to process raw data for training
   - ``augment_hdf5_images.py`` Pipline of augmenting images from the hdf5 file
+  - ``data_check.py`` Check the integrity of the hdf5 data
 - ``policy_train.py`` Policy training: ACT and yours
 - ``policy_evaluate`` Policy evaluating/inferencing: ACT and yours
-- `Policies`
+- `policies`
   - `common` Utils for all policies.
   - `traditional` Traditional policies implementation: cnnmlp
   - `act`&`diffusion` Policy implementation: ACT, Diffusion Policy
+  - ``onnx`` Policy by loading a onnx model
+    - ``ckpt2onnx`` Example of converting ckpt file to onnx file
+    - ``onnx_policy.py`` Load a onnx model as the policy
 - ``detr`` Model definitions modified from DETR: ACT, CNNMLP
 - ``envs`` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
 - ``images`` Images used by README.md
 - ``task_configs`` Configuration files for tasks training and evaluating
-- ``ckpt2onnx`` Example of converting ckpt file to onnx file
 - ``conda_env.yaml`` Used by conda creating env (now requirements.txt is recommend)
 - ``requirements.txt`` Used for pip install
 - ``utils.py`` Utils such as data loading and helper functions
@@ -41,7 +44,7 @@ conda config --set auto_activate_base false && conda deactivate
 - ``robot_utils.py`` Useful robot tools to record images and process data
 - ``ros_tools.py`` Tools for ROS
 - ``robots`` Robots classes used by the envs
-  - ``custom_robot.py`` Template and a fake robot
+  - ``common_robot.py`` Example and a fake robot
   - ``ros_robots``
     - ``ros_robot_config.py`` Used to configure the ros robots
     - ``ros1_robot.py`` General ROS1 robot class used to control the robots
