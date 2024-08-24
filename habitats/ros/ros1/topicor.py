@@ -4,13 +4,14 @@ import rospy
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose, PoseStamped
 from ros_tools import Lister
-from convert_all import flatten_dict
-from ros_robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, OBSERVATIONS_TOPIC_CONFIG, EXAMPLE_CONFIG
+from data_process.convert_all import flatten_dict
+# TODO: add these to the config param, or configure the path
+from habitats.ros.common.robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, OBSERVATIONS_TOPIC_CONFIG, EXAMPLE_CONFIG
 
 
-class AssembledROS1Robot(object):
+class ROS1Interface(object):
     """Use the keys and values in config as the keys to get all the configuration"""
-
+    # TODO: make this a common class for all ROS interfaces include both low dim and high dim data, such as images, point clouds, etc.
     def __init__(self, config: Dict[str, dict] = None) -> None:
         self.params = config["param"]
         self.actions_dim = flatten_dict(self.params["actions_dim"])
@@ -86,6 +87,7 @@ class AssembledROS1Robot(object):
 
     def _target_cmd_pub_thread(self):
         """Publish thread for all publishers"""
+        # TODO: change this to a timer
         rate = rospy.Rate(self.params["control_freq"])
         while not rospy.is_shutdown():
             for key, pub in self.action_pubs.items():
@@ -99,6 +101,7 @@ class AssembledROS1Robot(object):
 
     def _current_state_callback(self, data, args):
         """Callback function used for all subcribers"""
+        # TODO: for joint states, support the case where the joint names are not in a specific order
         key, lister, preprocess = args
         self.current_data[key] = preprocess(lister(data))
         rospy.logdebug(f"Current data: {self.current_data[key]}")
@@ -183,7 +186,7 @@ class AssembledROS1Robot(object):
 if __name__ == "__main__":
 
     rospy.init_node("test_mmk")
-    ros1_robot = AssembledROS1Robot(EXAMPLE_CONFIG)
+    ros1_robot = ROS1Interface(EXAMPLE_CONFIG)
     ros1_robot.wait_for_current_states()
     current = ros1_robot.get_current_states()
     print("Current states:", current)

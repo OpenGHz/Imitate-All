@@ -233,30 +233,6 @@ class ImageRecorderFake(object):
         print()
 
 
-def calibrate_linear_vel(base_action: np.ndarray, c=None):
-    if c is None:
-        c = 0.0
-    v = base_action[..., 0]
-    w = base_action[..., 1]
-    base_action = base_action.copy()
-    base_action[..., 0] = v - c * w
-    return base_action
-
-def smooth_base_action(base_action):
-    return np.stack(
-        [
-            np.convolve(base_action[:, i], np.ones(5) / 5, mode="same")
-            for i in range(base_action.shape[1])
-        ],
-        axis=-1,
-    ).astype(np.float32)
-
-def postprocess_base_action(base_action):
-    linear_vel, angular_vel = base_action
-    angular_vel *= 0.9
-    return np.array([linear_vel, angular_vel])
-
-
 if __name__ == "__main__":
     show_images = False
     recorder = ImageRecorderVideo(cameras=[0], is_debug=False, show_images=show_images)

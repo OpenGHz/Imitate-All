@@ -6,11 +6,11 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose, PoseStamped
 from ros_tools import Lister
-from convert_all import flatten_dict
-from ros_robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, OBSERVATIONS_TOPIC_CONFIG, EXAMPLE_CONFIG
+from data_process.convert_all import flatten_dict
+from habitats.ros.common.robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, OBSERVATIONS_TOPIC_CONFIG, EXAMPLE_CONFIG
 
 
-class AssembledROS2Robot(object):
+class ROS2Interface(object):
     """Use the keys and values in config as the keys to get all the configuration"""
 
     def __init__(self, config: Dict[str, dict] = None) -> None:
@@ -184,7 +184,7 @@ class AssembledROS2Robot(object):
 
 def main(args=None):
     rclpy.init(args=args)
-    ros2_robot = AssembledROS2Robot(EXAMPLE_CONFIG)
+    ros2_robot = ROS2Interface(EXAMPLE_CONFIG)
     ros2_robot.wait_for_current_states()
     current = ros2_robot.get_current_states()
     ros2_robot.node.get_logger().info(f"Current states: {current}")

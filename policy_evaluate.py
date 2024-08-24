@@ -7,7 +7,7 @@ from utils import set_seed
 from visualize_episodes import save_videos
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
-from envs.common_env import get_image, CommonEnv
+from envs.common import get_image, CommonEnv
 
 logging.basicConfig(level=logging.INFO)
 

@@ -487,3 +487,7 @@ class GPUer(object):
             print(f"Error occurred: {e}")
             return []
 
+def merge_custom():
+    #TODO: merge custom folder
+    # subprocess.run(["cp", "-r", "custom/robots"], "robots")
+    pass

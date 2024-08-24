@@ -5,29 +5,35 @@ import torch
 from typing import List
 from einops import rearrange
 import dm_env
-from robots.common_robot import AssembledRobot
+from robots.common import Robot
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CommonEnvConfig(object):
-    def __init__(self) -> None:
-        self.robots = []
+    def __init__(self, robots:List[Robot]) -> None:
+        """For most real robot environments, the config only needs to specify the robot instances,
+        which have all sensors' configurations."""
+        self.robots = robots
+
+    def __post_init__(self):
+        assert self.robots, "There should be at least one robot in the environment."
 
 
 class CommonEnv:
     """
     An environment is a combination of robots, scenes and objects. It should be able to reset and step.
-    The environment will return observations based on the state of the robot, the position of the sensors, and the current scene and object conditions. And for RL and data collection, it should also send rewards and done signals.
+    The environment will return observations based on the state of the robots, the position of the sensors, and the current scene and object conditions. And for RL and data collection, it should also send rewards and done signals to Gaia.
     """
-    def __init__(self, *args, **kwargs) -> None:
+
+    def __init__(self, config: CommonEnvConfig) -> None:
         raise NotImplementedError
 
     def reset(self) -> dm_env.TimeStep:
         raise NotImplementedError
 
     def step(self, action) -> dm_env.TimeStep:
-        raise NotImplementedError
-
-    def get_reward(self):
         raise NotImplementedError
 
 
