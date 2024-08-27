@@ -6,8 +6,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose, PoseStamped
 from ros_tools import Lister
-from convert_all import flatten_dict
-from ros_robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, OBSERVATIONS_TOPIC_CONFIG, EXAMPLE_CONFIG
+from data_process.convert_all import flatten_dict
+from robots.ros_robots.ros_robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, STATES_TOPIC_CONFIG, EXAMPLE_CONFIG
 
 
 class AssembledROS2Robot(object):
@@ -31,7 +31,7 @@ class AssembledROS2Robot(object):
         self.state_listers = flatten_dict(config["lister"]["state"])
         self.action_listers = flatten_dict(config["lister"]["action"])
         # Initiate Observation Subscribers and Current Data
-        subs_configs = flatten_dict(OBSERVATIONS_TOPIC_CONFIG)
+        subs_configs = flatten_dict(STATES_TOPIC_CONFIG)
         self.state_config = flatten_dict(config["state"])
         self.state_subs: Dict[str, rclpy.subscription.Subscription] = {}
         self.current_data = {}

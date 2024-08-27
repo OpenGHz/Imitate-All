@@ -47,7 +47,7 @@ ACTIONS_TOPIC_CONFIG = {
         JOINT_VELOCITY: ("/control/spine/move", Int32),
     },
 }
-OBSERVATIONS_TOPIC_CONFIG = {
+STATES_TOPIC_CONFIG = {
     "arm": {
         "left": {
             JOINT_POSITION: (

@@ -4,8 +4,8 @@ import rospy
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose, PoseStamped
 from ros_tools import Lister
-from convert_all import flatten_dict
-from ros_robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, OBSERVATIONS_TOPIC_CONFIG, EXAMPLE_CONFIG
+from data_process.convert_all import flatten_dict
+from robots.ros_robots.ros_robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, STATES_TOPIC_CONFIG, EXAMPLE_CONFIG
 
 
 class AssembledROS1Robot(object):
@@ -22,14 +22,14 @@ class AssembledROS1Robot(object):
             }
         self.reach_tolerance = reach_tolerance
         # Initiate Preprocess Functions
-        state_pre_funcs = flatten_dict(config["preprocess"]["observation"])
+        state_pre_funcs = flatten_dict(config["preprocess"]["state"])
         self.action_pre_funcs = flatten_dict(config["preprocess"]["action"])
         # Initiate Lister Functions
-        self.state_listers = flatten_dict(config["lister"]["observation"])
+        self.state_listers = flatten_dict(config["lister"]["state"])
         self.action_listers = flatten_dict(config["lister"]["action"])
-        # Initiate Observation Subscribers and Current Data
-        subs_configs = flatten_dict(OBSERVATIONS_TOPIC_CONFIG)
-        self.state_config = flatten_dict(config["observation"])
+        # Initiate state Subscribers and Current Data
+        subs_configs = flatten_dict(STATES_TOPIC_CONFIG)
+        self.state_config = flatten_dict(config["state"])
         self.state_subs: Dict[str, rospy.Subscriber] = {}
         self.current_data = {}
         for key, value in self.state_config.items():
@@ -46,7 +46,7 @@ class AssembledROS1Robot(object):
                 ),
             )
             self.current_data[new_key] = None
-            rospy.loginfo(f"Subscribe to {topic} with type {msg_type} as observation")
+            rospy.loginfo(f"Subscribe to {topic} with type {msg_type} as state")
         # Initiate Action Publishers and Target Data
         pubs_configs = flatten_dict(ACTIONS_TOPIC_CONFIG)
         self.action_config = flatten_dict(config["action"])
@@ -81,7 +81,7 @@ class AssembledROS1Robot(object):
         self.end_effector_open = 1
         self.end_effector_close = 0
         self.all_joints_num = 17  # 7 for each of the 2 arms, 2 for head, 1 for spine
-        # TODO: change all_joints_num to action and observation dim
+        # TODO: change all_joints_num to action and state dim
         Thread(target=self._target_cmd_pub_thread, daemon=True).start()
 
     def _target_cmd_pub_thread(self):
