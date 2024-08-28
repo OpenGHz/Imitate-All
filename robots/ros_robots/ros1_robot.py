@@ -77,9 +77,6 @@ class AssembledROS1Robot(object):
                 self.reset_pubs[key] = self.action_pubs[key]
                 self.reset_action_com.append(key)
             self.reset_data[key] = value
-        # Initiate Basic Parameters200 # TODO: remove these
-        self.end_effector_open = 1
-        self.end_effector_close = 0
         self.all_joints_num = 17  # 7 for each of the 2 arms, 2 for head, 1 for spine
         # TODO: change all_joints_num to action and state dim
         Thread(target=self._target_cmd_pub_thread, daemon=True).start()
