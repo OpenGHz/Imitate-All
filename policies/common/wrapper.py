@@ -155,9 +155,10 @@ class TemporalEnsemblingWithDeadActions(object):
             else:
                 start = 1
 
-        end = int(ddl_num + 1)
+        end = int(max(start + 1, ddl_num + 1))
         logger.debug(f"post start: {start}, end: {end}")
         actions_for_curr_step = all_time_actions[start:end, self.t]
+        logger.debug(f"actions_for_curr_step:{actions_for_curr_step}")
         # print(actions_for_curr_step.shape)
         # assert actions_for_curr_step.shape[0] <= self.chunk_size
         # assert actions_for_curr_step.shape[1] == self.action_dim

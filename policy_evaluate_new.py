@@ -192,13 +192,14 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         # pre-process current observations
                         curr_image = get_image(ts, camera_names, image_mode)
                         qpos_numpy = np.array(ts.observation["qpos"])
-                        logging.debug(f"raw qpos: {qpos_numpy}")
+                        logger.debug(f"raw qpos: {qpos_numpy}")
                         qpos = pre_process(qpos_numpy)  # normalize qpos
-                        logging.debug(f"pre qpos: {qpos}")
+                        logger.debug(f"pre qpos: {qpos}")
                         qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
 
                         # (1, chunk_size, 7) for act
                         all_actions: torch.Tensor = policy(qpos, curr_image)
+                        # logger.warning(f"all_actions:{all_actions}")
                         # t is the infer_t
                         all_time_actions[[t], act_step : act_step + chunk_size] = all_actions
 
@@ -220,10 +221,14 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 break
             if temer.need_infer():
                 while infer_event.is_set():
-                    # logger.debug("last not done")
+                    logger.debug("last not done")
                     last_not_done.add(t)
                     time.sleep(0.001)
                 infer_event.set()
+                if t == 0:
+                    logger.debug("wait for first infer")
+                    while infer_event.is_set():
+                        time.sleep(0.001)
             raw_action = temer.update(all_time_actions)
 
             # post-process predicted action
@@ -231,9 +236,12 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             raw_action = (
                 raw_action.squeeze(0).cpu().numpy()
             )
-            logging.debug(f"raw action: {raw_action}")
+            logger.debug(f"raw action: {raw_action}")
             action = post_process(raw_action)  # de-normalize action
-            logging.debug(f"post action: {action}")
+            logger.debug(f"post action: {action}")
+
+            # input("Press any key to continue")
+
             if filter_type is not None:  # filt action
                 for i, filter in enumerate(filters):
                     action[i] = filter(action[i], time.time())
@@ -281,10 +289,10 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             )
 
         next_rollout = True
-        logging.debug(f"{last_not_done}")
-        logging.debug("exiting current rollout inference")
+        logger.debug(f"{last_not_done}")
+        logger.debug("exiting current rollout inference")
         infer_thead.join()
-        logging.debug("done")
+        logger.debug("done")
 
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
