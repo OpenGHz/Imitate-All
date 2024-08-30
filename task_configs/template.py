@@ -192,7 +192,17 @@ EVAL_CONFIG_DEFAULT = {
         },
         "ensembler": policy_ensembler
     },
-    "environments": ENV_EVAL_CONFIG_DEFAULT
+    "environments": ENV_EVAL_CONFIG_DEFAULT,
+    "info_records": {
+        "save_dir": EVAL_DIR_DEFAULT,
+        "info_types": {
+            "color_image": "mp4",
+            "state": "npy",
+            "action": "npy",
+            "trajectory": "hdf5",
+            "config": "pkl",
+        }
+    }
 }
 
 TASK_CONFIG_DEFAULT = {
