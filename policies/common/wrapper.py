@@ -159,13 +159,14 @@ class TemporalEnsemblingWithDeadActions(object):
         logger.debug(f"post start: {start}, end: {end}")
         actions_for_curr_step = all_time_actions[start:end, self.t]
         logger.debug(f"actions_for_curr_step:{actions_for_curr_step}")
-        # print(actions_for_curr_step.shape)
+        # logger.warning(f"actions_for_curr_step.shape: {actions_for_curr_step.shape}")
         # assert actions_for_curr_step.shape[0] <= self.chunk_size
         # assert actions_for_curr_step.shape[1] == self.action_dim
         # TODO: configure the weight function when initiating the class
         k = 0.01
         exp_weights = np.exp(-k * np.arange(actions_for_curr_step.shape[0]))
         exp_weights = exp_weights / exp_weights.sum()
+        logger.debug(f"exp_weights: {exp_weights}")
         exp_weights = torch.from_numpy(exp_weights).cuda().unsqueeze(dim=1)
         new_action = (actions_for_curr_step * exp_weights).sum(dim=0, keepdim=True)
         self.t += 1
