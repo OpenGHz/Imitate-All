@@ -58,6 +58,7 @@ def get_ckpt_path(ckpt_dir, ckpt_name, stats_path):
 def eval_bc(config, ckpt_name, env: CommonEnv):
     # TODO: eval only contains the logic, data flow and visualization
     # remove other not general processing code outside in policy and env maker
+    # conver this to a class
     # 显式获得配置
     ckpt_dir = config["ckpt_dir"]
     stats_path = config["stats_path"]
@@ -249,8 +250,10 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             action_list.append(action)
             rewards.append(ts.reward)
         else:
+            # if not interrupted
             num_rollouts += 1
 
+        # evaluation results
         rewards = np.array(rewards)
         episode_return = np.sum(rewards[rewards != None])
         episode_returns.append(episode_return)
