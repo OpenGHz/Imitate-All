@@ -9,7 +9,9 @@ import cv2
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 
-logging.basicConfig(level=logging.NOTSET)
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
 def is_nested(data):
@@ -95,7 +97,8 @@ class Compresser(object):
                 f"Compress method {self.compress_method} is not implemented."
             )
 
-    def decompress(self, frame, method):
+    @staticmethod
+    def decompress(frame, method):
         if method == "jpg":
             return cv2.imdecode(frame, cv2.IMREAD_COLOR)
         else:

@@ -4,6 +4,12 @@ import cv2
 import h5py
 import argparse
 import matplotlib.pyplot as plt
+from data_process.convert_all import Compresser
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
 def load_hdf5(dataset_dir, dataset_name):
@@ -24,7 +30,7 @@ def load_hdf5(dataset_dir, dataset_name):
     return qpos, qvel, action, image_dict
 
 
-def save_videos(video, dt, video_path=None, swap_channel=False):
+def save_videos(video, dt, video_path=None, swap_channel=False, decompress=False):
     if isinstance(video, list):
         cam_names = list(video[0].keys())
         h, w, _ = video[0][cam_names[0]].shape
@@ -37,6 +43,8 @@ def save_videos(video, dt, video_path=None, swap_channel=False):
                 image = image_dict[cam_name]
                 if swap_channel:
                     image = image[:, :, [2, 1, 0]]  # swap B and R channel
+                if decompress:
+                    image = Compresser.decompress(image, "jpg")
                 images.append(image)
             images = np.concatenate(images, axis=1)
             out.write(images)
@@ -74,7 +82,9 @@ def visualize_joints(
         label1, label2 = "State", "Action"
 
     qpos = np.array(state_list)  # ts, dim
-    command = np.array(action_list)
+    action = np.array(action_list)
+    if qpos.shape != action.shape:
+        logger.warning(f"qpos and action have different shapes: {qpos.shape} vs {action.shape}")
     num_ts, num_dim = qpos.shape
     h, w = 2, num_dim
     num_figs = num_dim
@@ -92,7 +102,7 @@ def visualize_joints(
     # plot arm command
     for dim_idx in range(num_dim):
         ax = axs[dim_idx]
-        ax.plot(command[:, dim_idx], label=label2)
+        ax.plot(action[:, dim_idx], label=label2)
         ax.legend()
 
     if ylim:
@@ -201,6 +211,12 @@ if __name__ == "__main__":
         required=False,
         default="visualizations",
     )
+    parser.add_argument(
+        "-dc",
+        "--decompress",
+        action="store_true",
+        help="Decompress image.",
+    )
 
     args = vars(parser.parse_args())
 
@@ -210,7 +226,7 @@ if __name__ == "__main__":
     dataset_name = args["dataset_name"]
     joint_names = args["joint_names"]
     output_dir = args["output_dir"]
-    print(dataset_name)
+    decompress = args["decompress"]
 
     qpos, qvel, action, image_dict = load_hdf5(dataset_dir, dataset_name)
     if not os.path.exists(output_dir):
@@ -221,6 +237,7 @@ if __name__ == "__main__":
             image_dict,
             dt,
             video_path=os.path.join(output_dir, dataset_name + "_video.mp4"),
+            decompress=decompress,
         )
     if args["save_joints"]:
         visualize_joints(

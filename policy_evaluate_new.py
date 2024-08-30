@@ -173,7 +173,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
         v = input(f"Press Enter to start evaluation or z and Enter to exit...")
         if v == "z":
-            return
+            return None, None
         ts = env.reset()
 
         def inference():
@@ -196,13 +196,12 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         qpos = pre_process(qpos_numpy)  # normalize qpos
                         logging.debug(f"pre qpos: {qpos}")
                         qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
-                        qpos_history[:, t] = qpos
+
                         # (1, chunk_size, 7) for act
                         all_actions: torch.Tensor = policy(qpos, curr_image)
                         # t is the infer_t
                         all_time_actions[[t], act_step : act_step + chunk_size] = all_actions
-                        
-                        qpos_list.append(qpos_numpy)
+
                         time.sleep(max(0, 1/prediction_freq - (time.time() - start_time)))
                         infer_event.clear()
                 except KeyboardInterrupt:
@@ -210,19 +209,10 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     keyboard_interrupt = True
                     return
 
-            rewards = np.array(rewards)
-            episode_return = np.sum(rewards[rewards != None])
-            episode_returns.append(episode_return)
-            episode_highest_reward = np.max(rewards)
-            highest_rewards.append(episode_highest_reward)
-            logger.info(
-                f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward==env_max_reward}"
-            )
-
         # start inference thread
         infer_thead = Thread(target=inference, daemon=True)
         infer_thead.start()
-
+        last_not_done = set()
         for t in tqdm(range(max_timesteps)):
             start_time = time.time()
             act_step = t
@@ -230,7 +220,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 break
             if temer.need_infer():
                 while infer_event.is_set():
-                    print("last not done")
+                    # logger.debug("last not done")
+                    last_not_done.add(t)
                     time.sleep(0.001)
                 infer_event.set()
             raw_action = temer.update(all_time_actions)
@@ -252,10 +243,22 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             ts = env.step(action, sleep_time=sleep_time, arm_vel=arm_velocity)
 
             # for visualization
+            qpos = np.array(ts.observation["qpos"])
+            qpos_history[:, t] = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
+            qpos_list.append(qpos)
             action_list.append(action)
             rewards.append(ts.reward)
         else:
             num_rollouts += 1
+
+        rewards = np.array(rewards)
+        episode_return = np.sum(rewards[rewards != None])
+        episode_returns.append(episode_return)
+        episode_highest_reward = np.max(rewards)
+        highest_rewards.append(episode_highest_reward)
+        logger.info(
+            f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward==env_max_reward}"
+        )
 
         # saving evaluation results
         # TODO: configure what to save
@@ -265,12 +268,13 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             if not os.path.isdir(save_dir):
                 logger.info(f"Create directory for saving evaluation info: {save_dir}")
                 os.makedirs(save_dir)
-            save_videos(image_list, dt, video_path=f"{save_path}.mp4")
+            save_videos(image_list, dt, video_path=f"{save_path}.mp4", decompress=False)
             if save_time_actions:
                 np.save(f"{save_path}.npy", all_time_actions.cpu().numpy())
             if save_all:
                 start_time = time.time()
-                logger.info(f"Save all data to {save_path}...")
+                logger.info(f"Save all trajs to {save_path}...")
+                
                 # # save qpos
                 # with open(os.path.join(save_dir, f'qpos_{rollout_id}.pkl'), 'wb') as f:
                 #     pickle.dump(qpos_list, f)
@@ -291,20 +295,23 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                             frame[cam_name]
                         )
                 mid_time = time.time()
-                from data_process.convert_all import compress_images, save_dict_to_hdf5
-
-                image_dict = compress_images(image_dict)
+                from data_process.convert_all import compress_images, save_dict_to_hdf5, Compresser
+                import cv2
+                compresser = Compresser("jpg", [int(cv2.IMWRITE_JPEG_QUALITY), 50], True)
+                for key, value in image_dict.items():
+                    image_dict[key] = compress_images(value, compresser)
                 data_dict.update(image_dict)
-                save_dict_to_hdf5(data_dict, save_path, False)
+                save_dict_to_hdf5(data_dict, f"{save_path}.hdf5", False)
                 end_time = time.time()
                 logger.info(
                     f"{dataset_name}: construct data {mid_time - start_time} s and save data {end_time - mid_time} s"
                 )
 
         next_rollout = True
-        print("exiting current inference")
+        logging.debug(f"{last_not_done}")
+        logging.debug("exiting current rollout inference")
         infer_thead.join()
-        print("done")
+        logging.debug("done")
 
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
