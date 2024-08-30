@@ -150,8 +150,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     )
     prediction_step_max = 1 + (max_timesteps - 1) // dead_num + 1
     max_col = 1 + (prediction_step_max - 2) * dead_num + chunk_size
+    infer_event = Event()
     for rollout_id in range(max_rollouts):
-        infer_event = Event()
+        infer_event.clear()
         act_step = 0
         next_rollout = False
         keyboard_interrupt = False
@@ -289,6 +290,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             )
 
         next_rollout = True
+        infer_event.set()
         logger.debug(f"{last_not_done}")
         logger.debug("exiting current rollout inference")
         infer_thead.join()
