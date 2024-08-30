@@ -177,7 +177,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         ts = env.reset()
 
         def inference():
-            global num_rollouts, keyboard_interrupt
+            global keyboard_interrupt
             # evaluation loop
             with torch.inference_mode():
                 if hasattr(policy, "reset"):
