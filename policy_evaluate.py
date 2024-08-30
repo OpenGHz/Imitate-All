@@ -3,8 +3,7 @@ import numpy as np
 import os, time, logging, pickle, inspect
 from typing import Dict
 from tqdm import tqdm
-from utils import set_seed
-from visualize_episodes import save_videos
+from utils import set_seed, save_eval_results
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
@@ -229,45 +228,19 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         # saving evaluation results
         if save_dir != "":
             dataset_name = f"{result_prefix}_{rollout_id}"
-            save_path = os.path.join(save_dir, dataset_name)
-            if not os.path.isdir(save_dir):
-                logging.info(f"Create directory for saving evaluation info: {save_dir}")
-                os.makedirs(save_dir)
-            save_videos(image_list, dt, video_path=f"{save_path}.mp4")
-            if save_time_actions:
-                np.save(f"{save_path}.npy", all_time_actions.cpu().numpy())
-            if save_all:
-                start_time = time.time()
-                logging.info(f"Save all data to {save_path}...")
-                # # save qpos
-                # with open(os.path.join(save_dir, f'qpos_{rollout_id}.pkl'), 'wb') as f:
-                #     pickle.dump(qpos_list, f)
-                # # save actions
-                # with open(os.path.join(save_dir, f'actions_{rollout_id}.pkl'), 'wb') as f:
-                #     pickle.dump(action_list, f)
-                # save as hdf5
-                data_dict = {
-                    "/observations/qpos": qpos_list,
-                    "/action": action_list,
-                }
-                image_dict: Dict[str, list] = {}
-                for cam_name in camera_names:
-                    image_dict[f"/observations/images/{cam_name}"] = []
-                for frame in image_list:
-                    for cam_name in camera_names:
-                        image_dict[f"/observations/images/{cam_name}"].append(
-                            frame[cam_name]
-                        )
-                mid_time = time.time()
-                from data_process.convert_all import compress_images, save_dict_to_hdf5
-
-                image_dict = compress_images(image_dict)
-                data_dict.update(image_dict)
-                save_dict_to_hdf5(data_dict, save_path, False)
-                end_time = time.time()
-                logging.info(
-                    f"{dataset_name}: construct data {mid_time - start_time} s and save data {end_time - mid_time} s"
-                )
+            save_eval_results(
+                save_dir,
+                dataset_name,
+                rollout_id,
+                image_list,
+                qpos_list,
+                action_list,
+                camera_names,
+                dt,
+                all_time_actions,
+                save_all=save_all,
+                save_time_actions=save_time_actions,
+            )
 
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
