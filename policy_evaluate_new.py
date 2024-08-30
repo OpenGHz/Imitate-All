@@ -8,8 +8,14 @@ from visualize_episodes import save_videos
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
+from threading import Thread, Event
+from policies.common.wrapper import TemporalEnsemblingWithDeadActions
 
-logging.basicConfig(level=logging.INFO)
+
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
 
 def main(args):
 
@@ -30,7 +36,7 @@ def main(args):
         results.append([ckpt_name, success_rate, avg_return])
 
     for ckpt_name, success_rate, avg_return in results:
-        logging.info(f"{ckpt_name}: {success_rate=} {avg_return=}")
+        logger.info(f"{ckpt_name}: {success_rate=} {avg_return=}")
 
     print()
 
@@ -41,11 +47,11 @@ def get_ckpt_path(ckpt_dir, ckpt_name, stats_path):
     if not os.path.exists(ckpt_path):
         ckpt_dir = os.path.dirname(ckpt_dir)  # check the upper dir
         ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-        logging.warning(f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}...")
+        logger.warning(f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}...")
         if not os.path.exists(ckpt_path):
             ckpt_dir = os.path.dirname(stats_path)
             ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-            logging.warning(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
+            logger.warning(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
     return ckpt_path
 
 
@@ -63,6 +69,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     state_dim = policy_config["state_dim"]
     action_dim = policy_config["action_dim"]
     temporal_agg = policy_config["temporal_agg"]
+    temporal_agg = False
     num_queries = policy_config["num_queries"]  # i.e. chunk_size
     dt = 1 / config["fps"]
     image_mode = config.get("image_mode", 0)
@@ -81,13 +88,13 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     # make and configure policies
     policies: Dict[str, list] = {}
     if ensemble is None:
-        logging.info("policy_config:", policy_config)
+        logger.info("policy_config:", policy_config)
         # if ensemble is not None:
         policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
         policy = make_policy(policy_config, "eval")
         policies["Group1"] = (policy,)
     else:
-        logging.info("ensemble config:", ensemble)
+        logger.info("ensemble config:", ensemble)
         ensembler = ensemble.pop("ensembler")
         for gr_name, gr_cfgs in ensemble.items():
             policies[gr_name] = []
@@ -131,114 +138,139 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     episode_returns = []
     highest_rewards = []
     num_rollouts = 0
-    policy_sig = inspect.signature(policy).parameters
+    action_freq = config["fps"]
+    prediction_freq = 10  # TODO:config this
+    dead_num = int(action_freq / prediction_freq + 1)
+    chunk_size = num_queries
+    temer = TemporalEnsemblingWithDeadActions(
+        chunk_size=chunk_size,
+        action_dim=action_dim,
+        max_timesteps=max_timesteps,
+        dead_num=dead_num
+    )
+    prediction_step_max = 1 + (max_timesteps - 1) // dead_num + 1
+    max_col = 1 + (prediction_step_max - 2) * dead_num + chunk_size
     for rollout_id in range(max_rollouts):
+        infer_event = Event()
+        act_step = 0
+        next_rollout = False
+        keyboard_interrupt = False
 
-        # evaluation loop
         all_time_actions = torch.zeros(
-            [max_timesteps, max_timesteps + num_queries, action_dim]
+            [prediction_step_max, max_col, action_dim]
         ).cuda()
+
+        temer.reset()
 
         qpos_history = torch.zeros((1, max_timesteps, state_dim)).cuda()
         image_list = []  # for visualization
         qpos_list = []
         action_list = []
         rewards = []
-        with torch.inference_mode():
-            logging.info("Reset environment...")
-            env.reset(sleep_time=1)
-            logging.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
-            v = input(f"Press Enter to start evaluation or z and Enter to exit...")
-            if v == "z":
-                break
-            ts = env.reset()
-            if hasattr(policy, "reset"): policy.reset()
-            try:
-                for t in tqdm(range(max_timesteps)):
-                    start_time = time.time()
-                    image_list.append(ts.observation["images"])
 
-                    # pre-process current observations
-                    curr_image = get_image(ts, camera_names, image_mode)
-                    qpos_numpy = np.array(ts.observation["qpos"])
-                    # debug
-                    # qpos_numpy = np.array(
-                    #     [
-                    #         -0.000190738,
-                    #         -0.766194,
-                    #         0.702869,
-                    #         1.53601,
-                    #         -0.964942,
-                    #         -1.57607,
-                    #         1.01381,
-                    #     ]
-                    # )
-                    logging.debug(f"raw qpos: {qpos_numpy}")
-                    qpos = pre_process(qpos_numpy)  # normalize qpos
-                    logging.debug(f"pre qpos: {qpos}")
-                    qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
-                    qpos_history[:, t] = qpos
+        logger.info("Reset environment...")
+        env.reset(sleep_time=1)
+        logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
+        v = input(f"Press Enter to start evaluation or z and Enter to exit...")
+        if v == "z":
+            return
+        ts = env.reset()
 
-                    # wrap policy
-                    target_t = t % num_queries
-                    if temporal_agg or target_t == 0:
+        def inference():
+            global num_rollouts, keyboard_interrupt
+            # evaluation loop
+            with torch.inference_mode():
+                if hasattr(policy, "reset"):
+                    policy.reset()
+                try:
+                    for t in tqdm(range(prediction_step_max)):
+                        infer_event.wait()
+                        start_time = time.time()
+                        if next_rollout:
+                            break
+                        image_list.append(ts.observation["images"])
+                        # pre-process current observations
+                        curr_image = get_image(ts, camera_names, image_mode)
+                        qpos_numpy = np.array(ts.observation["qpos"])
+                        logging.debug(f"raw qpos: {qpos_numpy}")
+                        qpos = pre_process(qpos_numpy)  # normalize qpos
+                        logging.debug(f"pre qpos: {qpos}")
+                        qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
+                        qpos_history[:, t] = qpos
                         # (1, chunk_size, 7) for act
                         all_actions: torch.Tensor = policy(qpos, curr_image)
-                    all_time_actions[[t], t : t + num_queries] = all_actions
-                    index = 0 if temporal_agg else target_t
-                    raw_action = all_actions[:, index]
+                        # t is the infer_t
+                        all_time_actions[[t], act_step : act_step + chunk_size] = all_actions
+                        
+                        qpos_list.append(qpos_numpy)
+                        time.sleep(max(0, 1/prediction_freq - (time.time() - start_time)))
+                        infer_event.clear()
+                except KeyboardInterrupt:
+                    logger.info(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
+                    keyboard_interrupt = True
+                    return
 
-                    # post-process predicted action
-                    # dim: (1,7) -> (7,)
-                    raw_action = (
-                        raw_action.squeeze(0).cpu().numpy()
-                    )  
-                    logging.debug(f"raw action: {raw_action}")
-                    action = post_process(raw_action)  # de-normalize action
-                    logging.debug(f"post action: {action}")
-                    if filter_type is not None:  # filt action
-                        for i, filter in enumerate(filters):
-                            action[i] = filter(action[i], time.time())
+            rewards = np.array(rewards)
+            episode_return = np.sum(rewards[rewards != None])
+            episode_returns.append(episode_return)
+            episode_highest_reward = np.max(rewards)
+            highest_rewards.append(episode_highest_reward)
+            logger.info(
+                f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward==env_max_reward}"
+            )
 
-                    # step the environment
-                    sleep_time = max(0, dt - (time.time() - start_time))
-                    ts = env.step(action, sleep_time=sleep_time, arm_vel=arm_velocity)
+        # start inference thread
+        infer_thead = Thread(target=inference, daemon=True)
+        infer_thead.start()
 
-                    # for visualization
-                    qpos_list.append(qpos_numpy)
-                    action_list.append(action)
-                    rewards.append(ts.reward)
-                    # debug
-                    # input(f"Press Enter to continue...")
-                    # break
-            except KeyboardInterrupt:
-                logging.info(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
-                continue
-            else:
-                num_rollouts += 1
+        for t in tqdm(range(max_timesteps)):
+            start_time = time.time()
+            act_step = t
+            if keyboard_interrupt:
+                break
+            if temer.need_infer():
+                while infer_event.is_set():
+                    print("last not done")
+                    time.sleep(0.001)
+                infer_event.set()
+            raw_action = temer.update(all_time_actions)
 
-        rewards = np.array(rewards)
-        episode_return = np.sum(rewards[rewards != None])
-        episode_returns.append(episode_return)
-        episode_highest_reward = np.max(rewards)
-        highest_rewards.append(episode_highest_reward)
-        logging.info(
-            f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward==env_max_reward}"
-        )
+            # post-process predicted action
+            # dim: (1,7) -> (7,)
+            raw_action = (
+                raw_action.squeeze(0).cpu().numpy()
+            )
+            logging.debug(f"raw action: {raw_action}")
+            action = post_process(raw_action)  # de-normalize action
+            logging.debug(f"post action: {action}")
+            if filter_type is not None:  # filt action
+                for i, filter in enumerate(filters):
+                    action[i] = filter(action[i], time.time())
+
+            # step the environment
+            sleep_time = max(0, dt - (time.time() - start_time))
+            ts = env.step(action, sleep_time=sleep_time, arm_vel=arm_velocity)
+
+            # for visualization
+            action_list.append(action)
+            rewards.append(ts.reward)
+        else:
+            num_rollouts += 1
 
         # saving evaluation results
+        # TODO: configure what to save
         if save_dir != "":
             dataset_name = f"{result_prefix}_{rollout_id}"
             save_path = os.path.join(save_dir, dataset_name)
             if not os.path.isdir(save_dir):
-                logging.info(f"Create directory for saving evaluation info: {save_dir}")
+                logger.info(f"Create directory for saving evaluation info: {save_dir}")
                 os.makedirs(save_dir)
             save_videos(image_list, dt, video_path=f"{save_path}.mp4")
             if save_time_actions:
                 np.save(f"{save_path}.npy", all_time_actions.cpu().numpy())
             if save_all:
                 start_time = time.time()
-                logging.info(f"Save all data to {save_path}...")
+                logger.info(f"Save all data to {save_path}...")
                 # # save qpos
                 # with open(os.path.join(save_dir, f'qpos_{rollout_id}.pkl'), 'wb') as f:
                 #     pickle.dump(qpos_list, f)
@@ -265,9 +297,14 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 data_dict.update(image_dict)
                 save_dict_to_hdf5(data_dict, save_path, False)
                 end_time = time.time()
-                logging.info(
+                logger.info(
                     f"{dataset_name}: construct data {mid_time - start_time} s and save data {end_time - mid_time} s"
                 )
+
+        next_rollout = True
+        print("exiting current inference")
+        infer_thead.join()
+        print("done")
 
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
@@ -278,7 +315,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             more_or_equal_r_rate = more_or_equal_r / num_rollouts
             summary_str += f"Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate*100}%\n"
 
-        logging.info(summary_str)
+        logger.info(summary_str)
 
         # save success rate to txt
         if save_dir != "":
@@ -287,7 +324,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 f.write(repr(episode_returns))
                 f.write("\n\n")
                 f.write(repr(highest_rewards))
-            logging.info(
+            logger.info(
                 f'Success rate and average return saved to {os.path.join(save_dir, dataset_name + ".txt")}'
             )
     else:
