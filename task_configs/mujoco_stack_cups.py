@@ -1,5 +1,10 @@
 
+from concurrent.futures import ThreadPoolExecutor
 from email import policy
+from multiprocessing import Pool
+
+import torch
+from policies.common.maker import post_init_policies
 from task_configs.template import (
     get_task_name,
     replace_task_name,
@@ -8,13 +13,74 @@ from task_configs.template import (
     TASK_CONFIG_DEFAULT,
 )
 
+
 def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
     from policies.traditionnal.cnnmlp import CNNMLPPolicy
-    from policies.common.maker import post_init_policies
-    policy=ACTPolicy(config)
-    post_init_policies([policy], stage, [config["ckpt_path"]])
-    return policy
+    # from policies.diffusion.diffusion_policy import DiffusionPolicy
+    with torch.inference_mode():#禁用梯度计算
+        policy = ACTPolicy(config)
+        post_init_policies([policy], stage, [config["ckpt_path"]])
+
+        if "ckpt_path_1" in config:
+            policy_1 = CNNMLPPolicy(config)
+            post_init_policies([policy_1], stage, [config["ckpt_path_1"]])
+    
+        if stage == "train":
+            return policy
+
+        elif stage == "eval":
+            if TASK_CONFIG_DEFAULT["eval"]["ensemble"] == None:
+                return policy
+            else:
+                ckpt_path = config["ckpt_path"]
+                assert ckpt_path is not None, "ckpt_path must exist for loading policy"
+                # TODO: all policies should load the ckpt (policy maker should return a class)
+
+                policy.cuda()
+                policy.eval()
+                policy_1.cuda()
+                policy_1.eval()
+
+
+                # def ensemble_policy(*args, **kwargs):
+                #     #TODO：转换为并行操作
+                #     actions = policy(*args, **kwargs)
+                #     actions_2 = policy_1(*args, **kwargs)
+                #     # average the actions
+                #     actions = (actions + actions_2) / 2
+                #     return actions
+                
+                def run_policy(policy, *args, **kwargs):
+                    with torch.no_grad():  # 禁用计算图跟踪
+                        a_hat = policy(*args, **kwargs)
+                        a_hat = a_hat.clone()  # 在更新之前克隆
+                        return policy.temporal_ensembler.update(a_hat)
+
+                def ensemble_policy(*args, **kwargs):
+                    with ThreadPoolExecutor(max_workers=2) as executor:
+                        future_policy = executor.submit(run_policy, policy, *args, **kwargs)
+                        
+                        future_policy_1 = executor.submit(run_policy, policy_1, *args, **kwargs)
+
+                        actions = future_policy.result()
+                        actions_2 = future_policy_1.result()
+
+                    # average the actions
+                    actions = (actions + actions_2) / 2
+                    return actions
+                
+                # 定义 reset 方法
+                def reset():
+                    if hasattr(policy, "reset"):
+                        policy.reset()
+                    if hasattr(policy_1, "reset"):
+                        policy_1.reset()
+
+                # 将 reset 方法绑定到 ensemble_policy 函数上
+                ensemble_policy.reset = reset
+
+                return ensemble_policy
 
 def environment_maker(config:dict):
     from envs.make_env import make_environment
@@ -58,7 +124,7 @@ TASK_CONFIG_DEFAULT["eval"]["robot_num"] = 1
 TASK_CONFIG_DEFAULT["eval"]["joint_num"] = joint_num
 TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
 TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 100
-TASK_CONFIG_DEFAULT["eval"]["ensemble"] = None
+TASK_CONFIG_DEFAULT["eval"]["ensemble"] = True
 TASK_CONFIG_DEFAULT["eval"]["environments"]["environment_maker"] = environment_maker
 
 # final config
