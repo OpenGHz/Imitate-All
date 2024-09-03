@@ -1,3 +1,4 @@
+from policies.common.maker import post_init_policies
 from task_configs.template import (
     replace_task_name,
     TASK_CONFIG_DEFAULT,
@@ -6,20 +7,54 @@ from task_configs.template import (
 )
 from task_configs.config_augmentation.image.basic import color_transforms_2
 
-def policy_maker(policy_class, policy_config):
-    print("custom policy_maker")
-    return None
 
 def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
-    from policies.common.maker import post_init_policies
-    import logging
-    import torch
-    # TODO: add stage param to the policy class for convenience and simplicity
-    # that is, do the following in the policy class __init__ method.
+    from policies.traditionnal.cnnmlp import CNNMLPPolicy
+    # from policies.diffusion.diffusion_policy import DiffusionPolicy
     policy = ACTPolicy(config)
     post_init_policies([policy], stage, [config["ckpt_path"]])
-    return policy
+
+    if "ckpt_path_1" in config:
+        policy_1 = ACTPolicy(config)
+        post_init_policies([policy_1], stage, [config["ckpt_path_1"]])
+
+    if stage == "train":
+        return policy
+
+    elif stage == "eval":
+        if TASK_CONFIG_DEFAULT["eval"]["ensemble"] == None:
+            return policy
+        else:
+            ckpt_path = config["ckpt_path"]
+            assert ckpt_path is not None, "ckpt_path must exist for loading policy"
+            # TODO: all policies should load the ckpt (policy maker should return a class)
+
+            policy.cuda()
+            policy.eval()
+            policy_1.cuda()
+            policy_1.eval()
+
+
+            def ensemble_policy(*args, **kwargs):
+                #TODO：转换为并行操作
+                actions = policy(*args, **kwargs)
+                actions_2 = policy_1(*args, **kwargs)
+                # average the actions
+                actions = (actions + actions_2) / 2
+                return actions
+            
+            # 定义 reset 方法
+            def reset():
+                if hasattr(policy, "reset"):
+                    policy.reset()
+                if hasattr(policy_1, "reset"):
+                    policy_1.reset()
+
+            # 将 reset 方法绑定到 ensemble_policy 函数上
+            ensemble_policy.reset = reset
+
+            return ensemble_policy
 
 def environment_maker(config:dict):
     from envs.make_env import make_environment
