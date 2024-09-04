@@ -1,6 +1,4 @@
-
 from concurrent.futures import ThreadPoolExecutor
-from email import policy
 from multiprocessing import Pool
 
 import torch
@@ -52,7 +50,7 @@ def policy_maker(config:dict, stage=None):
                 #     return actions
                 
                 def run_policy(policy, *args, **kwargs):
-                    with torch.no_grad():  # 禁用计算图跟踪
+                    with torch.inference_mode():
                         a_hat = policy(*args, **kwargs)
                         a_hat = a_hat.clone()  # 在更新之前克隆
                         return policy.temporal_ensembler.update(a_hat)

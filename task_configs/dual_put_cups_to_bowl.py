@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from policies.common.maker import post_init_policies
 from task_configs.template import (
     get_task_name,
@@ -25,9 +26,11 @@ def policy_maker(config:dict, stage=None):
     import torch
     policy = ACTPolicy(config)
     post_init_policies([policy], stage, [config["ckpt_path"]])
-    policy_1 = CNNMLPPolicy(config)
-    post_init_policies([policy], stage, [config["ckpt_path_1"]])
-     
+
+    if "ckpt_path_1" in config:
+        policy_1 = CNNMLPPolicy(config)
+        post_init_policies([policy_1], stage, [config["ckpt_path_1"]])
+  
     if stage == "train":
         return policy
 
@@ -41,12 +44,17 @@ def policy_maker(config:dict, stage=None):
 
             policy.cuda()
             policy.eval()
+            policy_1.cuda()
+            policy_1.eval()
+
             def ensemble_policy(*args, **kwargs):
+                #TODO：转换为并行操作
                 actions = policy(*args, **kwargs)
                 actions_2 = policy_1(*args, **kwargs)
                 # average the actions
                 actions = (actions + actions_2) / 2
                 return actions
+
             return ensemble_policy
         
 
@@ -76,7 +84,7 @@ robot_num = 2
 TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num * robot_num
 TASK_CONFIG_DEFAULT["common"]["action_dim"] = joint_num * robot_num
-TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
+TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = False
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["chunk_size"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["num_queries"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["kl_weight"] = 10
@@ -84,7 +92,7 @@ TASK_CONFIG_DEFAULT["common"]["policy_config"]["policy_maker"] = policy_maker
 
 TASK_CONFIG_DEFAULT["train"]["num_episodes"] = "ALL"
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 8000
-TASK_CONFIG_DEFAULT["train"]["batch_size"] = 24
+TASK_CONFIG_DEFAULT["train"]["batch_size"] = 16
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 3e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
 TASK_CONFIG_DEFAULT["train"]["pretrain_epoch_base"] = "AUTO"

@@ -52,7 +52,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     # remove other not general processing code outside in policy and env maker
     # 显式获得配置
     ckpt_dir = config["ckpt_dir"]
+
     stats_path = config["stats_path"]
+
     save_dir = config["save_dir"]
     max_timesteps = config["max_timesteps"]
     camera_names = config["camera_names"]
@@ -76,31 +78,37 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
     policy_config["ckpt_path"] = ckpt_path
 
+    if "ckpt_dir_1" in config:
+        ckpt_dir_1 = config["ckpt_dir_1"]
+        stats_path_1 = config["stats_path_1"]
+        ckpt_path_1 = get_ckpt_path(ckpt_dir_1, ckpt_name, stats_path_1)
+        policy_config["ckpt_path_1"] = ckpt_path_1
     # make and configure policies
     policies: Dict[str, list] = {}
-    if ensemble is None:
-        logging.info("policy_config:", policy_config)
-        # if ensemble is None:
-        policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
-        policy = make_policy(policy_config, "eval")
-        policies["Group1"] = (policy,)
-    else:
-        logging.info("policy_config:", policy_config)
-        # if ensemble is not None:
-        policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
-        policy = make_policy(policy_config, "eval")
-        #policy group:
-        # logging.info("ensemble config:", ensemble)
-        # ensembler = ensemble.pop("ensembler")
-        # for gr_name, gr_cfgs in ensemble.items():
-        #     policies[gr_name] = []
-        #     for index, gr_cfg in enumerate(gr_cfgs):
+    logging.info("policy_config:", policy_config)
+    # if ensemble is None:
+    policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
+    policy = make_policy(policy_config, "eval")   
+    #move to policy maker 
 
-        #         policies[gr_name].append(
-        #             make_policy(
-        #                 gr_cfg["policies"][index]["policy_class"],
-        #             )
-        #         )
+    # if ensemble is None:
+    #     logging.info("policy_config:", policy_config)
+    #     # if ensemble is None:
+    #     policy_config["max_timesteps"] = max_timesteps  # TODO: remove this
+    #     policy = make_policy(policy_config, "eval")
+    #     policies["Group1"] = (policy,)
+    # else:
+    #     logging.info("ensemble config:", ensemble)
+    #     ensembler = ensemble.pop("ensembler")
+    #     for gr_name, gr_cfgs in ensemble.items():
+    #         policies[gr_name] = []
+    #         for index, gr_cfg in enumerate(gr_cfgs):
+
+    #             policies[gr_name].append(
+    #                 make_policy(
+    #                     gr_cfg["policies"][index]["policy_class"],
+    #                 )
+    #             )
 
     # add action filter
     # TODO: move to policy maker as wrappers
@@ -399,18 +407,19 @@ if __name__ == "__main__":
         "-ts",
         "--time_stamp",
         action="store",
+        nargs="+", #直接通过空格分隔的多个参数
         type=str,
         help="time_stamp",
         required=False,
     )
-    parser.add_argument(
-        "-ts_1",
-        "--time_stamp_1",
-        action="store",
-        type=str,
-        help="time_stamp_1",
-        required=False,
-    )
+    # parser.add_argument(
+    #     "-ts_1",
+    #     "--time_stamp_1",
+    #     action="store",
+    #     type=str,
+    #     help="time_stamp_1",
+    #     required=False,
+    # )
 
     # save
     parser.add_argument(
@@ -424,7 +433,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-ft", "--filter", action="store", type=str, help="filter_type", required=False
     )
-
+    # environment
+    parser.add_argument('-et', "--environment", action='store', type=str, help='environment', required=False)
     args = parser.parse_args()
     args_dict = vars(args)
     # TODO: put unknown key-value pairs into args_dict

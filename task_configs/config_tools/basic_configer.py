@@ -187,13 +187,22 @@ def get_all_config(args: dict, stage: str):
     elif stage == "eval":
         # 评估时需要将自动根据当前时间戳生成的ckpt_dir和stats_path替换为指定时间戳的路径(save_dir不需要替换)
         if args.get("time_stamp", None):
-            time_stamp = args["time_stamp"]
-            all_config["ckpt_dir"] = replace_timestamp(
-                all_config["ckpt_dir"], time_stamp
-            )
-            all_config["stats_path"] = replace_timestamp(
-                all_config["stats_path"], time_stamp
-            )
+            time_stamps = args["time_stamp"]
+            if len(time_stamps) > 0:
+                all_config["ckpt_dir"] = replace_timestamp(all_config["ckpt_dir"], time_stamps[0])
+                all_config["stats_path"] = replace_timestamp(all_config["stats_path"], time_stamps[0])
+            if len(time_stamps) > 1:
+                all_config["ckpt_dir_1"] = replace_timestamp(all_config["ckpt_dir"], time_stamps[1])
+                all_config["stats_path_1"] = replace_timestamp(all_config["stats_path"], time_stamps[1])
+        
+        # if args.get("time_stamp_1", None):    
+        #     time_stamp_1 = args["time_stamp_1"]
+        #     all_config["ckpt_dir_1"] = replace_timestamp(
+        #         all_config["ckpt_dir"], time_stamp_1
+        #     )
+        #     all_config["stats_path_1"] = replace_timestamp(
+        #         all_config["stats_path"], time_stamp_1
+        #    )
         # 检查路径（支持task_name/ts/task_name/ts两级嵌套和仅task_name/ts一级两种目录结构）
         stats_dir, stats_path = get_stats_path(all_config["stats_path"], all_config["task_name"])
         all_config["stats_path"] = stats_path

@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+import torch
 from policies.common.maker import post_init_policies
 from task_configs.template import (
     replace_task_name,
@@ -12,49 +14,86 @@ def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
     from policies.traditionnal.cnnmlp import CNNMLPPolicy
     # from policies.diffusion.diffusion_policy import DiffusionPolicy
-    policy = ACTPolicy(config)
-    post_init_policies([policy], stage, [config["ckpt_path"]])
+    with torch.inference_mode():#禁用梯度计算
+        policy = ACTPolicy(config)
+        post_init_policies([policy], stage, [config["ckpt_path"]])
 
-    if "ckpt_path_1" in config:
-        policy_1 = ACTPolicy(config)
-        post_init_policies([policy_1], stage, [config["ckpt_path_1"]])
-
-    if stage == "train":
-        return policy
-
-    elif stage == "eval":
-        if TASK_CONFIG_DEFAULT["eval"]["ensemble"] == None:
+        if "ckpt_path_1" in config:
+            policy_1 = ACTPolicy(config)
+            post_init_policies([policy_1], stage, [config["ckpt_path_1"]])
+        if "ckpt_path_2" in config:
+            policy_2 = ACTPolicy(config)
+            post_init_policies([policy_2], stage, [config["ckpt_path_2"]])
+        if "ckpt_path_3" in config:
+            policy_3 = ACTPolicy(config)
+            post_init_policies([policy_3], stage, [config["ckpt_path_3"]])
+        if "ckpt_path_4" in config:
+            policy_4 = ACTPolicy(config)
+            post_init_policies([policy_4], stage, [config["ckpt_path_4"]])
+        if "ckpt_path_5" in config:       
+            policy_5 = ACTPolicy(config)
+            post_init_policies([policy_5], stage, [config["ckpt_path_5"]])
+        
+        if stage == "train":
             return policy
-        else:
-            ckpt_path = config["ckpt_path"]
-            assert ckpt_path is not None, "ckpt_path must exist for loading policy"
-            # TODO: all policies should load the ckpt (policy maker should return a class)
 
-            policy.cuda()
-            policy.eval()
-            policy_1.cuda()
-            policy_1.eval()
+        elif stage == "eval":
+            if TASK_CONFIG_DEFAULT["eval"]["ensemble"] == None:
+                return policy
+            else:
+                ckpt_path = config["ckpt_path"]
+                assert ckpt_path is not None, "ckpt_path must exist for loading policy"
+                # TODO: all policies should load the ckpt (policy maker should return a class)
 
+                policy.cuda()
+                policy.eval()
+                policy_1.cuda()
+                policy_1.eval()
 
-            def ensemble_policy(*args, **kwargs):
-                #TODO：转换为并行操作
-                actions = policy(*args, **kwargs)
-                actions_2 = policy_1(*args, **kwargs)
-                # average the actions
-                actions = (actions + actions_2) / 2
-                return actions
-            
-            # 定义 reset 方法
-            def reset():
-                if hasattr(policy, "reset"):
-                    policy.reset()
-                if hasattr(policy_1, "reset"):
-                    policy_1.reset()
+                #串行推理
+                # def ensemble_policy(*args, **kwargs):
+                #     actions = policy(*args, **kwargs)
+                #     actions_2 = policy_1(*args, **kwargs)
+                #     # average the actions
+                #     actions = (actions + actions_2) / 2
+                #     return actions
+                
+                #并行推理
+                def run_policy(policy, *args, **kwargs):
+                    with torch.inference_mode():
+                        a_hat = policy(*args, **kwargs)
+                        #a_hat = a_hat.clone()  # 在更新之前克隆
+                        return policy.temporal_ensembler.update(a_hat)
+                    
 
-            # 将 reset 方法绑定到 ensemble_policy 函数上
-            ensemble_policy.reset = reset
+                def ensemble_policy(*args, **kwargs):
+                    with ThreadPoolExecutor(max_workers=len(config)-1) as executor:
+                        futures = []
+                        for i in range(1, len(config)):
+                            policy_name = f"policy_{i}"
+                            if policy_name in globals():
+                                policy = globals()[policy_name]
+                                future = executor.submit(run_policy, policy, *args, **kwargs)
+                                futures.append(future)
 
-            return ensemble_policy
+                        actions_sum = torch.zeros_like(futures[0].result())
+                        for future in futures:
+                            actions_sum += future.result()
+
+                        actions_avg = actions_sum / len(futures)
+                        return actions_avg
+                
+                # 定义 reset 方法
+                def reset():
+                    if hasattr(policy, "reset"):
+                        policy.reset()
+                    if hasattr(policy_1, "reset"):
+                        policy_1.reset()
+
+                # 将 reset 方法绑定到 ensemble_policy 函数上
+                ensemble_policy.reset = reset
+
+                return ensemble_policy
 
 def environment_maker(config:dict):
     from envs.make_env import make_environment
