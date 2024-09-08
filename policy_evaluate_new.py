@@ -8,7 +8,7 @@ from task_configs.config_tools.basic_configer import basic_parser, get_all_confi
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 from threading import Thread, Event
-from policies.common.wrapper import TemporalEnsemblingWithDeadActions
+from policies.common.wrapper import TemporalEnsemblingWithDroppedActions
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -142,7 +142,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     prediction_freq = 10  # TODO:config this
     dead_num = int(action_freq / prediction_freq + 1)
     chunk_size = num_queries
-    temer = TemporalEnsemblingWithDeadActions(
+    temer = TemporalEnsemblingWithDroppedActions(
         chunk_size=chunk_size,
         action_dim=action_dim,
         max_timesteps=max_timesteps,

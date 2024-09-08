@@ -118,8 +118,8 @@ class TemporalEnsembling(object):
         policy.__class__.__call__ = call
 
 
-class TemporalEnsemblingWithDeadActions(object):
-    """Temporal Ensembling to filter out the actions over time"""
+class TemporalEnsemblingWithDroppedActions(object):
+    """Temporal Ensembling With Dropped Actions to filter out the actions over time parrellelly with policy prediction"""
 
     def __init__(self, chunk_size, action_dim, max_timesteps, dead_num):
         self.chunk_size = chunk_size
