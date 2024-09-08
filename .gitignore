@@ -153,3 +153,4 @@ demonstrations/
 onnx_output/
 custom/
 visualizations/
+model_weights/

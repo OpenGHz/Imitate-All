@@ -1,0 +1,41 @@
+encoder:
+  _target_: detr.encoders.images_hl_dyh.images_hl_dyh.MultiImageObsEncoder
+  shape_meta: ${task.shape_meta}
+  high_res_encoder: 
+    _target_: detr.encoders.images_hl_dyh.images_hl_dyh.get_high_res_encoder
+    model_name: convnext_small.fb_in22k_ft_in1k_384
+    local_weights_path: detr/encoders/images_hl_dyh/model_weights/convnext_small/pytorch_model.bin
+  low_res_encoder:
+    _target_: detr.encoders.images_hl_dyh.images_hl_dyh.get_low_res_encoder_dinov2
+    model_name: vit_small_patch14_dinov2.lvd142m
+    local_weights_path: detr/encoders/images_hl_dyh/model_weights/dinov2_small_facebook
+  mask_encoder:
+    _target_: detr.encoders.images_hl_dyh.images_hl_dyh.get_mask_encoder_dinov2
+    mask_in_chans: 256
+    embed_dim: 384
+  high_res_encoder_name: convnext_small.fb_in22k_ft_in1k_384
+  low_res_encoder_name: vit_small_patch14_dinov2.lvd142m
+  use_group_norm: false
+  share_high_res_encoder: true
+  share_low_res_encoder: true
+  share_mask_encoder: true
+  downsample_ratio: 32
+  frozen: true
+  pretrained: true
+  feature_aggregation: null
+  processor_model_weights_path: detr/encoders/images_hl_dyh/model_weights/dinov2_small/pytorch_model.bin
+task:
+  shape_meta:
+    obs:
+      rgb_global:
+        shape:
+        - 3
+        - 480
+        - 640
+        type: rgb
+      mask_global:
+        shape:
+        - 3
+        - 480
+        - 640
+        type: mask

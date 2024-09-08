@@ -121,3 +121,13 @@ def build_backbone(args):
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
+
+def build_yhd_backbone(args):
+    position_embedding = build_position_encoding(args)
+    # TODO: build_optimizer function will use lr_backbone
+    train_backbone = args.lr_backbone > 0
+    return_interm_layers = args.masks
+    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation)
+    model = Joiner(backbone, position_embedding)
+    model.num_channels = backbone.num_channels
+    return model
