@@ -77,12 +77,16 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     # TODO: remove this
     ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
     policy_config["ckpt_path"] = ckpt_path
+    policy_config["stats_path"] = stats_path
 
-    if "ckpt_dir_1" in config:
-        ckpt_dir_1 = config["ckpt_dir_1"]
-        stats_path_1 = config["stats_path_1"]
-        ckpt_path_1 = get_ckpt_path(ckpt_dir_1, ckpt_name, stats_path_1)
-        policy_config["ckpt_path_1"] = ckpt_path_1
+    if "ckpt_dir" in config and "stats_path" in config:
+        print(f"the number of model is : {len(config['ckpt_dir_n'])}")
+        for i in range(len(config["ckpt_dir_n"])):
+            ckpt_dir_n = config["ckpt_dir_n"][i]
+            stats_path_n = config["stats_path_n"][i]
+            ckpt_path = get_ckpt_path(ckpt_dir_n, ckpt_name, stats_path_n)
+            policy_config[f"ckpt_path_{i}"] = ckpt_path
+
     # make and configure policies
     policies: Dict[str, list] = {}
     logging.info("policy_config:", policy_config)
@@ -150,6 +154,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         ).cuda()
 
         qpos_history = torch.zeros((1, max_timesteps, state_dim)).cuda()
+        all_time_stage = []
         image_list = []  # for visualization
         qpos_list = []
         action_list = []
@@ -192,12 +197,15 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     # wrap policy
                     target_t = t % num_queries
                     if temporal_agg or target_t == 0:
+                        #start = time.time()
                         # (1, chunk_size, 7) for act
+                        # (1, chunk_size, 8) for with stage
                         all_actions: torch.Tensor = policy(qpos, curr_image)
+                        #print(f"prediction time: {time.time() - start}")
                     all_time_actions[[t], t : t + num_queries] = all_actions
                     index = 0 if temporal_agg else target_t
                     raw_action = all_actions[:, index]
-
+                    all_time_stage[t] = raw_action[0, -1]
                     # post-process predicted action
                     # dim: (1,7) -> (7,)
                     raw_action = (
@@ -209,7 +217,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     if filter_type is not None:  # filt action
                         for i, filter in enumerate(filters):
                             action[i] = filter(action[i], time.time())
-
+                    #print("The predict stage is", action[-1])
                     # step the environment
                     sleep_time = max(0, dt - (time.time() - start_time))
                     ts = env.step(action, sleep_time=sleep_time, arm_vel=arm_velocity)

@@ -188,13 +188,18 @@ def get_all_config(args: dict, stage: str):
         # 评估时需要将自动根据当前时间戳生成的ckpt_dir和stats_path替换为指定时间戳的路径(save_dir不需要替换)
         if args.get("time_stamp", None):
             time_stamps = args["time_stamp"]
-            if len(time_stamps) > 0:
-                all_config["ckpt_dir"] = replace_timestamp(all_config["ckpt_dir"], time_stamps[0])
-                all_config["stats_path"] = replace_timestamp(all_config["stats_path"], time_stamps[0])
-            if len(time_stamps) > 1:
-                all_config["ckpt_dir_1"] = replace_timestamp(all_config["ckpt_dir"], time_stamps[1])
-                all_config["stats_path_1"] = replace_timestamp(all_config["stats_path"], time_stamps[1])
-        
+            n = len(time_stamps)
+            
+            # 初始化两个 n 维数组
+            all_config["ckpt_dir_n"] = [None] * n
+            all_config["stats_path_n"] = [None] * n
+            
+            # 将每一个 time_stamp 都传入相应的位置
+            all_config["ckpt_dir"] = replace_timestamp(all_config["ckpt_dir"], time_stamps[0])
+            all_config["stats_path"] = replace_timestamp(all_config["stats_path"], time_stamps[0])
+            for i in range(n):
+                all_config["ckpt_dir_n"][i] = replace_timestamp(all_config["ckpt_dir"], time_stamps[i])
+                all_config["stats_path_n"][i] = replace_timestamp(all_config["stats_path"], time_stamps[i])  
         # if args.get("time_stamp_1", None):    
         #     time_stamp_1 = args["time_stamp_1"]
         #     all_config["ckpt_dir_1"] = replace_timestamp(

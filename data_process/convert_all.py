@@ -55,17 +55,26 @@ def flatten_list(l):
 def flatten_sublist_in_flat_dict(d: dict) -> dict:
     """Flatten the sublist in the flat dict.
     This will change the original dict.
-    Returns the lenth of each value list.
+    Returns the length of each value list.
     """
     trajs_lenth = {}
+    assert isinstance(d, dict), "The input data should be a dict."
     for key, traj in d.items():
+        if not isinstance(traj, (list, tuple)):
+            print(f"Warning: The value for key '{key}' is not a list or tuple, but {type(traj)}")
+            trajs_lenth[key] = 0
+            continue
+        
         traj_lenth = len(traj)
         if traj_lenth > 0:
             point = traj[0]
             if isinstance(point, list):
                 if isinstance(point[0], list):
                     for i, p in enumerate(traj):
-                        traj[i] = sum(p, [])
+                        if isinstance(p, list):
+                            traj[i] = sum(p, [])
+                        else:
+                            print(f"Warning: The sublist for key '{key}' at index {i} is not a list, but {type(p)}")
         trajs_lenth[key] = traj_lenth
     return trajs_lenth
 
@@ -292,6 +301,7 @@ def raw_to_dict(
         flatten_mode(str)       -- the flatten mode for the dict keys
         name_converter(dict)    -- the name converter for the flattened dict keys
         concatenater(dict)      -- the concatenate dict to bind several flattened keys together
+        key_filter             -- the key filter to remove the keys
     Returns:
         ep_dicts(dict)          -- the raw data dictionary, with keys as the episode names
     Note:
@@ -320,12 +330,17 @@ def raw_to_dict(
                     )
                 # flatten the dict
                 mode_to_sep_prefix = {
-                    "hdf5": ("/", "/"),
+                    "hdf5": ("/", ""),
                     "hf": (".", ""),
                 }
                 sep_prefix = mode_to_sep_prefix.get(flatten_mode, None)
                 assert sep_prefix is not None, f"Invalid flatten mode {flatten_mode}."
                 data_flat: Dict[str, list] = flatten_dict(raw_data, "", *sep_prefix)
+
+                # 检查 "/observations/stage" 键是否存在
+                if "/observations/stage" not in data_flat:
+                    print(f"Key '/observations/stage' not found in {ep_dir / state_file}")
+
                 # filter the keys
                 if key_filter is not None:
                     for key in key_filter:
@@ -346,6 +361,7 @@ def raw_to_dict(
                 ), "The length of each value list should be the same."
                 for key, value in data_flat.items():
                     name = name_converter.get(key, key)
+                    # print(f"Original key: {key}, Converted name: {name}")
                     ep_dict[name] = pre_process(value)
 
         if video_file_names is not None:

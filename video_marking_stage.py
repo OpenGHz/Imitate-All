@@ -1,3 +1,4 @@
+import time
 import cv2
 import tkinter as tk
 from tkinter import ttk
@@ -7,8 +8,9 @@ import numpy as np
 import json
 
 # 视频路径
-video_path = 'demonstrations/raw/stack_cups/0/0.avi'
-json_path = 'demonstrations/raw/stack_cups/0/records.json'
+video_folder = 'demonstrations/raw/put_objects_into_bowl_2/20/'
+video_path = video_folder + '0.avi'
+json_path = video_folder + 'records.json'
 
 class VideoPlayer:
     def __init__(self, root, video_path):
@@ -92,6 +94,8 @@ class VideoPlayer:
 
                 self.photo = tk.PhotoImage(data=cv2.imencode('.png', img)[1].tobytes())
                 self.video_label.config(image=self.photo)
+
+                time.sleep(0.1)
 
             self.root.update_idletasks()
 

@@ -61,6 +61,7 @@ class ACTPolicy(nn.Module):
             else:
                 a_hat_one = self.temporal_ensembler.update(a_hat)
                 a_hat[0][0] = a_hat_one
+                
             return a_hat
 
     def configure_optimizers(self):
