@@ -1,10 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import argparse
 import torch
-from .models import build_ACT_model_, build_CNNMLP_model_
+from .models import build_ACT_model_, build_CNNMLP_model_, build_ACT_YHD_model_
 
-import IPython
-e = IPython.embed
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
@@ -50,6 +48,7 @@ def get_args_parser():
                         help="Train segmentation head if the flag is provided")
     return parser
 
+
 def build_ACT_model(args_override):
     parser = argparse.ArgumentParser('DETR training and evaluation script', parents=[get_args_parser()])
     args, unkown = parser.parse_known_args()
@@ -61,6 +60,20 @@ def build_ACT_model(args_override):
     model.cuda()
 
     return model, args
+
+
+def build_ACT_YHD_model(config, args_override):
+    parser = argparse.ArgumentParser('DETR training and evaluation script', parents=[get_args_parser()])
+    args, unkown = parser.parse_known_args()
+
+    for k, v in args_override.items():
+        setattr(args, k, v)
+
+    model = build_ACT_YHD_model_(config, args)
+    model.cuda()
+
+    return model, args
+
 
 def build_CNNMLP_model(args_override):
     parser = argparse.ArgumentParser('DETR training and evaluation script', parents=[get_args_parser()])

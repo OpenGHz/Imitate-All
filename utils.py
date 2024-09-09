@@ -213,12 +213,16 @@ def load_data(
     )
     val_dataset = EpisodicDataset(val_indices, dataset_dir, camera_names, norm_stats)
     # construct dataloader
+    print("batch_size_train:", batch_size_train)
+    print("batch_size_val:", batch_size_val)
+    num_workers_train = other_config.get("num_workers_train", 1)
+    num_workers_val = other_config.get("num_workers_val", 1)
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=batch_size_train,
         shuffle=True,
         pin_memory=True,
-        num_workers=1,
+        num_workers=num_workers_train,
         prefetch_factor=1,
     )
     val_dataloader = DataLoader(
@@ -226,7 +230,7 @@ def load_data(
         batch_size=batch_size_val,
         shuffle=True,
         pin_memory=True,
-        num_workers=1,
+        num_workers=num_workers_val,
         prefetch_factor=1,
     )
 

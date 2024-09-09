@@ -7,11 +7,8 @@ from torch import nn
 from torch.autograd import Variable
 from .backbone import build_backbone
 from .transformer import build_transformer, TransformerEncoder, TransformerEncoderLayer
-
 import numpy as np
 
-import IPython
-e = IPython.embed
 
 def reparametrize(mu, logvar):
     std = logvar.div(2).exp()
@@ -75,6 +72,18 @@ class DETRVAE(nn.Module):
         self.latent_out_proj = nn.Linear(self.latent_dim, hidden_dim) # project latent sample to embedding
         self.additional_pos_embed = nn.Embedding(2, hidden_dim) # learned position embedding for proprio and latent
 
+    def encode_images(self, image):
+        all_cam_features = []
+        all_cam_pos = []
+        for cam_id in range(len(self.camera_names)):
+            # print(image[:, cam_id].shape)
+            features, pos = self.backbones[cam_id](image[:, cam_id])
+            # TODO: check if this is correct
+            features = features[0]  # take the last layer feature
+            pos = pos[0]
+            all_cam_features.append(self.input_proj(features))
+            all_cam_pos.append(pos)
+
     def forward(self, qpos, image, env_state, actions=None, is_pad=None):
         """
         qpos: batch, qpos_dim
@@ -117,15 +126,7 @@ class DETRVAE(nn.Module):
 
         if self.backbones is not None:
             # Image observation features and position embeddings
-            all_cam_features = []
-            all_cam_pos = []
-            for cam_id in range(len(self.camera_names)):
-                features, pos = self.backbones[cam_id](image[:, cam_id])
-                # TODO: check if this is correct
-                features = features[0]  # take the last layer feature
-                pos = pos[0]
-                all_cam_features.append(self.input_proj(features))
-                all_cam_pos.append(pos)
+            all_cam_features, all_cam_pos = self.encode_images(image)
             # proprioception features
             proprio_input = self.input_proj_robot_state(qpos)
             # fold camera dimension into width dimension
@@ -140,6 +141,25 @@ class DETRVAE(nn.Module):
         a_hat = self.action_head(hs)
         is_pad_hat = self.is_pad_head(hs)
         return a_hat, is_pad_hat, [mu, logvar]
+
+
+class DETRVAEYHD(DETRVAE):
+    def encode_images(self, image):
+        all_cam_features = []
+        all_cam_pos = []
+
+        for index, names in enumerate(self.camera_names):
+            # print(image[:, cam_id].shape)
+            obs_dict = {
+                "rgb_global": image[:, index],
+                "mask_global": image[:, index + 1],
+            }
+            features, pos = self.backbones[index](obs_dict)
+            # TODO: check if this is correct
+            features = features[0]  # take the last layer feature
+            pos = pos[0]
+            all_cam_features.append(self.input_proj(features))
+            all_cam_pos.append(pos)
 
 
 class CNNMLP(nn.Module):
@@ -217,8 +237,8 @@ def build_encoder(args):
     dropout = args.dropout # 0.1
     nhead = args.nheads # 8
     dim_feedforward = args.dim_feedforward
-    num_encoder_layers = args.enc_layers # 4 # TODO shared with VAE decoder
-    normalize_before = args.pre_norm # False
+    num_encoder_layers = args.enc_layers  # 4 # TODO shared with VAE decoder
+    normalize_before = args.pre_norm  # False
     activation = "relu"
 
     encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward,
@@ -253,6 +273,44 @@ def build_vae(args):
     print("number of parameters: %.2fM" % (n_parameters/1e6,))
 
     return model
+
+
+def build_vae_yhd(config, args):
+
+    import hydra
+    from detr.encoders.images_hl_dyh.images_hl_dyh import MultiImageObsEncoder
+
+    transformer = build_transformer(args)
+    encoder = build_encoder(args)
+
+    names = args.camera_names
+    num_name = len(names)
+    assert num_name % 2 == 0, f"camera number must be 2*N: {num_name}"
+    grouped_image_names = []
+    for i in range(0, num_name, 2):
+        grouped_image_names.append(names[i], names[i+1])
+    backbones = []
+    for _ in grouped_image_names:
+        # backbone = build_yhd_backbone(config, args)
+        backbone: MultiImageObsEncoder = hydra.utils.instantiate(config.encoder)
+        backbone.num_channels = 512
+        backbones.append(backbone)
+
+    model = DETRVAEYHD(
+        backbones,
+        transformer,
+        encoder,
+        state_dim=args.state_dim,
+        action_dim=args.action_dim,
+        num_queries=args.num_queries,
+        camera_names=grouped_image_names,
+    )
+
+    n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print("number of parameters: %.2fM" % (n_parameters/1e6,))
+
+    return model
+
 
 def build_cnnmlp(args):
 

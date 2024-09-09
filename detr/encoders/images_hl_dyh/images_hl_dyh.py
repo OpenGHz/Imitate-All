@@ -439,11 +439,13 @@ class MultiImageObsEncoder(ModuleAttrMixin):
             nn.Linear(self.high_res_feature_dim, self.low_res_feature_dim),
         )
 
+        out_put_dim = 512  # 384 raw
+
         self.img_projector = get_projector(
-            input_dim=low_res_feature_dim, output_dim=384
+            input_dim=low_res_feature_dim, output_dim=out_put_dim
         )
         self.mask_projector = get_projector(
-            input_dim=low_res_feature_dim, output_dim=384
+            input_dim=low_res_feature_dim, output_dim=out_put_dim
         )
 
     def aggregate_feature(self, feature):

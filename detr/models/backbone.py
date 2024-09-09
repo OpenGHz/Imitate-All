@@ -2,21 +2,17 @@
 """
 Backbone modules.
 """
-from collections import OrderedDict
 
 import torch
-import torch.nn.functional as F
 import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
-from typing import Dict, List
-
+from typing import List
 from ..util.misc import NestedTensor, is_main_process
-
 from .position_encoding import build_position_encoding
 
-import IPython
-e = IPython.embed
+from detr.encoders.images_hl_dyh.images_hl_dyh import MultiImageObsEncoder
+
 
 class FrozenBatchNorm2d(torch.nn.Module):
     """
@@ -96,6 +92,19 @@ class Backbone(BackboneBase):
         super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
 
 
+class BackboneYHD(BackboneBase):
+    """YHD backbone with frozen BatchNorm."""
+    def __init__(self, cfg, return_interm_layers):
+
+        import hydra
+
+        backbone: MultiImageObsEncoder = hydra.utils.instantiate(cfg.encoder)
+        num_channels = 512
+        train_backbone = False
+        return_interm_layers = True
+        super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
+
+
 class Joiner(nn.Sequential):
     def __init__(self, backbone, position_embedding):
         super().__init__(backbone, position_embedding)
@@ -122,12 +131,10 @@ def build_backbone(args):
     model.num_channels = backbone.num_channels
     return model
 
-def build_yhd_backbone(args):
+def build_yhd_backbone(config, args):
     position_embedding = build_position_encoding(args)
-    # TODO: build_optimizer function will use lr_backbone
-    train_backbone = args.lr_backbone > 0
     return_interm_layers = args.masks
-    backbone = Backbone(args.backbone, train_backbone, return_interm_layers, args.dilation)
+    backbone = BackboneYHD(config, return_interm_layers)
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
