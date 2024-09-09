@@ -17,13 +17,16 @@ class ACTPolicy(nn.Module):
         self.kl_weight = args_override["kl_weight"]
         print(f"KL Weight {self.kl_weight}")
         self.temporal_ensembler = None
-        if args_override["temporal_agg"]:
-            self.temporal_ensembler = TemporalEnsembling(
-                args_override["chunk_size"],
-                args_override["action_dim"],
-                args_override["max_timesteps"],
-            )
-
+        try:
+            if args_override["temporal_agg"]:
+                self.temporal_ensembler = TemporalEnsembling(
+                    args_override["chunk_size"],
+                    args_override["action_dim"],
+                    args_override["max_timesteps"],
+                )
+        except Exception as e:
+            print(e)
+            print("The above Exception can be ignored when training instead of evaluating.")
     # TODO: 使用装饰器在外部进行包装
     def reset(self):
         if self.temporal_ensembler is not None:
