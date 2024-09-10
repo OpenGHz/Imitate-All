@@ -59,14 +59,14 @@ class MujocoEnv:
 
         cfg = AirbotPlayCfg()
         cfg.expreriment  = "act_airbot_play"
-        cfg.rb_link_list = []
-        cfg.obj_list     = []
+        cfg.rb_link_list   = ["arm_base", "link1", "link2", "link3", "link4", "link5", "link6", "right", "left"]
+        cfg.obj_list       = ["cup_blue", "cup_pink"]
         cfg.sync         = False
         cfg.headless     = False
         cfg.put_text     = False
-        cfg.decimation   = 4
+        cfg.decimation   = 8
         cfg.render_set   = {
-            "fps"    : 50,
+            "fps"    : 25,
             "width"  : 640,
             "height" : 480
         }
@@ -81,6 +81,24 @@ class MujocoEnv:
             "gripper" :  1
         }
         self.exec_node = SimNode(cfg)
+
+        models_set = {
+            "qz11/table_trans.ply",
+            "qz11/qz_table_new.ply",
+            "object/cup_blue.ply",
+            "object/cup_pink.ply",
+            "airbot_play/arm_base.ply",
+            "airbot_play/link1.ply",
+            "airbot_play/link2.ply",
+            "airbot_play/link3.ply",
+            "airbot_play/link4.ply",
+            "airbot_play/link5.ply",
+            "airbot_play/link6.ply",
+            "airbot_play/left.ply",
+            "airbot_play/right.ply",
+        }
+        self.exec_node.init_gs_render(models_set)
+
         self.exec_node.cam_id = self.exec_node.config.obs_camera_id
         self.reset_position = None
 
