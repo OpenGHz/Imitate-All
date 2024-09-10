@@ -216,4 +216,5 @@ def get_all_config(args: dict, stage: str):
     # all_config["policy_maker"] = task_funcs["policy_maker"]
     all_config["state_dim"] = policy_config["state_dim"]
     all_config["action_dim"] = policy_config["action_dim"]
+    all_config["stage"] = stage
     return all_config
