@@ -143,6 +143,9 @@ def train_bc(train_dataloader, val_dataloader, config):
     # get epoch base
     epoch_base = get_epoch_base(pretrain_path, config["pretrain_epoch_base"])
 
+    # make optimizer
+    optimizer = make_optimizer(policy)
+
     # set GPU device
     if parallel is not None:
         if parallel["mode"] == "DP":
@@ -152,15 +155,13 @@ def train_bc(train_dataloader, val_dataloader, config):
                 device_ids = config["target_gpus"]
             assert len(device_ids) > 1, "DP mode requires more than 1 GPU"
             print(f'Using {len(device_ids)} GPUs for DataParallel training')
-            policy = torch.nn.DataParallel(policy, device_ids=device_ids)
+            policy = torch.nn.DataParallel(policy, device_ids=list(range(len(device_ids))))
         elif parallel["mode"] == "DDP":
             # TODO: can not use DDP for now
             raise NotImplementedError
             policy = torch.nn.parallel.DistributedDataParallel(policy, device_ids=parallel["device_ids"])
         else:
             raise ValueError(f'Invalid parallel mode: {parallel["mode"]}')
-    # make optimizer
-    optimizer = make_optimizer(policy)
 
     # training loop
     train_history = []
