@@ -9,7 +9,7 @@ import shutil
 import time
 import argparse
 
-from utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer, pretty_print_dict
+from utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
 
@@ -21,6 +21,7 @@ def main(args:dict):
     stats_path = all_config['stats_path']
     dataset_dir = all_config['dataset_dir']
     image_augmentor = all_config['image_augmentor']
+    gpu_threshold = all_config.get('gpu_threshold', 10)
     if image_augmentor.activated:
         print("Use image augmentor")
     # 加载数据及统计信息
@@ -55,7 +56,7 @@ def main(args:dict):
     # wait for free GPU
     target_gpu = os.environ.get("CUDA_VISIBLE_DEVICES", None)
     while True:
-        free_gpus, gpus_num = GPUer.check_all_gpus_idle(5)
+        free_gpus, gpus_num = GPUer.check_all_gpus_idle(gpu_threshold)
         if len(free_gpus) > 0:
             if target_gpu is not None:
                 target_gpu = int(target_gpu)
@@ -250,6 +251,7 @@ def parser_add_train(parser:argparse.ArgumentParser):
     parser.add_argument('-ve', '--validate_every', action='store', type=int, help='validate_every', required=False)
     parser.add_argument('-se', '--save_every', action='store', type=int, help='save_every', required=False)
     parser.add_argument('-smd','--skip_mirrored_data', action='store', type=bool, help='skip_mirrored_data', required=False)
+    parser.add_argument('-gth', '--gpu_threshold', action='store', type=float, help='gpu_threshold', required=False)
     # set time_stamp  # TODO: used to load pretrain model
     parser.add_argument("-ts", "--time_stamp", action="store", type=str, help="time_stamp", required=False)
     # parser.add_argument('--actuator_network_dir', action='store', type=str, help='actuator_network_dir', required=False)
