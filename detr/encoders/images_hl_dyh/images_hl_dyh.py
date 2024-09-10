@@ -2,8 +2,10 @@ from typing import Dict, Union, Callable, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import timm
-from transformers import AutoModel
+try:
+    import timm
+except ImportError as e:
+    pass
 
 
 class ModuleAttrMixin(nn.Module):
@@ -183,6 +185,7 @@ def get_low_res_encoder(
 def get_low_res_encoder_dinov2(
     model_name="vit_small_patch14_dinov2.lvd142m", local_weights_path=None
 ):
+    from transformers import AutoModel
     model = AutoModel.from_pretrained(local_weights_path)
     return model
 
