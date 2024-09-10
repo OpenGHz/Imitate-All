@@ -151,7 +151,8 @@ def train_bc(train_dataloader, val_dataloader, config):
             else:
                 device_ids = config["target_gpus"]
             assert len(device_ids) > 1, "DP mode requires more than 1 GPU"
-            policy = torch.nn.DataParallel(policy, device_ids=config["target_gpus"])
+            print(f'Using {len(device_ids)} GPUs for DataParallel training')
+            policy = torch.nn.DataParallel(policy, device_ids=device_ids)
         elif parallel["mode"] == "DDP":
             # TODO: can not use DDP for now
             raise NotImplementedError
