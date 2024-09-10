@@ -146,6 +146,11 @@ def train_bc(train_dataloader, val_dataloader, config):
     # set GPU device
     if parallel is not None:
         if parallel["mode"] == "DP":
+            if parallel.get("device_ids", None) is not None:
+                device_ids = parallel["device_ids"]
+            else:
+                device_ids = config["target_gpus"]
+            assert len(device_ids) > 1, "DP mode requires more than 1 GPU"
             policy = torch.nn.DataParallel(policy, device_ids=config["target_gpus"])
         elif parallel["mode"] == "DDP":
             # TODO: can not use DDP for now
