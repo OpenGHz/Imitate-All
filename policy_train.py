@@ -74,7 +74,7 @@ def main(args:dict):
                     elif target_gpu not in free_gpus:
                         not_free_ids.append(index)
                 if len(not_free_ids) != 0:
-                    print(f'Target GPU {target_gpu[not_free_ids]} is not free ({gpu_utilizations[index]}), waiting for {waiting_time} senconds...')
+                    print(f'Target GPU {target_gpus[not_free_ids]} is not free ({gpu_utilizations[not_free_ids]}), waiting for {waiting_time} senconds...')
                     time.sleep(waiting_time)
                     continue
             else:
