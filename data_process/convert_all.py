@@ -99,7 +99,7 @@ class Compresser(object):
 
     @staticmethod
     def decompress(frame, method):
-        if method == "jpg":
+        if method in ["jpg", "jpeg"]:
             return cv2.imdecode(frame, cv2.IMREAD_COLOR)
         else:
             raise NotImplementedError(f"Decompress method {method} is not implemented.")
@@ -169,9 +169,16 @@ def video_to_dict(
         typer = lambda i: video_type
 
     if video_names is None:
+        # TODO: check why set 0 always
         video_names = get_files_name_by_suffix(video_dir, f".{typer(0)}")
 
     name_converter = {} if name_converter is None else name_converter
+    no_suffix_names = [remove_after_last_dot(name) for name in video_names]
+    for key in name_converter.keys():
+        if key not in no_suffix_names:
+            logger.warning(f"{key} is not found in the video names.")
+            name_converter.pop(key)
+
     compressed_len: Dict[str, list] = {}
     if pre_process is None:
         pre_process = lambda x: x
