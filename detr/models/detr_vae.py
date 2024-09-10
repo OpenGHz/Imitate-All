@@ -83,6 +83,7 @@ class DETRVAE(nn.Module):
             pos = pos[0]
             all_cam_features.append(self.input_proj(features))
             all_cam_pos.append(pos)
+        return all_cam_features, all_cam_pos
 
     def forward(self, qpos, image, env_state, actions=None, is_pad=None):
         """
