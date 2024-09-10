@@ -12,6 +12,11 @@ import argparse
 from utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def main(args:dict):
@@ -54,28 +59,35 @@ def main(args:dict):
     with open(key_info_path, 'wb') as f:
         pickle.dump(key_info, f)
     # wait for free GPU
-    target_gpu = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+    target_gpus = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+    target_gpus = target_gpus.split(',')
+    target_gpus = [int(gpu) for gpu in target_gpus if gpu != '']
+    waiting_time = 60
     while True:
-        free_gpus, gpus_num = GPUer.check_all_gpus_idle(gpu_threshold)
+        free_gpus, gpus_num, gpu_utilizations = GPUer.check_all_gpus_idle(gpu_threshold)
         if len(free_gpus) > 0:
-            if target_gpu is not None:
-                target_gpu = int(target_gpu)
-                if target_gpu >= gpus_num:
-                    raise ValueError(f'Target GPU id (from 0) {target_gpu} is not valid, only {gpus_num} gpus available')
-                if target_gpu not in free_gpus:
-                    print(f'Target GPU {target_gpu} is not free, waiting...')
-                    time.sleep(60)
+            if len(target_gpus) > 0:
+                not_free_ids = []
+                for index, target_gpu in enumerate(target_gpus):
+                    if target_gpu >= gpus_num:
+                        raise ValueError(f'Target GPU id (from 0) {target_gpu} is not valid, only {gpus_num} gpus available')
+                    elif target_gpu not in free_gpus:
+                        not_free_ids.append(index)
+                if len(not_free_ids) != 0:
+                    print(f'Target GPU {target_gpu[not_free_ids]} is not free ({gpu_utilizations[index]}), waiting for {waiting_time} senconds...')
+                    time.sleep(waiting_time)
                     continue
-                else:
-                    free_gpu = target_gpu
             else:
                 free_gpu = free_gpus[0]
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(free_gpu)
-            print(f'Using GPU {free_gpu}')
+                os.environ["CUDA_VISIBLE_DEVICES"] = str(free_gpu)
+                print(f'Using GPU {free_gpu}')
+                target_gpus = [int(free_gpu)]
             break
         else:
-            print('No free GPU, waiting...')
-            time.sleep(60)
+            print(f'No free GPU, waiting for {waiting_time} senconds...')
+            time.sleep(waiting_time)
+    print(f"Using GPU: {target_gpus}")
+    all_config["target_gpus"] = target_gpus
     # train policy
     set_seed(all_config['seed'])
     best_ckpt_info = train_bc(train_dataloader, val_dataloader, all_config)
@@ -134,7 +146,7 @@ def train_bc(train_dataloader, val_dataloader, config):
     # set GPU device
     if parallel is not None:
         if parallel["mode"] == "DP":
-            policy = torch.nn.DataParallel(policy, device_ids=parallel["device_ids"])
+            policy = torch.nn.DataParallel(policy, device_ids=config["target_gpus"])
         elif parallel["mode"] == "DDP":
             # TODO: can not use DDP for now
             raise NotImplementedError

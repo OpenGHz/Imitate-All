@@ -544,12 +544,14 @@ class GPUer(object):
             gpu_usage = result.stdout.splitlines()
 
             idle_gpus = []
+            gpu_utilizations = []
             for gpu_id, usage in enumerate(gpu_usage):
                 gpu_utilization = int(usage.strip())
+                gpu_utilizations.append(gpu_utilization)
                 if gpu_utilization < utilization_threshold:
                     idle_gpus.append(gpu_id)
 
-            return idle_gpus, len(gpu_usage)
+            return idle_gpus, len(gpu_usage), gpu_utilizations
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             print(f"Error occurred: {e}")
             return []
