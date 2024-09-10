@@ -154,3 +154,4 @@ onnx_output/
 custom/
 visualizations/
 model_weights/
+test_*
