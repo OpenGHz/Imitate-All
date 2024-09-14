@@ -297,7 +297,7 @@ def policy_maker(config:dict, stage=None):
 
                     # Getting the base64 string
                     base64_image = tensor_to_base64_image(image_tensor)
-                    client = openai.OpenAI(api_key="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")
+                    client = openai.OpenAI(api_key="")
 
                     response = client.chat.completions.create(
                         model="gpt-4o",

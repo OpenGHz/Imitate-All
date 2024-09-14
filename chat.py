@@ -3,8 +3,8 @@ import requests
 import cv2
 
 # OpenAI API Key
-# api_key = "sk-proj-gNS4ar7fAWypmYNjOpLmT3BlbkFJ5Nm2hX5Jx9iV4Jqkn85Q"
-api_key = "sk-proj-ThHbAqYhOdLCTbYWfZnnT3BlbkFJ3sk2kwtniRqC4lvwzM0x"
+# api_key = ""
+api_key = ""
 
 
 # Read text from .txt file
