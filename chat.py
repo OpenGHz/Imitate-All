@@ -3,8 +3,7 @@ import requests
 import cv2
 
 # OpenAI API Key
-# api_key = ""
-api_key = ""
+
 
 
 # Read text from .txt file

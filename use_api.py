@@ -23,7 +23,7 @@ def capture_image(camera_index):
 
 # Call gpt4 api for plans and instructions
 def call_gpt4_for_planning(initial_prompt = None, image_base64 = None, instruction = None):
-    api_key = ""
+
     api_url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
@@ -59,7 +59,7 @@ def call_gpt4_for_planning(initial_prompt = None, image_base64 = None, instructi
 
 # Call gpt4 api for plans and instructions
 def call_gpt4_for_judgement(prompt = None, image_base64 = None):
-    api_key = "sk-proj-ThHbAqYhOdLCTbYWfZnnT3BlbkFJ3sk2kwtniRqC4lvwzM0x"
+
     api_url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",

@@ -16,7 +16,7 @@ image_path = "/home/qiuzhi/bowls.png"
 # Getting the base64 string
 base64_image = encode_image(image_path)
 
-client = OpenAI(api_key="")
+client = OpenAI()
 
 response = client.chat.completions.create(
   model="gpt-4o-mini",
