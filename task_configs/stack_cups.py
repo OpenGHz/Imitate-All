@@ -1,5 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
+import logging
 import torch
+from collections import Counter
 from policies.common.maker import post_init_policies
 from task_configs.template import (
     replace_task_name,
@@ -14,25 +16,14 @@ def policy_maker(config:dict, stage=None):
     from policies.act.act import ACTPolicy
     from policies.traditionnal.cnnmlp import CNNMLPPolicy
     # from policies.diffusion.diffusion_policy import DiffusionPolicy
-    with torch.inference_mode():#禁用梯度计算
-        policy = ACTPolicy(config)
-        post_init_policies([policy], stage, [config["ckpt_path"]])
-
-        if "ckpt_path_1" in config:
-            policy_1 = ACTPolicy(config)
-            post_init_policies([policy_1], stage, [config["ckpt_path_1"]])
-        if "ckpt_path_2" in config:
-            policy_2 = ACTPolicy(config)
-            post_init_policies([policy_2], stage, [config["ckpt_path_2"]])
-        if "ckpt_path_3" in config:
-            policy_3 = ACTPolicy(config)
-            post_init_policies([policy_3], stage, [config["ckpt_path_3"]])
-        if "ckpt_path_4" in config:
-            policy_4 = ACTPolicy(config)
-            post_init_policies([policy_4], stage, [config["ckpt_path_4"]])
-        if "ckpt_path_5" in config:       
-            policy_5 = ACTPolicy(config)
-            post_init_policies([policy_5], stage, [config["ckpt_path_5"]])
+    with torch.inference_mode():  # 禁用梯度计算
+        policies = []
+        for key in config:
+            if key.startswith("ckpt_path_"):
+                policy = ACTPolicy(config)
+                post_init_policies([policy], stage, [config[key]])
+                policies.append(policy)
+                logging.info(len(policies))
         
         if stage == "train":
             return policy
@@ -43,12 +34,11 @@ def policy_maker(config:dict, stage=None):
             else:
                 ckpt_path = config["ckpt_path"]
                 assert ckpt_path is not None, "ckpt_path must exist for loading policy"
-                # TODO: all policies should load the ckpt (policy maker should return a class)
+                # TODO: all policies should load the ckpt (policy maker should return a class)、
 
-                policy.cuda()
-                policy.eval()
-                policy_1.cuda()
-                policy_1.eval()
+                for policy in policies:
+                    policy.cuda()
+                    policy.eval()
 
                 #串行推理
                 # def ensemble_policy(*args, **kwargs):
@@ -63,32 +53,46 @@ def policy_maker(config:dict, stage=None):
                     with torch.inference_mode():
                         a_hat = policy(*args, **kwargs)
                         #a_hat = a_hat.clone()  # 在更新之前克隆
-                        return policy.temporal_ensembler.update(a_hat)
+                        return a_hat
                     
 
                 def ensemble_policy(*args, **kwargs):
-                    with ThreadPoolExecutor(max_workers=len(config)-1) as executor:
+                    with ThreadPoolExecutor(max_workers=len(policies)) as executor:
                         futures = []
-                        for i in range(1, len(config)):
-                            policy_name = f"policy_{i}"
-                            if policy_name in globals():
-                                policy = globals()[policy_name]
-                                future = executor.submit(run_policy, policy, *args, **kwargs)
-                                futures.append(future)
+                        for policy in policies:
+                            future = executor.submit(run_policy, policy, *args, **kwargs)
+                            futures.append(future)
 
-                        actions_sum = torch.zeros_like(futures[0].result())
-                        for future in futures:
-                            actions_sum += future.result()
+                        results = [future.result() for future in futures]
+                        # 获取每个结果的最后一位
+                        last_elements = [round(result[0,0,-1].item()) for result in results]
+                        
+                        # 统计每个最后一位的出现次数
+                        counter = Counter(last_elements)
+                        
+                        # 找到出现次数最多的最后一位
+                        most_common_last_element, count = counter.most_common(1)[0]
 
-                        actions_avg = actions_sum / len(futures)
+                        print("Most common last element:", most_common_last_element, "Count:", count)
+                        # 过滤出最后一位是多数的结果
+                        filtered_results = [result for result in results if round(result[0,0,-1].item()) == most_common_last_element]
+        
+                        actions_sum = torch.zeros_like(filtered_results[0])
+                        print("actions_sum",actions_sum.shape)
+
+                        for result in filtered_results:
+                            actions_sum += result
+
+                        actions_avg = actions_sum / len(filtered_results)
+
                         return actions_avg
+                    #return size: (1, chunksize, 7)
                 
                 # 定义 reset 方法
                 def reset():
-                    if hasattr(policy, "reset"):
-                        policy.reset()
-                    if hasattr(policy_1, "reset"):
-                        policy_1.reset()
+                    for policy in policies:
+                        if hasattr(policy, "reset"):policy.reset()
+
 
                 # 将 reset 方法绑定到 ensemble_policy 函数上
                 ensemble_policy.reset = reset
@@ -143,7 +147,7 @@ TASK_CONFIG_DEFAULT["eval"]["robot_num"] = 1
 TASK_CONFIG_DEFAULT["eval"]["joint_num"] = joint_num
 TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
 TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 400
-TASK_CONFIG_DEFAULT["eval"]["ensemble"] = None
+TASK_CONFIG_DEFAULT["eval"]["ensemble"] = True
 TASK_CONFIG_DEFAULT["eval"]["environments"]["environment_maker"] = environment_maker
 
 # final config

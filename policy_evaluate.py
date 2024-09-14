@@ -205,7 +205,6 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     all_time_actions[[t], t : t + num_queries] = all_actions
                     index = 0 if temporal_agg else target_t
                     raw_action = all_actions[:, index]
-                    all_time_stage[t] = raw_action[0, -1]
                     # post-process predicted action
                     # dim: (1,7) -> (7,)
                     raw_action = (
