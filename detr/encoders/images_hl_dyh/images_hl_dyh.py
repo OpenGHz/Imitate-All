@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 try:
     import timm
-except ImportError as e:
+except Exception as e:
     pass
 
 
