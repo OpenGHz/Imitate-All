@@ -434,9 +434,9 @@ def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optiona
         target_path(str)    -- the target path to save the data
         pad_max_len(int)    -- the max length to pad all the data to the same episode length
     """
-    print("Call: save_dict_to_json_and_mp4.")
+    # print("Call: save_dict_to_json_and_mp4.")
     target_path = Path(target_path)
-    print("target_path=", target_path)
+    # print("target_path=", target_path)
     target_path.mkdir(parents=True, exist_ok=True)
     images_dict = {}
     # padding the data with the last N values
