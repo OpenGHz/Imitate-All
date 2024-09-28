@@ -8,7 +8,7 @@ from task_configs.config_tools.basic_configer import basic_parser, get_all_confi
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 from threading import Thread, Event
-from policies.common.wrapper import TemporalEnsemblingWithDroppedActions
+from policies.common.wrapper import TemporalEnsemblingWithDroppedActions as TEDA
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -46,11 +46,15 @@ def get_ckpt_path(ckpt_dir, ckpt_name, stats_path):
     if not os.path.exists(ckpt_path):
         ckpt_dir = os.path.dirname(ckpt_dir)  # check the upper dir
         ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-        logger.warning(f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}...")
+        logger.warning(
+            f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}..."
+        )
         if not os.path.exists(ckpt_path):
             ckpt_dir = os.path.dirname(stats_path)
             ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-            logger.warning(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
+            logger.warning(
+                f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}..."
+            )
     return ckpt_path
 
 
@@ -68,8 +72,6 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     policy_config: dict = config["policy_config"]
     state_dim = policy_config["state_dim"]
     action_dim = policy_config["action_dim"]
-    temporal_agg = policy_config["temporal_agg"]
-    temporal_agg = False
     num_queries = policy_config["num_queries"]  # i.e. chunk_size
     dt = 1 / config["fps"]
     image_mode = config.get("image_mode", 0)
@@ -133,23 +135,24 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         post_process = lambda a: a
 
     # evaluation loop
-    if hasattr(policy, "eval"): policy.eval()
+    if hasattr(policy, "eval"):
+        policy.eval()
     env_max_reward = 0
     episode_returns = []
     highest_rewards = []
     num_rollouts = 0
     action_freq = config["fps"]
     prediction_freq = 10  # TODO:config this
-    dead_num = int(action_freq / prediction_freq + 1)
     chunk_size = num_queries
-    temer = TemporalEnsemblingWithDroppedActions(
+    teda = TEDA(
         chunk_size=chunk_size,
         action_dim=action_dim,
         max_timesteps=max_timesteps,
-        dead_num=dead_num
+        dropped_num=TEDA.get_dropped_action_num(
+            action_freq=action_freq, predict_freq=prediction_freq
+        ),
     )
-    prediction_step_max = 1 + (max_timesteps - 1) // dead_num + 1
-    max_col = 1 + (prediction_step_max - 2) * dead_num + chunk_size
+
     infer_event = Event()
     for rollout_id in range(max_rollouts):
         infer_event.clear()
@@ -157,11 +160,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         next_rollout = False
         keyboard_interrupt = False
 
-        all_time_actions = torch.zeros(
-            [prediction_step_max, max_col, action_dim]
-        ).cuda()
-
-        temer.reset()
+        all_time_actions = teda.get_action_buffer()
+        teda.reset()
 
         qpos_history = torch.zeros((1, max_timesteps, state_dim)).cuda()
         image_list = []  # for visualization
@@ -184,7 +184,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 if hasattr(policy, "reset"):
                     policy.reset()
                 try:
-                    for t in tqdm(range(prediction_step_max)):
+                    for t in tqdm(range(teda.prediction_step_max)):
                         infer_event.wait()
                         start_time = time.time()
                         if next_rollout:
@@ -202,12 +202,18 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         all_actions: torch.Tensor = policy(qpos, curr_image)
                         # logger.warning(f"all_actions:{all_actions}")
                         # t is the infer_t
-                        all_time_actions[[t], act_step : act_step + chunk_size] = all_actions
+                        all_time_actions[[t], act_step : act_step + chunk_size] = (
+                            all_actions
+                        )
 
-                        time.sleep(max(0, 1/prediction_freq - (time.time() - start_time)))
+                        time.sleep(
+                            max(0, 1 / prediction_freq - (time.time() - start_time))
+                        )
                         infer_event.clear()
                 except KeyboardInterrupt:
-                    logger.info(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
+                    logger.info(
+                        f"Current roll out: {rollout_id} interrupted by CTRL+C..."
+                    )
                     keyboard_interrupt = True
                     return
 
@@ -220,8 +226,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             act_step = t
             if keyboard_interrupt:
                 break
-            if temer.need_infer():
+            if teda.need_infer():
                 while infer_event.is_set():
+                    print("wait for last infer")
                     logger.debug("last not done")
                     last_not_done.add(t)
                     time.sleep(0.001)
@@ -230,13 +237,11 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     logger.debug("wait for first infer")
                     while infer_event.is_set():
                         time.sleep(0.001)
-            raw_action = temer.update(all_time_actions)
+            raw_action = teda.update(all_time_actions)
 
             # post-process predicted action
             # dim: (1,7) -> (7,)
-            raw_action = (
-                raw_action.squeeze(0).cpu().numpy()
-            )
+            raw_action = raw_action.squeeze(0).cpu().numpy()
             logger.debug(f"raw action: {raw_action}")
             action = post_process(raw_action)  # de-normalize action
             logger.debug(f"post action: {action}")
@@ -299,7 +304,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
         avg_return = np.mean(episode_returns)
-        summary_str = f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
+        summary_str = (
+            f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
+        )
         for r in range(env_max_reward + 1):
             more_or_equal_r = (np.array(highest_rewards) >= r).sum()
             more_or_equal_r_rate = more_or_equal_r / num_rollouts

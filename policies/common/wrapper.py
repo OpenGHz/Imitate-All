@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import logging
+from typing import Union
 
 
 logger = logging.getLogger(__name__)
@@ -121,22 +122,29 @@ class TemporalEnsembling(object):
 class TemporalEnsemblingWithDroppedActions(object):
     """Temporal Ensembling With Dropped Actions to filter out the actions over time parrellelly with policy prediction"""
 
-    def __init__(self, chunk_size, action_dim, max_timesteps, dead_num):
+    def __init__(self, chunk_size, action_dim, max_timesteps, dropped_num):
         self.chunk_size = chunk_size
         self.action_dim = action_dim
         self.max_timesteps = max_timesteps
-        self.dead_num = dead_num
+        self.dead_num = dropped_num
         self.max_temporal_len = self.chunk_size // self.dead_num - 1
         self.max_temporal_len_res = self.chunk_size % self.dead_num
         logger.debug("max_temporal_len: %d", self.max_temporal_len)
         logger.debug("max_temporal_len_res: %d", self.max_temporal_len_res)
         self.reset()
 
+        self._prediction_step_max = 1 + (max_timesteps - 1) // dropped_num + 1
+        self.buffer_max_col = 1 + (self._prediction_step_max - 2) * dropped_num + chunk_size
+
+    @staticmethod
+    def get_dropped_action_num(action_freq, predict_freq) -> int:
+        return np.ceil(action_freq / predict_freq).astype(int)
+
     def reset(self):
         self.t = 0
         self.infer_t = 0
 
-    def update(self, all_time_actions: torch.Tensor) -> torch.Tensor:
+    def update(self, all_time_actions: Union[torch.Tensor, np.ndarray], return_type:str="input") -> Union[torch.Tensor, np.ndarray]:
         # max_temporal_len + res + 初始行（可能）才为实际的
         ddl_num = self.infer_t - 2
         logger.debug("ddl_num: %d", ddl_num)
@@ -167,15 +175,20 @@ class TemporalEnsemblingWithDroppedActions(object):
         exp_weights = np.exp(-k * np.arange(actions_for_curr_step.shape[0]))
         exp_weights = exp_weights / exp_weights.sum()
         logger.debug(f"exp_weights: {exp_weights}")
+        use_numpy = isinstance(actions_for_curr_step, np.ndarray)
+        if use_numpy:
+            actions_for_curr_step = torch.from_numpy(actions_for_curr_step).cuda()
         exp_weights = torch.from_numpy(exp_weights).cuda().unsqueeze(dim=1)
         new_action = (actions_for_curr_step * exp_weights).sum(dim=0, keepdim=True)
         self.t += 1
+        if (use_numpy and return_type == "input") or return_type == "numpy":
+            new_action = new_action.cpu().numpy()
         return new_action
 
     def need_infer(self):
         if (self.t % self.dead_num == 1) or self.t == 0:
             self.infer_t += 1
-            return True 
+            return True
 
     def __call__(self, policy) -> None:
         """Decorate the policy class's reset and __call__ method"""
@@ -211,3 +224,12 @@ class TemporalEnsemblingWithDroppedActions(object):
             return raw_actions
 
         policy.__class__.__call__ = call
+
+    def get_action_buffer(self):
+        return torch.zeros(
+            [self._prediction_step_max, self.buffer_max_col, self.action_dim]
+        ).cuda()
+
+    @property
+    def prediction_step_max(self):
+        return self._prediction_step_max
