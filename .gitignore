@@ -154,4 +154,4 @@ onnx_output/
 custom/
 visualizations/
 model_weights/
-test_*
+test_*.py

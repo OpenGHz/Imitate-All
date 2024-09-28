@@ -427,6 +427,51 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
         root.attrs["compress"] = True
 
 
+def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optional[int] = None, fps: int = 30):
+    """Save the data dict to the target path in hdf5 format.
+    Parameters:
+        data(dict)          -- the data dict to be saved, with keys as the data names and values as the array-like data
+        target_path(str)    -- the target path to save the data
+        pad_max_len(int)    -- the max length to pad all the data to the same episode length
+    """
+    print("Call: save_dict_to_json_and_mp4.")
+    target_path = Path(target_path)
+    print("target_path=", target_path)
+    target_path.mkdir(parents=True, exist_ok=True)
+    images_dict = {}
+    # padding the data with the last N values
+    keys = list(data.keys())
+    for key in keys:
+        if isinstance(data[key], dict):
+            continue
+        if pad_max_len is not None:
+            def pad(value):
+                size_to_pad = pad_max_len - len(value)
+                if size_to_pad > 0:
+                    value = value + value[-size_to_pad:]
+                return value
+            data[key] = pad(data[key])
+        if "images" in key:
+            images_dict[key] = data.pop(key)
+
+    with open(target_path / "records.json", "w") as f:
+        json.dump(data, f)
+    for key, value in images_dict.items():
+        # create video writer
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        w_h = (value[0].shape[1], value[0].shape[0])
+        image_path = str(target_path / f"{key.split('/')[-1]}.avi")
+        print(f"Save images to {image_path} with w_h={w_h}, fps={fps}")
+        video_writer = cv2.VideoWriter(
+            image_path, fourcc, fps, w_h
+        )
+        # save images
+        for img in value:
+            video_writer.write(img)
+
+        video_writer.release()
+        print(f"Save the video data to image_path.")
+
 def hdf5_to_dict(hdf5_path):
     def recursively_load_datasets(hdf5_group):
         data_dict = {}
