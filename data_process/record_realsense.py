@@ -6,7 +6,10 @@ import os
 from pathlib import Path
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor
+from collections import OrderedDict
+import subprocess
 import argparse
+from typing import Optional
 
 
 def save_images_concurrently(imgs_array: np.ndarray, out_dir: Path, max_workers: int = 4):
@@ -25,7 +28,61 @@ def save_images_concurrently(imgs_array: np.ndarray, out_dir: Path, max_workers:
             executor.submit(save_image, imgs_array[i], i, out_dir)
             for i in range(num_images)
         ]
-    
+
+
+def encode_video_frames(
+    imgs_dir: Path,
+    video_path: Path,
+    fps: int,
+    vcodec: str = "libsvtav1",
+    pix_fmt: str = "yuv420p",
+    g: Optional[int] = 2,
+    crf: Optional[int] = 30,
+    fast_decode: int = 0,
+    log_level: Optional[str] = "error",
+    overwrite: bool = False,
+) -> None:
+    """More info on ffmpeg arguments tuning on `benchmark/video/README.md`"""
+    video_path = Path(video_path)
+    video_path.parent.mkdir(parents=True, exist_ok=True)
+
+    ffmpeg_args = OrderedDict(
+        [
+            ("-f", "image2"),
+            ("-r", str(fps)),
+            ("-i", str(imgs_dir / "frame_%06d.png")),
+            ("-vcodec", vcodec),
+            ("-pix_fmt", pix_fmt),
+        ]
+    )
+
+    if g is not None:
+        ffmpeg_args["-g"] = str(g)
+
+    if crf is not None:
+        ffmpeg_args["-crf"] = str(crf)
+
+    if fast_decode:
+        key = "-svtav1-params" if vcodec == "libsvtav1" else "-tune"
+        value = f"fast-decode={fast_decode}" if vcodec == "libsvtav1" else "fastdecode"
+        ffmpeg_args[key] = value
+
+    if log_level is not None:
+        ffmpeg_args["-loglevel"] = str(log_level)
+
+    ffmpeg_args = [item for pair in ffmpeg_args.items() for item in pair]
+    if overwrite:
+        ffmpeg_args.append("-y")
+
+    ffmpeg_cmd = ["ffmpeg"] + ffmpeg_args + [str(video_path)]
+    # redirect stdin to subprocess.DEVNULL to prevent reading random keyboard inputs from terminal
+    subprocess.run(ffmpeg_cmd, check=True, stdin=subprocess.DEVNULL)
+
+    if not video_path.exists():
+        raise OSError(
+            f"Video encoding did not work. File not found: {video_path}. "
+            f"Try running the command manually to debug: `{''.join(ffmpeg_cmd)}`"
+        )
 
 
 class Camera(object):
@@ -72,16 +129,28 @@ class Camera(object):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Record Realsense Camera")
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-in", "--imgs_dir", type=str, default="data/Realsense/images")
+    parser.add_argument("-out", "--video_dir", type=str, default="data/Realsense/rgb_data")
+    parser.add_argument("--fps", type=int, required=True)
+    parser.add_argument("--vcodec", type=str, default="libx264")
+    parser.add_argument("--pix_fmt", type=str, default="yuv420p")
+    parser.add_argument("--g", type=int, default=2)
+    parser.add_argument("--crf", type=int, default=30)
+    parser.add_argument("--fast_decode", type=int, default=0)
+    parser.add_argument("--log_level", type=str, default="error")
+    parser.add_argument("--overwrite", action="store_true")
+    args = parser.parse_args()
     # 视频保存路径
-    imgs_dir = "data/Realsense/images"
-    os.makedirs("data/Realsense/rgb_data", exist_ok=True)
+    imgs_dir = args.imgs_dir
+    video_dir = args.video_dir
+    fps = args.fps
+    os.makedirs(video_dir, exist_ok=True)
     os.makedirs("data/Realsense/depth_data", exist_ok=True)
     os.makedirs("data/Realsense/depthcolor_data", exist_ok=True)
     os.makedirs("data/Realsense/camera_colordepth", exist_ok=True)
     os.makedirs(imgs_dir, exist_ok=True)
-    video_path = f"data/Realsense/rgb_data/{int(time.time())}.mp4"
+    video_path = f"{video_dir}/{int(time.time())}.mp4"
     video_depth_path = f"data/Realsense/depth_data/{int(time.time())}_depth.mp4"
     video_depthcolor_path = (
         f"data/Realsense/depthcolor_data/{int(time.time())}_depthcolor.mp4"
@@ -90,7 +159,7 @@ if __name__ == "__main__":
         f"data/Realsense/camera_colordepth/{int(time.time())}_depthcolor.mp4"
     )
     # 初始化参数
-    fps, w, h = 30, 640, 480
+    w, h = 640, 480
     mp4 = cv2.VideoWriter_fourcc(*"mp4v")  # 视频格式
     # 视频保存而建立对象
     color_images = []
@@ -115,7 +184,7 @@ if __name__ == "__main__":
         )
         images = np.hstack((color_image, depth_colormap))
         cv2.namedWindow("RealSense", cv2.WINDOW_AUTOSIZE)
-        cv2.imshow("RealSense", colorizer_depth)
+        cv2.imshow("RealSense", color_image)
 
         key = cv2.waitKey(1)
         if key == ord("s"):
@@ -134,11 +203,23 @@ if __name__ == "__main__":
             save_images_concurrently(
                 images_array, out_dir=Path(imgs_dir), max_workers=4
             )
+            # Encode a video from a directory of images
+            encode_video_frames(
+                Path(imgs_dir),
+                Path(video_path),
+                fps,
+                args.vcodec,
+                args.pix_fmt,
+                args.g,
+                args.crf,
+                args.fast_decode,
+                args.log_level,
+                args.overwrite,
+            )
             cv2.destroyAllWindows()
             print("...录制结束/直接退出...")
             break
     wr_depthcolor.release()
     wr_depth.release()
-    # wr_color.release()
     wr_camera_colordepth.release()
     cam.release()
