@@ -12,7 +12,9 @@ import argparse
 from typing import Optional
 
 
-def save_images_concurrently(imgs_array: np.ndarray, out_dir: Path, max_workers: int = 4):
+def save_images_concurrently(
+    imgs_array: np.ndarray, out_dir: Path, max_workers: int = 4
+):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -131,7 +133,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-in", "--imgs_dir", type=str, default="data/Realsense/images")
-    parser.add_argument("-out", "--video_dir", type=str, default="data/Realsense/rgb_data")
+    parser.add_argument(
+        "-out", "--video_dir", type=str, default="data/Realsense/rgb_data"
+    )
     parser.add_argument("--fps", type=int, required=True)
     parser.add_argument("--vcodec", type=str, default="libx264")
     parser.add_argument("--pix_fmt", type=str, default="yuv420p")
@@ -175,6 +179,7 @@ if __name__ == "__main__":
     cam = Camera(w, h, fps)
     print("录制视频请按: s, 保存视频或退出请按：q")
     flag_V = 0
+    cv2.namedWindow("RealSense", cv2.WINDOW_AUTOSIZE)
     while True:
         # 读取图像帧，包括RGB图和深度图
         color_image, depth_image, colorizer_depth = cam.get_frame()
@@ -182,24 +187,16 @@ if __name__ == "__main__":
         depth_colormap = cv2.applyColorMap(
             cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET
         )
-        images = np.hstack((color_image, depth_colormap))
-        cv2.namedWindow("RealSense", cv2.WINDOW_AUTOSIZE)
+        # images = np.hstack((color_image, depth_colormap))
         cv2.imshow("RealSense", color_image)
 
         key = cv2.waitKey(1)
         if key == ord("s"):
             flag_V = 1
             print("...录制视频中...")
-        if flag_V == 1:
-            color_images.append(color_image)
-            # wr_color.write(color_image)  # 保存RGB图像帧
-            wr_depth.write(depth_image)  # 保存基于灰度深度图
-            wr_depthcolor.write(depth_colormap)  # 保存计算所得着色深度图
-            wr_camera_colordepth.write(colorizer_depth)  # 保存相机自行计算的着色深度图
-        if key == ord("q") or key == 27:
-            print("Saving images concurrently to", imgs_dir)
-            print(f"color_images length = {len(color_images)}")
-            images_array = np.array(color_images) 
+        elif key == ord("q"):
+            print(f"Saving images concurrently to {imgs_dir}, frames:", len(color_images))
+            images_array = np.array(color_images)
             save_images_concurrently(
                 images_array, out_dir=Path(imgs_dir), max_workers=4
             )
@@ -216,9 +213,21 @@ if __name__ == "__main__":
                 args.log_level,
                 args.overwrite,
             )
-            cv2.destroyAllWindows()
-            print("...录制结束/直接退出...")
+            print("...录制结束...")
             break
+        elif key == 27:
+            print("不保存退出")
+            break
+        elif key != -1:
+            print(f"按键{key}无功能")
+        if flag_V == 1:
+            color_images.append(color_image.copy())
+            # wr_depth.write(depth_image)  # 保存基于灰度深度图
+            # wr_depthcolor.write(depth_colormap)  # 保存计算所得着色深度图
+            # wr_camera_colordepth.write(colorizer_depth)  # 保存相机自行计算的着色深度图
+
+    # 释放资源
+    cv2.destroyAllWindows()
     wr_depthcolor.release()
     wr_depth.release()
     wr_camera_colordepth.release()
