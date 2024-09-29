@@ -1,14 +1,31 @@
-"""
-使用realsense相机录制视频
-"""
-
-#!/usr/bin/env python
-# coding=utf-8
 import time
 import pyrealsense2 as rs
 import numpy as np
 import cv2
 import os
+from pathlib import Path
+from PIL import Image
+from concurrent.futures import ThreadPoolExecutor
+import argparse
+
+
+def save_images_concurrently(imgs_array: np.ndarray, out_dir: Path, max_workers: int = 4):
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    def save_image(img_array, i, out_dir):
+        img = Image.fromarray(img_array)
+        img.save(str(out_dir / f"frame_{i:06d}.png"), quality=100)
+
+    num_images = len(imgs_array)
+    # for i in range(num_images):
+    #     save_image(imgs_array[i], i, out_dir)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        [
+            executor.submit(save_image, imgs_array[i], i, out_dir)
+            for i in range(num_images)
+        ]
+    
 
 
 class Camera(object):
@@ -55,11 +72,15 @@ class Camera(object):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description="Record Realsense Camera")
+
     # 视频保存路径
+    imgs_dir = "data/Realsense/images"
     os.makedirs("data/Realsense/rgb_data", exist_ok=True)
     os.makedirs("data/Realsense/depth_data", exist_ok=True)
     os.makedirs("data/Realsense/depthcolor_data", exist_ok=True)
     os.makedirs("data/Realsense/camera_colordepth", exist_ok=True)
+    os.makedirs(imgs_dir, exist_ok=True)
     video_path = f"data/Realsense/rgb_data/{int(time.time())}.mp4"
     video_depth_path = f"data/Realsense/depth_data/{int(time.time())}_depth.mp4"
     video_depthcolor_path = (
@@ -72,7 +93,8 @@ if __name__ == "__main__":
     fps, w, h = 30, 640, 480
     mp4 = cv2.VideoWriter_fourcc(*"mp4v")  # 视频格式
     # 视频保存而建立对象
-    wr = cv2.VideoWriter(video_path, mp4, fps, (w, h), isColor=True)
+    color_images = []
+    # wr_color = cv2.VideoWriter(video_path, mp4, fps, (w, h), isColor=True)
     wr_depth = cv2.VideoWriter(video_depth_path, mp4, fps, (w, h), isColor=False)
     wr_depthcolor = cv2.VideoWriter(
         video_depthcolor_path, mp4, fps, (w, h), isColor=True
@@ -100,16 +122,23 @@ if __name__ == "__main__":
             flag_V = 1
             print("...录制视频中...")
         if flag_V == 1:
-            wr.write(color_image)  # 保存RGB图像帧
+            color_images.append(color_image)
+            # wr_color.write(color_image)  # 保存RGB图像帧
             wr_depth.write(depth_image)  # 保存基于灰度深度图
             wr_depthcolor.write(depth_colormap)  # 保存计算所得着色深度图
             wr_camera_colordepth.write(colorizer_depth)  # 保存相机自行计算的着色深度图
         if key == ord("q") or key == 27:
+            print("Saving images concurrently to", imgs_dir)
+            print(f"color_images length = {len(color_images)}")
+            images_array = np.array(color_images) 
+            save_images_concurrently(
+                images_array, out_dir=Path(imgs_dir), max_workers=4
+            )
             cv2.destroyAllWindows()
             print("...录制结束/直接退出...")
             break
     wr_depthcolor.release()
     wr_depth.release()
-    wr.release()
+    # wr_color.release()
     wr_camera_colordepth.release()
     cam.release()
