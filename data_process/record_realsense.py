@@ -221,7 +221,7 @@ if __name__ == "__main__":
         elif key != -1:
             print(f"按键{key}无功能")
         if flag_V == 1:
-            color_images.append(color_image.copy())
+            color_images.append(color_image[:, :, ::-1])
             # wr_depth.write(depth_image)  # 保存基于灰度深度图
             # wr_depthcolor.write(depth_colormap)  # 保存计算所得着色深度图
             # wr_camera_colordepth.write(colorizer_depth)  # 保存相机自行计算的着色深度图
