@@ -61,6 +61,9 @@ def flatten_sublist_in_flat_dict(d: dict) -> dict:
     """
     trajs_lenth = {}
     for key, traj in d.items():
+        if not isinstance(traj, list):
+            trajs_lenth[key] = None
+            continue
         traj_lenth = len(traj)
         if traj_lenth > 0:
             point = traj[0]
@@ -176,6 +179,7 @@ def video_to_dict(
     no_suffix_names = [remove_after_last_dot(name) for name in video_names]
     for key in name_converter.keys():
         if key not in no_suffix_names:
+            # TODO: fix name with suffix error
             logger.warning(f"{key} is not found in the video names.")
             name_converter.pop(key)
 
@@ -333,9 +337,12 @@ def raw_to_dict(
                     "hdf5": ("/", "/"),
                     "hf": (".", ""),
                 }
-                sep_prefix = mode_to_sep_prefix.get(flatten_mode, None)
-                assert sep_prefix is not None, f"Invalid flatten mode {flatten_mode}."
-                data_flat: Dict[str, list] = flatten_dict(raw_data, "", *sep_prefix)
+                if flatten_mode is not None:
+                    sep_prefix = mode_to_sep_prefix.get(flatten_mode, None)
+                    assert sep_prefix is not None, f"Invalid flatten mode {flatten_mode}."
+                    data_flat: Dict[str, list] = flatten_dict(raw_data, "", *sep_prefix)
+                else:
+                    data_flat = raw_data
                 # filter the keys
                 if key_filter is not None:
                     for key in key_filter:
@@ -461,7 +468,7 @@ def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optiona
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         w_h = (value[0].shape[1], value[0].shape[0])
         image_path = str(target_path / f"{key.split('/')[-1]}.avi")
-        print(f"Save images to {image_path} with w_h={w_h}, fps={fps}")
+        # print(f"Save images to {image_path} with w_h={w_h}, fps={fps}")
         video_writer = cv2.VideoWriter(
             image_path, fourcc, fps, w_h
         )
@@ -470,7 +477,7 @@ def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optiona
             video_writer.write(img)
 
         video_writer.release()
-        print(f"Save the video data to image_path.")
+        # print(f"Save the video data to image_path.")
 
 def hdf5_to_dict(hdf5_path):
     def recursively_load_datasets(hdf5_group):
