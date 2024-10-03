@@ -437,7 +437,9 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
 def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optional[int] = None, fps: int = 30):
     """Save the data dict to the target path in hdf5 format.
     Parameters:
-        data(dict)          -- the data dict to be saved, with keys as the data names and values as the array-like data
+        data(dict)          -- the data dict to be saved, 
+            with keys as the data names and values as the array-like data
+            the value of the dict whose key containing "images" will be saved as video data
         target_path(str)    -- the target path to save the data
         pad_max_len(int)    -- the max length to pad all the data to the same episode length
     """
