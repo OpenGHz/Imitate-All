@@ -20,7 +20,7 @@ import random
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Generator, Dict, List, Optional
 
 import hydra
 import numpy as np
@@ -36,26 +36,24 @@ def inside_slurm():
 
 def get_safe_torch_device(cfg_device: str, log: bool = False) -> torch.device:
     """Given a string, return a torch.device with checks on whether the device is available."""
-    match cfg_device:
-        case "cuda":
-            assert torch.cuda.is_available()
-            device = torch.device("cuda")
-        case "mps":
-            assert torch.backends.mps.is_available()
-            device = torch.device("mps")
-        case "cpu":
-            device = torch.device("cpu")
-            if log:
-                logging.warning("Using CPU, this will be slow.")
-        case _:
-            device = torch.device(cfg_device)
-            if log:
-                logging.warning(f"Using custom {cfg_device} device.")
-
+    if cfg_device == "cuda":
+        assert torch.cuda.is_available()
+        device = torch.device("cuda")
+    elif cfg_device == "mps":
+        assert torch.backends.mps.is_available()
+        device = torch.device("mps")
+    elif cfg_device == "cpu":
+        device = torch.device("cpu")
+        if log:
+            logging.warning("Using CPU, this will be slow.")
+    else:
+        device = torch.device(cfg_device)
+        if log:
+            logging.warning(f"Using custom {cfg_device} device.")
     return device
 
 
-def get_global_random_state() -> dict[str, Any]:
+def get_global_random_state() -> Dict[str, Any]:
     """Get the random state for `random`, `numpy`, and `torch`."""
     random_state_dict = {
         "random_state": random.getstate(),
@@ -67,7 +65,7 @@ def get_global_random_state() -> dict[str, Any]:
     return random_state_dict
 
 
-def set_global_random_state(random_state_dict: dict[str, Any]):
+def set_global_random_state(random_state_dict: Dict[str, Any]):
     """Set the random state for `random`, `numpy`, and `torch`.
 
     Args:
@@ -152,7 +150,7 @@ def _relative_path_between(path1: Path, path2: Path) -> Path:
         )
 
 
-def init_hydra_config(config_path: str, overrides: list[str] | None = None) -> DictConfig:
+def init_hydra_config(config_path: str, overrides: Optional[List[str]] = None) -> DictConfig:
     """Initialize a Hydra config given only the path to the relevant config file.
 
     For config resolution, it is assumed that the config file's parent is the Hydra config dir.

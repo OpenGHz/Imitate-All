@@ -130,7 +130,7 @@ from le_studio.common.datasets.video_utils import encode_video_frames
 # from le_studio.common.policies.factory import make_policy
 # from le_studio.common.robot_devices.robots.factory import make_robot
 # from le_studio.common.robot_devices.robots.utils import Robot
-from robots.common import Robot, make_robot
+from robots.common import Robot, make_robot, make_robot_from_yaml
 from le_studio.common.robot_devices.utils import busy_wait
 from le_studio.common.utils.utils import (
     get_safe_torch_device,
@@ -438,6 +438,7 @@ def record(
         while episode_index < num_episodes:
             logging.info(f"Recording episode {episode_index}")
             say(f"Recording episode {episode_index}")
+            videos_dir = episodes_dir / f"episode_{episode_index}"
             ep_dict = {}
             frame_index = 0
             timestamp = 0
@@ -838,8 +839,9 @@ if __name__ == "__main__":
     del kwargs["robot_path"]
     del kwargs["robot_overrides"]
 
-    robot_cfg = init_hydra_config(robot_path, robot_overrides)
-    robot = make_robot(robot_cfg)
+    # robot_cfg = init_hydra_config(robot_path, robot_overrides)
+    # robot = make_robot(robot_cfg)
+    robot = make_robot_from_yaml(robot_path, robot_overrides)
     # robot = make_robot(robot_path)
 
     if control_mode == "calibrate":

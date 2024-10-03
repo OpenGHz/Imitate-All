@@ -38,7 +38,7 @@ class AIRBOTPlay(object):
     def __init__(self, config: AIRBOTPlayConfig | None = None, **kwargs) -> None:
         if config is None:
             config = AIRBOTPlayConfig()
-        # Overwrite config arguments using kwargs
+        # Overwrite config arguments using kwargs (used for yaml config)
         self.config = replace(config, **kwargs)
         self.calibration_dir = None
 
