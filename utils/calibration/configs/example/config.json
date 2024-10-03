@@ -1,0 +1,9 @@
+{
+    "reference_pose": null,
+    "reference_image": null,
+    "camera_intrinsics": [384.904, 384.387, 321.351, 243.619],
+    "tag": {
+        "size": 0.16,
+        "families": 0
+    }
+}
