@@ -6,8 +6,11 @@ from le_studio.common.robot_devices.utils import (
     RobotDeviceAlreadyConnectedError,
     RobotDeviceNotConnectedError,
 )
-import numpy as np
 import argparse
+from typing import Dict, Optional, List
+import sys
+
+sys.path.insert(0, "/home/ghz/Work/airbot_play/airbot_sdk/python3/host_sdk_service")
 
 from airbot_client import Robot
 
@@ -38,7 +41,7 @@ class AIRBOTPlayConfig(object):
 
 
 class AIRBOTPlay(object):
-    def __init__(self, config: AIRBOTPlayConfig | None = None, **kwargs) -> None:
+    def __init__(self, config: Optional[AIRBOTPlayConfig] = None, **kwargs) -> None:
         if config is None:
             config = AIRBOTPlayConfig()
         # Overwrite config arguments using kwargs (used for yaml config)
@@ -121,14 +124,14 @@ class AIRBOTPlay(object):
         parser = argparse.ArgumentParser(description="Aloha data collection")
         parser.add_argument("--leader_number", type=int, default=1, help="Number of the leader")
         parser.add_argument("--follower_number", type=int, default=1, help="Number of the follower")
-        parser.add_argument("--leader_arm_type", type=list[str], default=["play_long"], help="Type of the leader's arm")
-        parser.add_argument("--follower_arm_type", type=list[str], default=["play_long"], help="Type of the follower's arm")
-        parser.add_argument("--leader_end_effector", type=list[str], default=["E2B"], help="End effector of the leader's arm")
-        parser.add_argument("--follower_end_effector", type=list[str], default=["G2"], help="End effector of the follower's arm")
-        parser.add_argument("--leader_can_interface", type=list[str], default=["can0"], help="Can interface of the leader's arm")
-        parser.add_argument("--follower_can_interface", type=list[str], default=["can1"], help="Can interface of the follower's arm")
-        parser.add_argument("--leader-domain-id", type=list[int], default=[50], help="Domain id of the leader")
-        parser.add_argument("--follower-domain-id", type=list[int], default=[100], help="Domain id of the follower")
+        parser.add_argument("--leader_arm_type", type=List[str], default=["play_long"], help="Type of the leader's arm")
+        parser.add_argument("--follower_arm_type", type=List[str], default=["play_long"], help="Type of the follower's arm")
+        parser.add_argument("--leader_end_effector", type=List[str], default=["E2B"], help="End effector of the leader's arm")
+        parser.add_argument("--follower_end_effector", type=List[str], default=["G2"], help="End effector of the follower's arm")
+        parser.add_argument("--leader_can_interface", type=List[str], default=["can0"], help="Can interface of the leader's arm")
+        parser.add_argument("--follower_can_interface", type=List[str], default=["can1"], help="Can interface of the follower's arm")
+        parser.add_argument("--leader-domain-id", type=List[int], default=[50], help="Domain id of the leader")
+        parser.add_argument("--follower-domain-id", type=List[int], default=[100], help="Domain id of the follower")
         parser.add_argument("--frequency", type=int, default=25, help="Frequency of the data collection")
         parser.add_argument("--start-episode", type=int, default=0, help="Start episode")
         parser.add_argument("--end-episode", type=int, default=100, help="End episode")

@@ -23,6 +23,7 @@ from le_studio.common.robot_devices.utils import (
     busy_wait,
 )
 from le_studio.common.utils.utils import capture_timestamp_utc
+from typing import List, Optional
 
 # Use 1 thread to avoid blocking the main thread. Especially useful during data collection
 # when other threads are used to save the images.
@@ -78,7 +79,7 @@ def save_image(img_array, camera_index, frame_index, images_dir):
 
 
 def save_images_from_cameras(
-    images_dir: Path, camera_ids: list[int] | None = None, fps=None, width=None, height=None, record_time_s=2
+    images_dir: Path, camera_ids: Optional[List[int]] = None, fps=None, width=None, height=None, record_time_s=2
 ):
     """
     Initializes all the cameras and saves images to the directory. Useful to visually identify the camera
@@ -152,9 +153,9 @@ class OpenCVCameraConfig:
     ```
     """
 
-    fps: int | None = None
-    width: int | None = None
-    height: int | None = None
+    fps: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
     color_mode: str = "rgb"
 
     def __post_init__(self):
@@ -203,7 +204,7 @@ class OpenCVCamera:
     ```
     """
 
-    def __init__(self, camera_index: int, config: OpenCVCameraConfig | None = None, **kwargs):
+    def __init__(self, camera_index: int, config: Optional[OpenCVCameraConfig] = None, **kwargs):
         if config is None:
             config = OpenCVCameraConfig()
 

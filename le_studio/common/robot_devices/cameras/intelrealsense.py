@@ -24,6 +24,7 @@ from le_studio.common.robot_devices.utils import (
 )
 from le_studio.common.utils.utils import capture_timestamp_utc
 from control_robot import busy_wait
+from typing import List, Optional
 
 SERIAL_NUMBER_INDEX = 1
 
@@ -59,7 +60,7 @@ def save_image(img_array, camera_idx, frame_index, images_dir):
 
 def save_images_from_cameras(
     images_dir: Path,
-    camera_ids: list[int] | None = None,
+    camera_ids: Optional[List[int]] = None,
     fps=None,
     width=None,
     height=None,
@@ -143,9 +144,9 @@ class IntelRealSenseCameraConfig:
     ```
     """
 
-    fps: int | None = None
-    width: int | None = None
-    height: int | None = None
+    fps: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
     color_mode: str = "rgb"
     use_depth: bool = False
     force_hardware_reset: bool = True
@@ -212,7 +213,7 @@ class IntelRealSenseCamera:
     def __init__(
         self,
         camera_index: int,
-        config: IntelRealSenseCameraConfig | None = None,
+        config: Optional[IntelRealSenseCameraConfig] = None,
         **kwargs,
     ):
         if config is None:
