@@ -6,10 +6,10 @@ from le_studio.common.robot_devices.utils import (
     RobotDeviceAlreadyConnectedError,
     RobotDeviceNotConnectedError,
 )
-import argparse
 from typing import Dict, Optional, List
 import sys
 
+# TODO: remove this by installing the package
 sys.path.insert(0, "/home/ghz/Work/airbot_play/airbot_sdk/python3/host_sdk_service")
 
 from airbot_client import Robot
@@ -23,6 +23,7 @@ class AIRBOTPlayConfig(object):
     AIRBOTPlayConfig()
     ```
     """
+
     leader_number: int = 1
     follower_number: int = 1
     leader_arm_type: List[str] = field(default_factory=lambda: ["play_long"])
@@ -31,14 +32,12 @@ class AIRBOTPlayConfig(object):
     follower_end_effector: List[str] = field(default_factory=lambda: ["G2"])
     leader_can_interface: List[str] = field(default_factory=lambda: ["can0"])
     follower_can_interface: List[str] = field(default_factory=lambda: ["can1"])
-    leader_domain_id: List[int] = field(default_factory=lambda: [50])
-    follower_domain_id: List[int] = field(default_factory=lambda: [100])
-    frequency: int = 25
-    start_episode: int = 0
-    end_episode: int = 100
-    task_name: str = "example"
-    start_joint_position: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    start_end_effector_position: float = 0.0
+    leader_domain_id: List[int] = field(default_factory=lambda: [90])
+    follower_domain_id: List[int] = field(default_factory=lambda: [88])
+    start_arm_joint_position: List[float] = field(
+        default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    )
+    start_eef_joint_position: float = 0.0
 
     # model_path: Optional[str] = "/usr/share/airbot_models/airbot_play_with_gripper.urdf"
     # gravity_mode: str = "down"
@@ -73,21 +72,36 @@ class AIRBOTPlay(object):
         # Overwrite config arguments using kwargs (used for yaml config)
         self.config = replace(config, **kwargs)
         self.cameras = self.config.cameras
-        self.init_robot()
+        self.logs = {}
+        self.__init()
 
-    def init_robot(self):
+    def __init(self):
         args = self.config
         leader_robot = []
         follower_robot = []
         for i in range(args.leader_number):
-            leader_robot.append(Robot(arm_type=args.leader_arm_type[i], end_effector=args.leader_end_effector[i], can_interface=args.leader_can_interface[i], domain_id=args.leader_domain_id[i]))
+            leader_robot.append(
+                Robot(
+                    arm_type=args.leader_arm_type[i],
+                    end_effector=args.leader_end_effector[i],
+                    can_interface=args.leader_can_interface[i],
+                    domain_id=args.leader_domain_id[i],
+                )
+            )
         for i in range(args.follower_number):
-            follower_robot.append(Robot(arm_type=args.follower_arm_type[i], end_effector=args.follower_end_effector[i], can_interface=args.follower_can_interface[i], domain_id=args.follower_domain_id[i]))
+            follower_robot.append(
+                Robot(
+                    arm_type=args.follower_arm_type[i],
+                    end_effector=args.follower_end_effector[i],
+                    can_interface=args.follower_can_interface[i],
+                    domain_id=args.follower_domain_id[i],
+                )
+            )
         self.leader_robot = leader_robot
         self.follower_robot = follower_robot
-        self.reset_robot()
+        self.reset()
 
-    def reset_robot(self):
+    def reset(self):
         args = self.config
         leader_robot = self.leader_robot
         follower_robot = self.follower_robot
@@ -95,25 +109,45 @@ class AIRBOTPlay(object):
             if args.leader_arm_type[i] == "replay":
                 continue
             if leader_robot[i].get_current_state() != "ONLINE_TRAJ":
-                assert leader_robot[i].online_idle_mode(), "Leader robot %d online idle mode failed" % i
-                assert leader_robot[i].online_traj_mode(), "Leader robot %d online traj mode failed" % i
+                assert leader_robot[i].online_idle_mode(), (
+                    "Leader robot %d online idle mode failed" % i
+                )
+                assert leader_robot[i].online_traj_mode(), (
+                    "Leader robot %d online traj mode failed" % i
+                )
             time.sleep(0.5)
         for i in range(args.follower_number):
             if follower_robot[i].get_current_state() != "SLAVE_MOVING":
-                assert follower_robot[i].online_idle_mode(), "Follower robot %d online idle mode failed" % i
-                assert follower_robot[i].slave_waiting_mode(args.leader_domain_id[i]), "Follower robot %d slave waiting mode failed" % i
+                assert follower_robot[i].online_idle_mode(), (
+                    "Follower robot %d online idle mode failed" % i
+                )
+                assert follower_robot[i].slave_waiting_mode(args.leader_domain_id[i]), (
+                    "Follower robot %d slave waiting mode failed" % i
+                )
                 time.sleep(0.5)
-                assert follower_robot[i].slave_reaching_mode(), "Follower robot %d slave reaching mode failed" % i
+                assert follower_robot[i].slave_reaching_mode(), (
+                    "Follower robot %d slave reaching mode failed" % i
+                )
                 while follower_robot[i].get_current_state() != "SLAVE_REACHED":
                     time.sleep(0.5)
-                assert follower_robot[i].slave_moving_mode(), "Follower robot %d slave moving mode failed" % i
+                assert follower_robot[i].slave_moving_mode(), (
+                    "Follower robot %d slave moving mode failed" % i
+                )
         for i in range(args.leader_number):
             if args.leader_arm_type[i] == "replay":
                 continue
-            assert leader_robot[i].set_target_joint_q(args.start_joint_position), "Leader robot %d set target joint q failed" % i
-            assert leader_robot[i].online_idle_mode(), "Leader robot %d online idle mode failed" % i
+            assert leader_robot[i].set_target_joint_q(args.start_arm_joint_position), (
+                "Leader robot %d set target joint q failed" % i
+            )
+            # now we can not set target end of the leader robot
+            # assert leader_robot[i].set_target_end(args.start_eef_joint_position), (
+            #     "Leader robot %d set target end failed" % i
+            # )
+            assert leader_robot[i].online_idle_mode(), (
+                "Leader robot %d online idle mode failed" % i
+            )
 
-    def _get_arm_eef_data(self):
+    def get_low_dim_data(self):
         args = self.config
         leader_robot = self.leader_robot
         follower_robot = self.follower_robot
@@ -150,13 +184,14 @@ class AIRBOTPlay(object):
             raise RobotDeviceNotConnectedError(
                 "ManipulatorRobot is not connected. You need to run `robot.connect()`."
             )
-
+        obs_act_dict = {}
         # Capture images from cameras
         images = {}
         for name in self.cameras:
             before_camread_t = time.perf_counter()
             images[name] = self.cameras[name].async_read()
             images[name] = torch.from_numpy(images[name])
+            obs_act_dict[f"/time/images/{name}"] = time.time()
             self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
                 "delta_timestamp_s"
             ]
@@ -164,14 +199,12 @@ class AIRBOTPlay(object):
                 time.perf_counter() - before_camread_t
             )
 
-        low_dim_data = self._get_arm_eef_data()
+        low_dim_data = self.get_low_dim_data()
 
         # Populate output dictionnaries and format to pytorch
-        obs_act_dict = {}
         obs_act_dict["low_dim"] = low_dim_data
         for name in self.cameras:
             obs_act_dict[f"observation.images.{name}"] = images[name]
-        # obs_dict["observation.image"] = images[list(self.cameras.keys())[0]]
         return obs_act_dict
 
     def exit(self):

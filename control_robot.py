@@ -107,51 +107,28 @@ import platform
 import shutil
 import time
 import traceback
-from contextlib import nullcontext
 from pathlib import Path
 from threading import Event
-
+from functools import partial
 import cv2
 import torch
 import tqdm
 from omegaconf import DictConfig
 from PIL import Image
 from termcolor import colored
-from dataclasses import dataclass, field, replace
-
-# from safetensors.torch import load_file, save_file
-# from le_studio.common.datasets.compute_stats import compute_stats
-# from le_studio.common.datasets.lerobot_dataset import CODEBASE_VERSION, LeRobotDataset
-# from le_studio.common.datasets.push_dataset_to_hub.aloha_hdf5_format import to_hf_dataset
-# from le_studio.common.datasets.push_dataset_to_hub.utils import concatenate_episodes, get_default_encoding
-# from le_studio.common.datasets.utils import calculate_episode_data_index, create_branch
 
 from le_studio.common.datasets.video_utils import encode_video_frames
 
-# from le_studio.common.policies.factory import make_policy
-# from le_studio.common.robot_devices.robots.factory import make_robot
-# from le_studio.common.robot_devices.robots.utils import Robot
-
 from le_studio.common.robot_devices.utils import busy_wait
 from le_studio.common.utils.utils import (
-    get_safe_torch_device,
-    init_hydra_config,
     init_logging,
-    set_global_seed,
 )
-
-# from le_studio.scripts.eval import get_pretrained_policy_path
-# from le_studio.scripts.push_dataset_to_hub import (
-# push_dataset_card_to_hub,
-# push_meta_data_to_hub,
-# push_videos_to_hub,
-# save_meta_data,
-# )
 
 from typing import Optional
 from data_process.dataset.raw_dataset import RawDataset
-from data_process.convert_all import save_dict_to_json_and_mp4
 from robots.common import Robot, make_robot, make_robot_from_yaml
+from pprint import pprint
+
 
 ########################################################################################
 # Utilities
@@ -313,9 +290,6 @@ def record(
     if not video:
         raise NotImplementedError()
 
-    # if not robot.is_connected:
-    #     robot.connect()
-
     local_dir = Path(root) / repo_id  # data/raw
     if local_dir.exists() and force_override:
         shutil.rmtree(local_dir)
@@ -323,10 +297,6 @@ def record(
     # episodes_dir = local_dir / "episodes"
     episodes_dir = local_dir
     episodes_dir.mkdir(parents=True, exist_ok=True)
-
-    # videos_dir = local_dir / "videos"
-    # videos_dir = episodes_dir
-    # videos_dir.mkdir(parents=True, exist_ok=True)
 
     # Logic to resume data recording
     if start_episode is None:
@@ -353,54 +323,86 @@ def record(
     class KeyboardHandler(object):
         def __init__(self) -> None:
             self.exit_early: bool = False
-            self.rerecord_episode: bool = False
+            self._rerecord_episode: bool = False
             self.stop_recording: bool = False
-            self.save_event: Event = Event()
+            self.record_event: Event = Event()
+            self._is_waiting_start_recording: bool = False
 
-        def wait_save_once(self):
-            self.save_event.wait()
-            self.save_event.clear()
+        def show_instruction(self):
+            print(
+                """(Press:
+                'Space Bar' to start/stop recording,
+                'q' to quit current recording,
+                'p' to print current arms' state,
+                'g' to start/stop teach mode,
+                '0' to reset arms,
+                'z' to exit the program.
+                'i' to show this instructions again.
+            )"""
+            )
+
+        def wait_start_recording(self):
+            self._is_waiting_start_recording = True
+            self.record_event.wait()
+            self.record_event.clear()
+            self._is_waiting_start_recording = False
+            return self._rerecord_episode
+
+        def is_recording(self):
+            return not self._is_waiting_start_recording
+
+        def clear_rerecord(self):
+            self._rerecord_episode = False
+
+        def set_record_event(self):
+            if not self.record_event.is_set():
+                self.record_event.set()
+                return True
+            else:
+                print("\n Something went wrong, recording data is already started")
+                return False
+
+        def on_press(self, key, robot: Robot = None):
+            if key == keyboard.Key.space:
+                if self.set_record_event():
+                    print("\nStart recording data")
+            elif key == "s":
+                print("\nSave current episode right now")
+                self.exit_early = True
+            elif key == "q":
+                print("Rerecord current episode...")
+                self._rerecord_episode = True
+                if not self._is_waiting_start_recording:
+                    self.exit_early = True
+                else:
+                    self.set_record_event()
+            elif key == keyboard.Key.esc or key == "z":
+                print("Stopping data recording...")
+                self.exit_early = True
+                self.stop_recording = True
+            elif key == "i":
+                self.show_instruction()
+            elif key == "p":
+                pprint(robot.get_low_dim_data())
+            elif key == "g":
+                print("Start/Stop teach mode (not implemented yet)")
+            elif key == "0":
+                print("Reset robots")
+                robot.reset()
+            else:
+                print("Unknown key pressed:", key)
+
+        @property
+        def rerecord_episode(self):
+            return self._rerecord_episode
 
     keyer = KeyboardHandler()
     # Only import pynput if not in a headless environment
     if not is_headless():
         from pynput import keyboard
 
-        def on_press(key):
-            try:
-                if key == "s":
-                    print("\nSave current episode right now")
-                    keyer.exit_early = True
-                    keyer.save_event.set()
-                elif key == "q":
-                    print("Exiting loop and rerecord the last episode...")
-                    keyer.exit_early = True
-                    keyer.rerecord_episode = True
-                    keyer.save_event.set()
-                elif key == keyboard.Key.esc:
-                    print("Escape key pressed. Stopping data recording...")
-                    keyer.exit_early = True
-                    keyer.stop_recording = True
-            except Exception as e:
-                print(f"Error handling key press: {e}")
-
-        listener = keyboard.Listener(on_press=on_press)
+        listener = keyboard.Listener(on_press=partial(keyer.on_press, robot=robot))
         listener.start()
-
-    # Load policy if any
-    # if policy is not None:
-    #     # Check device is available
-    #     device = get_safe_torch_device(hydra_cfg.device, log=True)
-
-    #     policy.eval()
-    #     policy.to(device)
-
-    #     torch.backends.cudnn.benchmark = True
-    #     torch.backends.cuda.matmul.allow_tf32 = True
-    #     set_global_seed(hydra_cfg.seed)
-
-    #     # override fps using policy fps
-    #     fps = hydra_cfg.env.fps
 
     get_videos_dir = lambda episode_index: episodes_dir / f"episode_{episode_index}"
     get_video_path = (
@@ -448,10 +450,21 @@ def record(
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=num_image_writers
     ) as executor:
+        # Show the instructions to the user
+        keyer.show_instruction()
         # Start recording all episodes
         while episode_index < num_episodes:
+            logging.info(
+                f"Press 'Space Bar' to start recording next episode {episode_index} or press 'q' to re-record the last episode."
+            )
+            rerecord = keyer.wait_start_recording()
+            if rerecord:
+                episode_index -= 1
+                keyer.clear_rerecord()
+                logging.info(f"Rerecording last episode {episode_index}")
+                continue
             logging.info(f"Recording episode {episode_index}")
-            say(f"Recording episode {episode_index}")
+            # say(f"Recording episode {episode_index}")
             videos_dir = get_videos_dir(episode_index)
             ep_dict = {}
             ep_dict["low_dim"] = {}
@@ -524,15 +537,14 @@ def record(
             if not keyer.stop_recording:
                 # Start resetting env while the executor are finishing
                 logging.info("Reset the environment")
-                say("Reset the environment")
+                # say("Reset the environment")
+                robot.reset()
 
             timestamp = 0
             start_vencod_t = time.perf_counter()
             # During env reset we save the data and encode the videos
-
-            with open(videos_dir / "low-dim.json", "w") as f:
+            with open(videos_dir / "low_dim.json", "w") as f:
                 json.dump(ep_dict["low_dim"], f)
-
             num_frames = frame_index
             print(f"num_frames:{num_frames}")
             for key in image_keys:
@@ -546,7 +558,6 @@ def record(
                 ep_dict[key] = []
                 for i in range(num_frames):
                     ep_dict[key].append({"path": f"{fname}", "timestamp": i / fps})
-
             # save record information
             rec_info = {
                 "last_episode_index": episode_index,
@@ -554,10 +565,10 @@ def record(
             with open(rec_info_path, "w") as f:
                 json.dump(rec_info, f)
 
+            # check if current episode is the last one
             is_last_episode = keyer.stop_recording or (
                 episode_index == (num_episodes - 1)
             )
-
             # Wait if necessary
             with tqdm.tqdm(total=reset_time_s, desc="Waiting") as pbar:
                 while timestamp < reset_time_s and not is_last_episode:
@@ -569,8 +580,8 @@ def record(
                         break
 
             # Skip updating episode index which forces re-recording episode
-            if keyer.rerecord_episode:
-                keyer.rerecord_episode = False
+            if keyer._rerecord_episode:
+                keyer.clear_rerecord()
                 continue
             else:
                 episode_index += 1
