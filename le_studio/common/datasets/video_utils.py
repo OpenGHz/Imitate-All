@@ -18,7 +18,7 @@ import subprocess
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Dict, List, Optional
 
 import torch
 import torchvision
@@ -28,8 +28,8 @@ import torchvision
 
 
 def load_from_videos(
-    item: dict[str, torch.Tensor],
-    video_frame_keys: list[str],
+    item: Dict[str, torch.Tensor],
+    video_frame_keys: List[str],
     videos_dir: Path,
     tolerance_s: float,
     backend: str = "pyav",
@@ -66,7 +66,7 @@ def load_from_videos(
 
 def decode_video_frames_torchvision(
     video_path: str,
-    timestamps: list[float],
+    timestamps: List[float],
     tolerance_s: float,
     backend: str = "pyav",
     log_loaded_timestamps: bool = False,
@@ -168,10 +168,10 @@ def encode_video_frames(
     fps: int,
     vcodec: str = "libsvtav1",
     pix_fmt: str = "yuv420p",
-    g: int | None = 2,
-    crf: int | None = 30,
+    g: Optional[int] = 2,
+    crf: Optional[int] = 30,
     fast_decode: int = 0,
-    log_level: str | None = "error",
+    log_level: Optional[str] = "error",
     overwrite: bool = False,
 ) -> None:
     """More info on ffmpeg arguments tuning on `benchmark/video/README.md`"""
@@ -217,26 +217,27 @@ def encode_video_frames(
         )
 
 
-@dataclass
-class VideoFrame:
-    # TODO(rcadene, lhoestq): move to Hugging Face `datasets` repo
-    """
-    Provides a type for a dataset containing video frames.
+# @dataclass
+# class VideoFrame:
+#     # TODO(rcadene, lhoestq): move to Hugging Face `datasets` repo
+#     """
+#     Provides a type for a dataset containing video frames.
 
-    Example:
+#     Example:
 
-    ```python
-    data_dict = [{"image": {"path": "videos/episode_0.mp4", "timestamp": 0.3}}]
-    features = {"image": VideoFrame()}
-    Dataset.from_dict(data_dict, features=Features(features))
-    ```
-    """
+#     ```python
+#     data_dict = [{"image": {"path": "videos/episode_0.mp4", "timestamp": 0.3}}]
+#     features = {"image": VideoFrame()}
+#     Dataset.from_dict(data_dict, features=Features(features))
+#     ```
+#     """
 
-    pa_type: ClassVar[Any] = pa.struct({"path": pa.string(), "timestamp": pa.float32()})
-    _type: str = field(default="VideoFrame", init=False, repr=False)
+#     import pyarrow as pa
+#     pa_type: ClassVar[Any] = pa.struct({"path": pa.string(), "timestamp": pa.float32()})
+#     _type: str = field(default="VideoFrame", init=False, repr=False)
 
-    def __call__(self):
-        return self.pa_type
+#     def __call__(self):
+#         return self.pa_type
 
 
 # with warnings.catch_warnings():

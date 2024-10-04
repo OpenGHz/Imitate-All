@@ -1,6 +1,4 @@
-_target_: robots.airbots.scripts.airbot_play_2.0.AIRBOTPlay
-
-robot_type: null
+_target_: robots.airbots.airbot_play.airbot_play_3_le.AIRBOTPlay
 
 # Troubleshooting: If one of your opencv cameras freeze during
 # data recording due to bandwidth limit, you might need to plug the camera

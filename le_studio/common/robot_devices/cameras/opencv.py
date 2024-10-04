@@ -291,7 +291,7 @@ class OpenCVCamera:
 
         self.is_connected = True
 
-    def read(self, temporary_color_mode: str | None = None) -> np.ndarray:
+    def read(self, temporary_color_mode: Optional[str] = None) -> np.ndarray:
         """Read a frame from the camera returned in the format (height, width, channels)
         (e.g. 480 x 640 x 3), contrarily to the pytorch format which is channel first.
 

@@ -23,7 +23,7 @@ from le_studio.common.robot_devices.utils import (
     RobotDeviceNotConnectedError,
 )
 from le_studio.common.utils.utils import capture_timestamp_utc
-from le_studio.scripts.control_robot import busy_wait
+from control_robot import busy_wait
 
 SERIAL_NUMBER_INDEX = 1
 
@@ -281,7 +281,7 @@ class IntelRealSenseCamera:
 
         self.is_connected = True
 
-    def read(self, temporary_color: str | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    def read(self, temporary_color: Optional[str] = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
         """Read a frame from the camera returned in the format height x width x channels (e.g. 480 x 640 x 3)
         of type `np.uint8`, contrarily to the pytorch format which is float channel first.
 
