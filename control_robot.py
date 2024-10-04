@@ -124,7 +124,7 @@ from le_studio.common.utils.utils import (
     init_logging,
 )
 
-from typing import Optional
+from typing import Optional, Dict
 from data_process.dataset.raw_dataset import RawDataset
 from robots.common import Robot, make_robot, make_robot_from_yaml
 from pprint import pprint
@@ -187,19 +187,19 @@ def log_control_info(robot, dt_s, episode_index=None, frame_index=None, fps=None
     # total step time displayed in milliseconds and its frequency
     log_dt("dt", dt_s)
 
-    for name in robot.leader_arms:
-        key = f"read_leader_{name}_pos_dt_s"
-        if key in robot.logs:
-            log_dt("dtRlead", robot.logs[key])
+    # for name in robot.leader_arms:
+    #     key = f"read_leader_{name}_pos_dt_s"
+    #     if key in robot.logs:
+    #         log_dt("dtRlead", robot.logs[key])
 
-    for name in robot.follower_arms:
-        key = f"write_follower_{name}_goal_pos_dt_s"
-        if key in robot.logs:
-            log_dt("dtWfoll", robot.logs[key])
+    # for name in robot.follower_arms:
+    #     key = f"write_follower_{name}_goal_pos_dt_s"
+    #     if key in robot.logs:
+    #         log_dt("dtWfoll", robot.logs[key])
 
-        key = f"read_follower_{name}_pos_dt_s"
-        if key in robot.logs:
-            log_dt("dtRfoll", robot.logs[key])
+    #     key = f"read_follower_{name}_pos_dt_s"
+    #     if key in robot.logs:
+    #         log_dt("dtRfoll", robot.logs[key])
 
     for name in robot.cameras:
         key = f"read_camera_{name}_dt_s"
@@ -277,6 +277,8 @@ def record(
     num_image_writers_per_camera=4,
     force_override=False,
     start_episode=None,
+    *args,
+    **kwargs,
 ):
     # TODO(rcadene): Add option to record logs
     # TODO(rcadene): Clean this function via decomposition in higher level functions
@@ -324,9 +326,10 @@ def record(
         def __init__(self) -> None:
             self.exit_early: bool = False
             self._rerecord_episode: bool = False
-            self.stop_recording: bool = False
+            self._stop_recording: bool = False
             self.record_event: Event = Event()
             self._is_waiting_start_recording: bool = False
+            self.is_dragging_mode: bool = False
 
         def show_instruction(self):
             print(
@@ -346,7 +349,7 @@ def record(
             self.record_event.wait()
             self.record_event.clear()
             self._is_waiting_start_recording = False
-            return self._rerecord_episode
+            return self._rerecord_episode, self._stop_recording
 
         def is_recording(self):
             return not self._is_waiting_start_recording
@@ -363,38 +366,61 @@ def record(
                 return False
 
         def on_press(self, key, robot: Robot = None):
+            print()
             if key == keyboard.Key.space:
                 if self.set_record_event():
-                    print("\nStart recording data")
-            elif key == "s":
-                print("\nSave current episode right now")
+                    robot.enter_passive_mode()
+                    print("Start recording data")
+            elif key.char == "s":
+                print("Save current episode right now")
                 self.exit_early = True
-            elif key == "q":
+            elif key.char == "q":
                 print("Rerecord current episode...")
                 self._rerecord_episode = True
                 if not self._is_waiting_start_recording:
                     self.exit_early = True
                 else:
                     self.set_record_event()
-            elif key == keyboard.Key.esc or key == "z":
+            elif (key == keyboard.Key.esc) or (key.char == "z"):
                 print("Stopping data recording...")
                 self.exit_early = True
-                self.stop_recording = True
-            elif key == "i":
+                self._stop_recording = True
+                if self._is_waiting_start_recording:
+                    self.set_record_event()
+            elif key.char == "i":
                 self.show_instruction()
-            elif key == "p":
+            elif key.char == "p":
                 pprint(robot.get_low_dim_data())
-            elif key == "g":
-                print("Start/Stop teach mode (not implemented yet)")
-            elif key == "0":
+            elif key.char == "g":
+                if robot.get_state_mode() == "passive":
+                    print("Stop teaching mode")
+                    robot.enter_active_mode()
+                elif robot.get_state_mode() == "active":
+                    print("Start teaching mode")
+                    robot.enter_passive_mode()
+                else:
+                    raise ValueError()
+            elif key.char == "0":
                 print("Reset robots")
                 robot.reset()
+            elif key.char == "c":
+                # used for clearing boundary errors
+                # robot.enter_active_mode()
+                robot.enter_passive_mode()
             else:
-                print("Unknown key pressed:", key)
+                print(
+                    "Unknown key pressed:",
+                    key,
+                    f"type:{type(key)}, str value {str(key)}",
+                )
 
         @property
         def rerecord_episode(self):
             return self._rerecord_episode
+
+        @property
+        def stop_recording(self):
+            return self._stop_recording
 
     keyer = KeyboardHandler()
     # Only import pynput if not in a headless environment
@@ -404,7 +430,7 @@ def record(
         listener = keyboard.Listener(on_press=partial(keyer.on_press, robot=robot))
         listener.start()
 
-    get_videos_dir = lambda episode_index: episodes_dir / f"episode_{episode_index}"
+    get_videos_dir = lambda episode_index: episodes_dir / f"{episode_index}"
     get_video_path = (
         lambda episode_index, key: get_videos_dir(episode_index) / f"{key}.mp4"
     )
@@ -422,10 +448,10 @@ def record(
 
         start_loop_t = time.perf_counter()
 
-        if policy is None:
-            observation, action = robot.teleop_step(record_data=True)
-        else:
-            observation = robot.capture_observation()
+        # if policy is None:
+        #     observation, action = robot.teleop_step(record_data=True)
+        # else:
+        observation = robot.capture_observation()
 
         if not is_headless():
             image_keys = [key for key in observation if "image" in key]
@@ -450,22 +476,47 @@ def record(
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=num_image_writers
     ) as executor:
+
+        def before_exit():
+            logging.info("Done recording")
+            # say("Done recording", blocking=True)
+            if not is_headless():
+                listener.stop()
+
+            logging.info(
+                "Waiting for threads writing the images on disk to terminate..."
+            )
+            for _ in tqdm.tqdm(
+                concurrent.futures.as_completed(futures),
+                total=len(futures),
+                desc="Writting images",
+            ):
+                pass
+
         # Show the instructions to the user
         keyer.show_instruction()
         # Start recording all episodes
         while episode_index < num_episodes:
             logging.info(
-                f"Press 'Space Bar' to start recording next episode {episode_index} or press 'q' to re-record the last episode."
+                f"Press 'Space Bar' to start recording episode {episode_index} or press 'q' to re-record the last episode {max(episode_index - 1, 0)}."
             )
-            rerecord = keyer.wait_start_recording()
-            if rerecord:
+            videos_dir = get_videos_dir(episode_index)
+            get_tmp_imgs_dir = (
+                lambda episode_index, key: get_videos_dir(episode_index)
+                / f"{key}_episode_{episode_index:06d}"
+            )
+            re_record, stop_record = keyer.wait_start_recording()
+            if stop_record:
+                before_exit()
+                break
+            elif re_record:
                 episode_index -= 1
+                episode_index = max(episode_index, 0)
                 keyer.clear_rerecord()
                 logging.info(f"Rerecording last episode {episode_index}")
                 continue
             logging.info(f"Recording episode {episode_index}")
             # say(f"Recording episode {episode_index}")
-            videos_dir = get_videos_dir(episode_index)
             ep_dict = {}
             ep_dict["low_dim"] = {}
             frame_index = 0
@@ -475,19 +526,14 @@ def record(
             while timestamp < episode_time_s:
                 start_loop_t = time.perf_counter()
 
-                if policy is None:
-                    observation, action = robot.teleop_step(record_data=True)
-                else:
-                    observation = robot.capture_observation()
+                # if policy is None:
+                #     observation, action = robot.teleop_step(record_data=True)
+                # else:
+                observation = robot.capture_observation()
 
                 image_keys = [key for key in observation if "image" in key]
                 # obs_not_image_keys = [key for key in observation if "image" not in key]
                 low_dim_keys = list(observation["low_dim"].keys())
-
-                get_tmp_imgs_dir = (
-                    lambda episode_index, key: videos_dir
-                    / f"{key}_episode_{episode_index:06d}"
-                )
 
                 # save temporal images as jpg files
                 for key in image_keys:
@@ -515,11 +561,11 @@ def record(
                 for key in low_dim_keys:
                     if key not in ep_dict["low_dim"]:
                         ep_dict["low_dim"][key] = []
-                    ep_dict["low_dim"][key].append(observation[key])
-                for key in action:
-                    if key not in ep_dict:
-                        ep_dict["low_dim"][key] = []
-                    ep_dict["low_dim"][key].append(action[key])
+                    ep_dict["low_dim"][key].append(observation["low_dim"][key])
+                # for key in action:
+                #     if key not in ep_dict:
+                #         ep_dict["low_dim"][key] = []
+                #     ep_dict["low_dim"][key].append(action[key])
 
                 frame_index += 1
 
@@ -546,9 +592,9 @@ def record(
             with open(videos_dir / "low_dim.json", "w") as f:
                 json.dump(ep_dict["low_dim"], f)
             num_frames = frame_index
-            print(f"num_frames:{num_frames}")
+            print(f"episode_{episode_index} frame number: {num_frames}")
             for key in image_keys:
-                tmp_imgs_dir = get_tmp_imgs_dir(key)
+                tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
                 # fname = f"{key}_episode_{episode_index:06d}.mp4"
                 video_path = get_video_path(episode_index, key)
                 fname = video_path.stem + video_path.suffix
@@ -580,51 +626,48 @@ def record(
                         break
 
             # Skip updating episode index which forces re-recording episode
-            if keyer._rerecord_episode:
+            if keyer.rerecord_episode:
                 keyer.clear_rerecord()
                 continue
             else:
                 episode_index += 1
                 if is_last_episode:
-                    logging.info("Done recording")
-                    say("Done recording", blocking=True)
-                    if not is_headless():
-                        listener.stop()
-
-                    logging.info(
-                        "Waiting for threads writing the images on disk to terminate..."
-                    )
-                    for _ in tqdm.tqdm(
-                        concurrent.futures.as_completed(futures),
-                        total=len(futures),
-                        desc="Writting images",
-                    ):
-                        pass
+                    before_exit()
                     break
 
-    robot.exit()
     if not is_headless():
         cv2.destroyAllWindows()
 
     num_episodes = episode_index
 
-    logging.info("Encoding all episode videos")
-    say("Encoding videos")
+    logging.info(f"Encoding videos from episode {start_episode} to {num_episodes - 1}")
+    # say("Encoding videos")
     # Use ffmpeg to convert frames stored as .png files into mp4 videos
     for episode_index in tqdm.tqdm(range(num_episodes)):
         for key in image_keys:
-            tmp_imgs_dir = get_tmp_imgs_dir(key)
+            tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
+            if not tmp_imgs_dir.exists():
+                logging.warning(
+                    f"Episode {episode_index} images path {tmp_imgs_dir} not found."
+                )
             video_path = get_video_path(episode_index, key)
             if video_path.exists():
                 # Skip if video is already encoded. Could be the case when resuming data recording.
+                logging.warning(
+                    f"Video {video_path} already exists. Skipping encoding."
+                )
                 continue
+            else:
+                logging.info(f"Encoding epidode_{episode_index} video to {video_path}")
             # note: `encode_video_frames` is a blocking call. Making it asynchronous shouldn't speedup encoding,
             # since video encoding with ffmpeg is already using multithreading.
-            encode_video_frames(tmp_imgs_dir, video_path, fps, overwrite=True)
+            encode_video_frames(
+                tmp_imgs_dir, video_path, fps, vcodec="libx264", overwrite=False
+            )
             shutil.rmtree(tmp_imgs_dir)
 
     logging.info("Exiting")
-    say("Exiting")
+    # say("Exiting")
 
 
 def replay(

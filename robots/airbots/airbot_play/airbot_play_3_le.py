@@ -74,9 +74,14 @@ class AIRBOTPlay(object):
         self.cameras = self.config.cameras
         self.logs = {}
         self.__init()
+        self._state_mode = "active"
 
     def __init(self):
         args = self.config
+        # Connect the cameras
+        for name in self.cameras:
+            self.cameras[name].connect()
+        # Connect the robot
         leader_robot = []
         follower_robot = []
         for i in range(args.leader_number):
@@ -99,12 +104,14 @@ class AIRBOTPlay(object):
             )
         self.leader_robot = leader_robot
         self.follower_robot = follower_robot
+        time.sleep(0.3)
         self.reset()
 
     def reset(self):
         args = self.config
         leader_robot = self.leader_robot
         follower_robot = self.follower_robot
+        wait_time = 0.1
         for i in range(args.leader_number):
             if args.leader_arm_type[i] == "replay":
                 continue
@@ -115,7 +122,7 @@ class AIRBOTPlay(object):
                 assert leader_robot[i].online_traj_mode(), (
                     "Leader robot %d online traj mode failed" % i
                 )
-            time.sleep(0.5)
+            time.sleep(wait_time)
         for i in range(args.follower_number):
             if follower_robot[i].get_current_state() != "SLAVE_MOVING":
                 assert follower_robot[i].online_idle_mode(), (
@@ -124,12 +131,12 @@ class AIRBOTPlay(object):
                 assert follower_robot[i].slave_waiting_mode(args.leader_domain_id[i]), (
                     "Follower robot %d slave waiting mode failed" % i
                 )
-                time.sleep(0.5)
+                time.sleep(wait_time)
                 assert follower_robot[i].slave_reaching_mode(), (
                     "Follower robot %d slave reaching mode failed" % i
                 )
                 while follower_robot[i].get_current_state() != "SLAVE_REACHED":
-                    time.sleep(0.5)
+                    time.sleep(wait_time)
                 assert follower_robot[i].slave_moving_mode(), (
                     "Follower robot %d slave moving mode failed" % i
                 )
@@ -146,6 +153,31 @@ class AIRBOTPlay(object):
             assert leader_robot[i].online_idle_mode(), (
                 "Leader robot %d online idle mode failed" % i
             )
+        self._state_mode = "active"
+
+    def enter_active_mode(self):
+        args = self.config
+        for i in range(args.leader_number):
+            if args.leader_arm_type[i] == "replay":
+                continue
+            assert self.leader_robot[i].online_idle_mode(), (
+                "Leader robot %d online idle mode failed" % i
+            )
+        self._state_mode = "active"
+
+    def enter_passive_mode(self):
+        args = self.config
+        for i in range(args.leader_number):
+            if args.leader_arm_type[i] == "replay":
+                continue
+            assert self.leader_robot[i].demonstrate_prep_mode(), (
+                "Leader robot %d demonstrate start mode failed" % i
+            )
+        self._state_mode = "passive"
+
+    def clear_boundary_error(self):
+        # self.enter_active_mode()
+        self.enter_passive_mode()
 
     def get_low_dim_data(self):
         args = self.config
@@ -180,10 +212,10 @@ class AIRBOTPlay(object):
 
     def capture_observation(self):
         """The returned observations do not have a batch dimension."""
-        if not self.is_connected:
-            raise RobotDeviceNotConnectedError(
-                "ManipulatorRobot is not connected. You need to run `robot.connect()`."
-            )
+        # if not self.is_connected:
+        #     raise RobotDeviceNotConnectedError(
+        #         "ManipulatorRobot is not connected. You need to run `robot.connect()`."
+        #     )
         obs_act_dict = {}
         # Capture images from cameras
         images = {}
@@ -191,7 +223,7 @@ class AIRBOTPlay(object):
             before_camread_t = time.perf_counter()
             images[name] = self.cameras[name].async_read()
             images[name] = torch.from_numpy(images[name])
-            obs_act_dict[f"/time/images/{name}"] = time.time()
+            obs_act_dict[f"/time/{name}"] = time.time()
             self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
                 "delta_timestamp_s"
             ]
@@ -208,4 +240,12 @@ class AIRBOTPlay(object):
         return obs_act_dict
 
     def exit(self):
+        try:
+            for name in self.cameras:
+                self.cameras[name].disconnect()
+        except Exception as e:
+            pass
         print("Robot exited")
+
+    def get_state_mode(self):
+        return self._state_mode
