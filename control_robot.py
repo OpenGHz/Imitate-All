@@ -124,7 +124,7 @@ from le_studio.common.utils.utils import (
     init_logging,
 )
 
-from typing import Optional, Dict
+from typing import Optional
 from data_process.dataset.raw_dataset import RawDataset
 from robots.common import Robot, make_robot, make_robot_from_yaml
 from pprint import pprint
@@ -276,7 +276,7 @@ def record(
     tags=None,
     num_image_writers_per_camera=4,
     force_override=False,
-    start_episode=None,
+    start_episode=-1,
     *args,
     **kwargs,
 ):
@@ -301,13 +301,17 @@ def record(
     episodes_dir.mkdir(parents=True, exist_ok=True)
 
     # Logic to resume data recording
-    if start_episode is None:
-        rec_info_path = episodes_dir / "data_recording_info.json"
+    raw_start_episode = start_episode
+    rec_info_path = episodes_dir / "data_recording_info.json"
+    if start_episode < 0:
+        start_episode += 1
         if rec_info_path.exists():
             with open(rec_info_path) as f:
                 rec_info = json.load(f)
-            episode_index = rec_info["last_episode_index"] + 1
+            episode_index = rec_info["last_episode_index"] + 1 + start_episode
         else:
+            if start_episode < 0:
+                logging.warning("No data recording info found. Starting from episode 0.")
             episode_index = 0
         start_episode = episode_index
     else:
@@ -381,6 +385,8 @@ def record(
                     self.exit_early = True
                 else:
                     self.set_record_event()
+                    robot.enter_passive_mode()
+                    print("Start recording data")
             elif (key == keyboard.Key.esc) or (key.char == "z"):
                 print("Stopping data recording...")
                 self.exit_early = True
@@ -451,7 +457,9 @@ def record(
         # if policy is None:
         #     observation, action = robot.teleop_step(record_data=True)
         # else:
-        observation = robot.capture_observation()
+        observation = robot.get_low_dim_data()
+
+        # logging.warning(f"0: get observation time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
 
         if not is_headless():
             image_keys = [key for key in observation if "image" in key]
@@ -463,7 +471,7 @@ def record(
 
         dt_s = time.perf_counter() - start_loop_t
         busy_wait(1 / fps - dt_s)
-
+        # logging.warning(f"0: warmup time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
         dt_s = time.perf_counter() - start_loop_t
         log_control_info(robot, dt_s, fps=fps)
 
@@ -500,22 +508,21 @@ def record(
             logging.info(
                 f"Press 'Space Bar' to start recording episode {episode_index} or press 'q' to re-record the last episode {max(episode_index - 1, 0)}."
             )
+            re_record, stop_record = keyer.wait_start_recording()
+            if stop_record:
+                before_exit()
+                # episode_index = max(1, episode_index)
+                break
+            elif re_record:
+                episode_index = max(episode_index - 1, 0)
+                keyer.clear_rerecord()
+                logging.info(f"Rerecording last episode {episode_index}")
+            logging.info(f"Recording episode {episode_index}")
             videos_dir = get_videos_dir(episode_index)
             get_tmp_imgs_dir = (
                 lambda episode_index, key: get_videos_dir(episode_index)
                 / f"{key}_episode_{episode_index:06d}"
             )
-            re_record, stop_record = keyer.wait_start_recording()
-            if stop_record:
-                before_exit()
-                break
-            elif re_record:
-                episode_index -= 1
-                episode_index = max(episode_index, 0)
-                keyer.clear_rerecord()
-                logging.info(f"Rerecording last episode {episode_index}")
-                continue
-            logging.info(f"Recording episode {episode_index}")
             # say(f"Recording episode {episode_index}")
             ep_dict = {}
             ep_dict["low_dim"] = {}
@@ -530,6 +537,8 @@ def record(
                 #     observation, action = robot.teleop_step(record_data=True)
                 # else:
                 observation = robot.capture_observation()
+
+                # logging.warning(f"1: get observation time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
 
                 image_keys = [key for key in observation if "image" in key]
                 # obs_not_image_keys = [key for key in observation if "image" not in key]
@@ -556,6 +565,8 @@ def record(
                             cv2.cvtColor(observation[key].numpy(), cv2.COLOR_RGB2BGR),
                         )
                     cv2.waitKey(1)
+
+                # logging.warning(f"2: save image time + 1: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
 
                 # add low dim observations and actions to the episode dict
                 for key in low_dim_keys:
@@ -640,31 +651,38 @@ def record(
 
     num_episodes = episode_index
 
-    logging.info(f"Encoding videos from episode {start_episode} to {num_episodes - 1}")
+    # Encode all videos finally
+    if start_episode < num_episodes - 1:
+        logging.info(f"Encoding videos from episode {start_episode} to {num_episodes - 1}")
+    elif num_episodes == 0:
+        logging.info("No episode recorded.")
+    else:
+        logging.info(f"Encoding video of episode {episode_index - 1}")
     # say("Encoding videos")
     # Use ffmpeg to convert frames stored as .png files into mp4 videos
     for episode_index in tqdm.tqdm(range(num_episodes)):
         for key in image_keys:
             tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
-            if not tmp_imgs_dir.exists():
-                logging.warning(
-                    f"Episode {episode_index} images path {tmp_imgs_dir} not found."
-                )
             video_path = get_video_path(episode_index, key)
-            if video_path.exists():
+            if video_path.exists() and (raw_start_episode >= 0 and episode_index < raw_start_episode):
                 # Skip if video is already encoded. Could be the case when resuming data recording.
                 logging.warning(
-                    f"Video {video_path} already exists. Skipping encoding."
+                    f"Video {video_path} already exists. Skipping encoding. If you want to re-encode, delete the video file before recording."
                 )
                 continue
             else:
-                logging.info(f"Encoding epidode_{episode_index} video to {video_path}")
-            # note: `encode_video_frames` is a blocking call. Making it asynchronous shouldn't speedup encoding,
-            # since video encoding with ffmpeg is already using multithreading.
-            encode_video_frames(
-                tmp_imgs_dir, video_path, fps, vcodec="libx264", overwrite=False
-            )
-            shutil.rmtree(tmp_imgs_dir)
+                if not tmp_imgs_dir.exists():
+                    logging.error(
+                        f"Episode {episode_index} images path {tmp_imgs_dir} not found."
+                    )
+                else:
+                    logging.info(f"Encoding epidode_{episode_index} video to {video_path}")
+                    # note: `encode_video_frames` is a blocking call. Making it asynchronous shouldn't speedup encoding,
+                    # since video encoding with ffmpeg is already using multithreading.
+                    encode_video_frames(
+                        tmp_imgs_dir, video_path, fps, vcodec="libx264", overwrite=False
+                    )
+                    shutil.rmtree(tmp_imgs_dir)
 
     logging.info("Exiting")
     # say("Exiting")
@@ -782,6 +800,9 @@ if __name__ == "__main__":
     )
     parser_record.add_argument(
         "--num-episodes", type=int, default=50, help="Number of episodes to record."
+    )
+    parser_record.add_argument(
+        "--start-episode", type=int, help="Index of the first episode to record; value < 0 means get the last episode index from 'data_recording_info.json' and add (value + 1) to it."
     )
     parser_record.add_argument(
         "--run-compute-stats",
