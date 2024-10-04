@@ -449,7 +449,7 @@ def record(
     while timestamp < warmup_time_s:
         if not is_warmup_print:
             logging.info("Warming up (no data recording)")
-            say("Warming up")
+            # say("Warming up")
             is_warmup_print = True
 
         start_loop_t = time.perf_counter()
@@ -457,7 +457,8 @@ def record(
         # if policy is None:
         #     observation, action = robot.teleop_step(record_data=True)
         # else:
-        observation = robot.get_low_dim_data()
+        # observation = robot.get_low_dim_data()
+        observation = robot.capture_observation()
 
         # logging.warning(f"0: get observation time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
 
