@@ -23,6 +23,22 @@ class AIRBOTPlayConfig(object):
     AIRBOTPlayConfig()
     ```
     """
+    leader_number: int = 1
+    follower_number: int = 1
+    leader_arm_type: List[str] = field(default_factory=lambda: ["play_long"])
+    follower_arm_type: List[str] = field(default_factory=lambda: ["play_long"])
+    leader_end_effector: List[str] = field(default_factory=lambda: ["E2B"])
+    follower_end_effector: List[str] = field(default_factory=lambda: ["G2"])
+    leader_can_interface: List[str] = field(default_factory=lambda: ["can0"])
+    follower_can_interface: List[str] = field(default_factory=lambda: ["can1"])
+    leader_domain_id: List[int] = field(default_factory=lambda: [50])
+    follower_domain_id: List[int] = field(default_factory=lambda: [100])
+    frequency: int = 25
+    start_episode: int = 0
+    end_episode: int = 100
+    task_name: str = "example"
+    start_joint_position: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    start_end_effector_position: float = 0.0
 
     # model_path: Optional[str] = "/usr/share/airbot_models/airbot_play_with_gripper.urdf"
     # gravity_mode: str = "down"
@@ -39,6 +55,16 @@ class AIRBOTPlayConfig(object):
 
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
 
+    def __post_init__(self):
+        assert len(self.leader_arm_type) == self.leader_number
+        assert len(self.follower_arm_type) == self.follower_number
+        assert len(self.leader_end_effector) == self.leader_number
+        assert len(self.follower_end_effector) == self.follower_number
+        assert len(self.leader_can_interface) == self.leader_number
+        assert len(self.follower_can_interface) == self.follower_number
+        assert len(self.leader_domain_id) == self.leader_number
+        assert len(self.follower_domain_id) == self.follower_number
+
 
 class AIRBOTPlay(object):
     def __init__(self, config: Optional[AIRBOTPlayConfig] = None, **kwargs) -> None:
@@ -47,11 +73,10 @@ class AIRBOTPlay(object):
         # Overwrite config arguments using kwargs (used for yaml config)
         self.config = replace(config, **kwargs)
         self.cameras = self.config.cameras
-        self.args = self.parse_args()
         self.init_robot()
 
     def init_robot(self):
-        args = self.args
+        args = self.config
         leader_robot = []
         follower_robot = []
         for i in range(args.leader_number):
@@ -63,7 +88,7 @@ class AIRBOTPlay(object):
         self.reset_robot()
 
     def reset_robot(self):
-        args = self.args
+        args = self.config
         leader_robot = self.leader_robot
         follower_robot = self.follower_robot
         for i in range(args.leader_number):
@@ -89,7 +114,7 @@ class AIRBOTPlay(object):
             assert leader_robot[i].online_idle_mode(), "Leader robot %d online idle mode failed" % i
 
     def _get_arm_eef_data(self):
-        args = self.args
+        args = self.config
         leader_robot = self.leader_robot
         follower_robot = self.follower_robot
         data = {}
@@ -118,35 +143,6 @@ class AIRBOTPlay(object):
         data["action/eef/joint_position"] = action_eef_jq
         data["action/eef/pose"] = action_eef_pose
         return data
-
-    @staticmethod
-    def parse_args()-> argparse.Namespace:
-        parser = argparse.ArgumentParser(description="Aloha data collection")
-        parser.add_argument("--leader_number", type=int, default=1, help="Number of the leader")
-        parser.add_argument("--follower_number", type=int, default=1, help="Number of the follower")
-        parser.add_argument("--leader_arm_type", type=List[str], default=["play_long"], help="Type of the leader's arm")
-        parser.add_argument("--follower_arm_type", type=List[str], default=["play_long"], help="Type of the follower's arm")
-        parser.add_argument("--leader_end_effector", type=List[str], default=["E2B"], help="End effector of the leader's arm")
-        parser.add_argument("--follower_end_effector", type=List[str], default=["G2"], help="End effector of the follower's arm")
-        parser.add_argument("--leader_can_interface", type=List[str], default=["can0"], help="Can interface of the leader's arm")
-        parser.add_argument("--follower_can_interface", type=List[str], default=["can1"], help="Can interface of the follower's arm")
-        parser.add_argument("--leader-domain-id", type=List[int], default=[50], help="Domain id of the leader")
-        parser.add_argument("--follower-domain-id", type=List[int], default=[100], help="Domain id of the follower")
-        parser.add_argument("--frequency", type=int, default=25, help="Frequency of the data collection")
-        parser.add_argument("--start-episode", type=int, default=0, help="Start episode")
-        parser.add_argument("--end-episode", type=int, default=100, help="End episode")
-        parser.add_argument("--task-name", type=str, default="aloha", help="Task name")
-        parser.add_argument("--start-joint-position", type=list, default=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], help="Start joint position")
-        parser.add_argument("--start-end-effector-position", type=float, default=0.0, help="Start end effector position")
-        assert len(parser.parse_args().leader_arm_type) == parser.parse_args().leader_number
-        assert len(parser.parse_args().follower_arm_type) == parser.parse_args().follower_number
-        assert len(parser.parse_args().leader_end_effector) == parser.parse_args().leader_number
-        assert len(parser.parse_args().follower_end_effector) == parser.parse_args().follower_number
-        assert len(parser.parse_args().leader_can_interface) == parser.parse_args().leader_number
-        assert len(parser.parse_args().follower_can_interface) == parser.parse_args().follower_number
-        assert len(parser.parse_args().leader_domain_id) == parser.parse_args().leader_number
-        assert len(parser.parse_args().follower_domain_id) == parser.parse_args().follower_number
-        return parser.parse_args()
 
     def capture_observation(self):
         """The returned observations do not have a batch dimension."""
