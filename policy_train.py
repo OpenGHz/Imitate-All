@@ -8,6 +8,7 @@ from tqdm import tqdm
 import shutil
 import time
 import argparse
+import json
 
 from utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
@@ -32,11 +33,9 @@ def main(args:dict):
     # 加载数据及统计信息
     train_dataloader, val_dataloader, stats = load_data(dataset_dir, all_config["num_episodes"], all_config['camera_names'], all_config['batch_size'], all_config['batch_size'], {'image':image_augmentor}, all_config)
     # 创建保存路径
-    if not os.path.isdir(ckpt_dir):
-        os.makedirs(ckpt_dir)
+    os.makedirs(ckpt_dir, exist_ok=True)
     stats_dir = os.path.dirname(stats_path)
-    if not os.path.isdir(stats_dir):
-        os.makedirs(stats_dir)
+    os.makedirs(stats_dir, exist_ok=True)
     # 复制配置文件到stats_dir
     shutil.copy(all_config["config_file_sys_path"], stats_dir)
     # 保存统计数据
@@ -55,7 +54,6 @@ def main(args:dict):
         "init_info": {"init_joint": all_config_cp["start_joint"], "init_action": all_config_cp["start_action"]},
         "all_config": all_config_cp,
     }
-    # pretty_print_dict(key_info)
     with open(key_info_path, 'wb') as f:
         pickle.dump(key_info, f)
     # wait for free GPU

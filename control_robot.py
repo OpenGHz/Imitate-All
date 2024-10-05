@@ -156,7 +156,7 @@ def say(text, blocking=False):
     os.system(cmd)
 
 
-def save_image(img_tensor, frame_index, images_dir):
+def save_image(img_tensor:torch.Tensor, frame_index, images_dir: Path):
     img = Image.fromarray(img_tensor.numpy())
     path = images_dir / f"frame_{frame_index:06d}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
