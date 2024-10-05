@@ -128,6 +128,7 @@ from typing import Optional
 from data_process.dataset.raw_dataset import RawDataset
 from robots.common import Robot, make_robot, make_robot_from_yaml
 from pprint import pprint
+import numpy as np
 
 
 ########################################################################################
@@ -267,7 +268,8 @@ def record(
     root="data",
     repo_id="lerobot/debug",
     warmup_time_s=2,
-    episode_time_s=10,
+    episode_time_s=None,
+    num_frames_per_episode=None,
     reset_time_s=5,
     num_episodes=50,
     video=True,
@@ -280,14 +282,12 @@ def record(
     *args,
     **kwargs,
 ):
-    # TODO(rcadene): Add option to record logs
-    # TODO(rcadene): Clean this function via decomposition in higher level functions
-
-    # _, dataset_name = repo_id.split("/")
-    # if dataset_name.startswith("eval_") and policy is None:
-    #     raise ValueError(
-    #         f"Your dataset name begins by 'eval_' ({dataset_name}) but no policy is provided ({policy})."
-    #     )
+    # allow to record data within a specific time or number of frames
+    assert (episode_time_s, num_frames_per_episode).count(None) == 1
+    if episode_time_s is None:
+        episode_time_s = np.inf
+    elif num_frames_per_episode is None:
+        num_frames_per_episode = np.inf
 
     if not video:
         raise NotImplementedError()
@@ -591,6 +591,8 @@ def record(
                 if keyer.exit_early:
                     keyer.exit_early = False
                     break
+                elif frame_index >= num_frames_per_episode:
+                    break
 
             if not keyer.stop_recording:
                 # Start resetting env while the executor are finishing
@@ -709,9 +711,6 @@ def replay(
     from_idx = dataset.episode_data_index["from"][episode]
     to_idx = dataset.episode_data_index["to"][episode]
 
-    # if not robot.is_connected:
-    #     robot.connect()
-
     logging.info("Replaying episode")
     say("Replaying episode", blocking=True)
     for idx in range(from_idx, to_idx):
@@ -787,16 +786,21 @@ if __name__ == "__main__":
         default=10,
         help="Number of seconds before starting data collection. It allows the robot devices to warmup and synchronize.",
     )
-    parser_record.add_argument(
+    parser_record_length = parser_record.add_mutually_exclusive_group(required=True)
+    parser_record_length.add_argument(
         "--episode-time-s",
         type=int,
-        default=60,
         help="Number of seconds for data recording for each episode.",
+    )
+    parser_record_length.add_argument(
+        "--num-frames-per-episode",
+        type=int,
+        help="Number of frames for data recording for each episode.",
     )
     parser_record.add_argument(
         "--reset-time-s",
         type=int,
-        default=60,
+        default=0,
         help="Number of seconds for resetting the environment after each episode.",
     )
     parser_record.add_argument(
