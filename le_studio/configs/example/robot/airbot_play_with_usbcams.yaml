@@ -13,6 +13,12 @@ cameras:
   cam2:
     _target_: le_studio.common.robot_devices.cameras.opencv.OpenCVCamera
     camera_index: 2
-    fps: 25
+    fps: 30
+    width: 640
+    height: 480
+  cam2:
+    _target_: le_studio.common.robot_devices.cameras.opencv.OpenCVCamera
+    camera_index: 4
+    fps: 30
     width: 640
     height: 480
