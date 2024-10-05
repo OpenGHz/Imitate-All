@@ -606,6 +606,14 @@ def record(
             with open(videos_dir / "low_dim.json", "w") as f:
                 json.dump(ep_dict["low_dim"], f)
             num_frames = frame_index
+            with open(videos_dir / "meta.json", "w") as f:
+                json.dump(
+                    {
+                        "length": num_frames,
+                        "fps": fps,
+                    },
+                    f,
+                )
             print(f"episode_{episode_index} frame number: {num_frames}")
             for key in image_keys:
                 tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
