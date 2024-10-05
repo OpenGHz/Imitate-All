@@ -111,7 +111,7 @@ class AIRBOTPlay(object):
         args = self.config
         leader_robot = self.leader_robot
         follower_robot = self.follower_robot
-        wait_time = 0.1
+        wait_time = 0.3
         for i in range(args.leader_number):
             if args.leader_arm_type[i] == "replay":
                 continue

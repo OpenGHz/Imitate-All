@@ -706,7 +706,10 @@ def replay(
     dataset = RawDataset(repo_id, root=root)
     dataset.warm_up_episodes([episode])
     if not hasattr(dataset, "select_columns"):
-        setattr(dataset, "select_columns", dataset.hf_dataset.select_columns)
+        if hasattr(dataset, "hf_dataset"):
+            setattr(dataset, "select_columns", dataset.hf_dataset.select_columns)
+        else:
+            raise ValueError("dataset does not have 'select_columns' method.")
     items = dataset.select_columns("action")
     from_idx = dataset.episode_data_index["from"][episode]
     to_idx = dataset.episode_data_index["to"][episode]
@@ -717,7 +720,8 @@ def replay(
         start_episode_t = time.perf_counter()
 
         action = items[idx]["action"]
-        robot.send_action(action)
+        # robot.send_action(action)
+        print(action)
 
         dt_s = time.perf_counter() - start_episode_t
         busy_wait(1 / fps - dt_s)
@@ -744,30 +748,16 @@ if __name__ == "__main__":
         nargs="*",
         help="Any key=value arguments to override config values (use dots for.nested=overrides)",
     )
-
-    parser_calib = subparsers.add_parser("calibrate", parents=[base_parser])
-    parser_calib.add_argument(
-        "--arms",
-        type=str,
-        nargs="*",
-        help="List of arms to calibrate (e.g. `--arms left_follower right_follower left_leader`)",
+    base_parser.add_argument(
+        "--fps",
+        type=none_or_int,
+        default=None,
+        help="Frames per second (set to None to disable)",
     )
 
     parser_teleop = subparsers.add_parser("teleoperate", parents=[base_parser])
-    parser_teleop.add_argument(
-        "--fps",
-        type=none_or_int,
-        default=None,
-        help="Frames per second (set to None to disable)",
-    )
 
     parser_record = subparsers.add_parser("record", parents=[base_parser])
-    parser_record.add_argument(
-        "--fps",
-        type=none_or_int,
-        default=None,
-        help="Frames per second (set to None to disable)",
-    )
     parser_record.add_argument(
         "--root",
         type=Path,
@@ -861,12 +851,6 @@ if __name__ == "__main__":
 
     parser_replay = subparsers.add_parser("replay", parents=[base_parser])
     parser_replay.add_argument(
-        "--fps",
-        type=none_or_int,
-        default=None,
-        help="Frames per second (set to None to disable)",
-    )
-    parser_replay.add_argument(
         "--root",
         type=Path,
         default="data",
@@ -894,14 +878,9 @@ if __name__ == "__main__":
     del kwargs["robot_path"]
     del kwargs["robot_overrides"]
 
-    # robot_cfg = init_hydra_config(robot_path, robot_overrides)
-    # robot = make_robot(robot_cfg)
     robot = make_robot_from_yaml(robot_path, robot_overrides)
-    # robot = make_robot(robot_path)
 
-    if control_mode == "calibrate":
-        raise NotImplementedError()
-    elif control_mode == "teleoperate":
+    if control_mode == "teleoperate":
         teleoperate(robot, **kwargs)
     elif control_mode == "record":
         record(robot, **kwargs)
