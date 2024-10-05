@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import List, Union
 import cv2
+import logging
 
 
 """
@@ -67,9 +68,9 @@ class RawDataset(object):
         for i, video_file in enumerate(video_files):
             cap = cv2.VideoCapture(str(video_file))
             self.raw_data[episode][str(i)] = cap
-        self.episode_data_index["from"] = self.__last_index + 1
-        self.episode_data_index["to"] = self.__last_index + meta["length"] - 1
-        self.__last_index = self.episode_data_index["to"]
+        self.episode_data_index["from"][episode] = self.__last_index + 1
+        self.episode_data_index["to"][episode] = self.__last_index + meta["length"] - 1
+        self.__last_index = self.episode_data_index["to"][episode]
 
     def select_columns(self, keys: Union[str, List[str]]) -> List[dict]:
         if isinstance(keys, str):
