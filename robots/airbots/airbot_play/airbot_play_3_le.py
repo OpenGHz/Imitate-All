@@ -2,10 +2,6 @@ from dataclasses import dataclass, field, replace
 import time
 import torch
 from le_studio.common.robot_devices.cameras.utils import Camera
-from le_studio.common.robot_devices.utils import (
-    RobotDeviceAlreadyConnectedError,
-    RobotDeviceNotConnectedError,
-)
 from typing import Dict, Optional, List
 import sys
 

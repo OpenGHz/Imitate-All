@@ -156,7 +156,7 @@ def say(text, blocking=False):
     os.system(cmd)
 
 
-def save_image(img_tensor:torch.Tensor, frame_index, images_dir: Path):
+def save_image(img_tensor: torch.Tensor, frame_index, images_dir: Path):
     img = Image.fromarray(img_tensor.numpy())
     path = images_dir / f"frame_{frame_index:06d}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -311,7 +311,9 @@ def record(
             episode_index = rec_info["last_episode_index"] + 1 + start_episode
         else:
             if start_episode < 0:
-                logging.warning("No data recording info found. Starting from episode 0.")
+                logging.warning(
+                    "No data recording info found. Starting from episode 0."
+                )
             episode_index = 0
         start_episode = episode_index
     else:
@@ -664,7 +666,9 @@ def record(
 
     # Encode all videos finally
     if start_episode < num_episodes - 1:
-        logging.info(f"Encoding videos from episode {start_episode} to {num_episodes - 1}")
+        logging.info(
+            f"Encoding videos from episode {start_episode} to {num_episodes - 1}"
+        )
     elif num_episodes == 0:
         logging.info("No episode recorded.")
     else:
@@ -675,7 +679,9 @@ def record(
         for key in image_keys:
             tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
             video_path = get_video_path(episode_index, key)
-            if video_path.exists() and (raw_start_episode >= 0 and episode_index < raw_start_episode):
+            if video_path.exists() and (
+                raw_start_episode >= 0 and episode_index < raw_start_episode
+            ):
                 # Skip if video is already encoded. Could be the case when resuming data recording.
                 logging.warning(
                     f"Video {video_path} already exists. Skipping encoding. If you want to re-encode, delete the video file before recording."
@@ -687,7 +693,9 @@ def record(
                         f"Episode {episode_index} images path {tmp_imgs_dir} not found."
                     )
                 else:
-                    logging.info(f"Encoding epidode_{episode_index} video to {video_path}")
+                    logging.info(
+                        f"Encoding epidode_{episode_index} video to {video_path}"
+                    )
                     # note: `encode_video_frames` is a blocking call. Making it asynchronous shouldn't speedup encoding,
                     # since video encoding with ffmpeg is already using multithreading.
                     encode_video_frames(
@@ -705,37 +713,41 @@ def replay(
     fps: Optional[int] = None,
     root="data",
     repo_id="lerobot/debug",
+    num_rollouts=1,
 ):
     # TODO(rcadene): Add option to record logs
     local_dir = Path(root) / repo_id
-    if not local_dir.exists():
-        raise ValueError(local_dir)
-
+    assert local_dir.exists(), f"Local directory not found: {local_dir}"
+    logging.info(f"Loading dataset from {local_dir}")
     dataset = RawDataset(repo_id, root=root)
-    dataset.warm_up_episodes([episode])
-    if not hasattr(dataset, "select_columns"):
-        if hasattr(dataset, "hf_dataset"):
-            setattr(dataset, "select_columns", dataset.hf_dataset.select_columns)
-        else:
-            raise ValueError("dataset does not have 'select_columns' method.")
-    items = dataset.select_columns("action")
-    from_idx = dataset.episode_data_index["from"][episode]
-    to_idx = dataset.episode_data_index["to"][episode]
+    dataset.warm_up_episodes([episode], low_dim_only=True)
 
-    logging.info("Replaying episode")
-    say("Replaying episode", blocking=True)
-    for idx in range(from_idx, to_idx):
-        start_episode_t = time.perf_counter()
-
-        action = items[idx]["action"]
-        # robot.send_action(action)
-        print(action)
-
-        dt_s = time.perf_counter() - start_episode_t
-        busy_wait(1 / fps - dt_s)
-
-        dt_s = time.perf_counter() - start_episode_t
-        log_control_info(robot, dt_s, fps=fps)
+    meta = dataset.raw_data[episode]["meta"]
+    low_dim = dataset.raw_data[episode]["low_dim"]
+    for roll in range(num_rollouts):
+        # go to first frame using trajectory mode
+        arm_qpos = low_dim["observation/arm/joint_position"][0]
+        eef_qpos = low_dim["observation/eef/joint_position"][0]
+        action = arm_qpos + eef_qpos
+        logging.info("Moving to the first frame of the episode")
+        robot.enter_traj_mode()
+        robot.send_action(action)
+        # time.sleep(1)
+        input(f"Press Enter to replay. Number: {roll}...")
+        logging.info("Replaying episode")
+        robot.enter_servo_mode()
+        for i in tqdm.tqdm(range(meta["length"])):
+            start_episode_t = time.perf_counter()
+            arm_qpos = low_dim["observation/arm/joint_position"][i]
+            eef_qpos = low_dim["observation/eef/joint_position"][i]
+            action = arm_qpos + eef_qpos
+            print("current joint:", robot.get_low_dim_data()["observation/arm/joint_position"])
+            print("target action:", action)
+            robot.send_action(action)
+            dt_s = time.perf_counter() - start_episode_t
+            busy_wait(1 / fps - dt_s)
+            dt_s = time.perf_counter() - start_episode_t
+            # log_control_info(robot, dt_s, fps=fps)
 
 
 if __name__ == "__main__":
@@ -805,7 +817,9 @@ if __name__ == "__main__":
         "--num-episodes", type=int, default=50, help="Number of episodes to record."
     )
     parser_record.add_argument(
-        "--start-episode", type=int, help="Index of the first episode to record; value < 0 means get the last episode index from 'data_recording_info.json' and add (value + 1) to it."
+        "--start-episode",
+        type=int,
+        help="Index of the first episode to record; value < 0 means get the last episode index from 'data_recording_info.json' and add (value + 1) to it.",
     )
     parser_record.add_argument(
         "--run-compute-stats",
@@ -872,6 +886,12 @@ if __name__ == "__main__":
     )
     parser_replay.add_argument(
         "--episode", type=int, default=0, help="Index of the episode to replay."
+    )
+    parser_replay.add_argument(
+        "--num-rollouts",
+        type=int,
+        default=1,
+        help="Number of times to replay the episode.",
     )
 
     args = parser.parse_args()
