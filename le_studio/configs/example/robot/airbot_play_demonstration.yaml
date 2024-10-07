@@ -1,14 +1,8 @@
-_target_: robots.airbots.airbot_play.airbot_play_3.AIRBOTPlay
+_target_: robots.airbots.airbot_play.airbot_play_3_le.AIRBOTPlay
 
-arm_type: "play_long"
-end_effector: "E2B"
-can_interface: "can0"
-domain_id: 77
-start_arm_joint_position: null
-start_eef_joint_position: null
-# ONLINE_TRAJ, ONLINE_IDLE, ONLINE_SERVO, DEMONSTRATE_PREP
-default_robot_mode: "ONLINE_IDLE"
-
+# Troubleshooting: If one of your opencv cameras freeze during
+# data recording due to bandwidth limit, you might need to plug the camera
+# on another USB hub or PCIe card.
 cameras:
   cam1:
     _target_: le_studio.common.robot_devices.cameras.opencv.OpenCVCamera

@@ -26,7 +26,12 @@ class AIRBOTPlayConfig(object):
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
 
     def __post_init__(self):
-        pass
+        assert self.default_robot_mode in [
+            "ONLINE_TRAJ",
+            "ONLINE_IDLE",
+            "ONLINE_SERVO",
+            "DEMONSTRATE_PREP",
+        ]
 
 
 class AIRBOTPlay(object):
@@ -58,6 +63,7 @@ class AIRBOTPlay(object):
     def reset(self):
         args = self.config
         robot = self.robot
+        print(f"Resetting robot to start position: {args.start_arm_joint_position}")
         # set to traj mode
         if args.arm_type != "replay" and robot.get_current_state() != "ONLINE_TRAJ":
             assert robot.online_idle_mode(), "online idle mode failed"
@@ -133,7 +139,7 @@ class AIRBOTPlay(object):
         data = {}
         data["/time"] = time.time()
         pose = self.robot.get_current_pose()
-        data["observation/arm/joint_position"] = self.robot.get_current_joint_q()
+        data["observation/arm/joint_position"] = list(self.robot.get_current_joint_q())
         data["observation/eef/joint_position"] = [self.robot.get_current_end()]
         data["observation/eef/pose"] = pose[0] + pose[1]  # xyz + quat(xyzw)
         return data
