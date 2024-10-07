@@ -24,6 +24,7 @@ class AIRBOTPlayConfig(object):
     # ONLINE_TRAJ, ONLINE_IDLE, ONLINE_SERVO, DEMONSTRATE_PREP
     default_robot_mode: str = "ONLINE_IDLE"
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
+    display: bool = False
 
     def __post_init__(self):
         assert self.default_robot_mode in [
