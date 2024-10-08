@@ -155,3 +155,5 @@ custom/
 visualizations/
 model_weights/
 test_*.py
+
+*referee*
