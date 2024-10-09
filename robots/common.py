@@ -1,7 +1,7 @@
 """A robot is a physical instance that has its proprioception state and can interact with the environment by subjective initiative actions. The robot's state is the information that can be obtained from the robot's body sensors while the actions are the control commands that can be sent to the robot's actuators. Vision, touch and the other external sensation (obtained by tactile sensors, cameras, lidar, radar, ultrasonic sensors, etc.) are not included in the robot's state, but in the environment. However, in addition to being related to the external environment, external observation also depends on the robot's state and the position and posture of the corresponding sensors. So the robot instance should have the full information and configurations of its external sensors to let the environment obtaining correct observations."""
 
 from typing import Protocol, Dict, List, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from le_studio.common.robot_devices.cameras.utils import Camera
 
 # class Robot(Protocol):
@@ -47,10 +47,32 @@ class FakeRobotConfig(object):
 
 
 class FakeRobot(object):
-    def __init__(self, config: FakeRobotConfig) -> None:
+    def __init__(self, config: Optional[FakeRobotConfig] = None, **kwargs) -> None:
+        if config is None:
+            config = FakeRobotConfig()
+        self.config = replace(config, **kwargs)
         self.config = config
         self.state = [0] * 6
         self.cameras = self.config.cameras
+
+    def reset(self):
+        print("Fake robot reset")
+
+    def enter_active_mode(self):
+        print("Fake robot entered active mode")
+
+    def enter_passive_mode(self):
+        print("Fake robot entered passive mode")
+
+    def get_low_dim_data(self):
+        pose = [0.5, 0.5, 0.5, 0, 0, 0, 1]
+        # pose = [0, 0, 0, 0, 0, 0, 1]
+        low_dim = {
+            "observation/arm/joint_position": self.state,
+            "observation/eef/joint_position": [0],
+            "observation/eef/pose": pose,
+        }
+        return low_dim
 
     def init_teleop(self):
         print("init_teleop")
@@ -62,15 +84,15 @@ class FakeRobot(object):
         print("teleop_step")
 
     def capture_observation(self):
-        print("capture_observation")
+        # print("capture_observation")
         return self.state
 
     def send_action(self, action):
-        print(f"send_action:{action}")
+        # print(f"send_action:{action}")
         self.state = action
 
     def exit(self):
-        print("exit")
+        print("Fake robot exited")
 
 
 def make_robot(config) -> Robot:
