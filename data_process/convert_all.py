@@ -221,6 +221,10 @@ def video_to_dict(
         as_completed(futures)
 
     compressed_len_list = list(compressed_len.values())
+
+    num_frams = [len(frames) for frames in video_dict.values()]
+    assert len(set(num_frams)) == 1, f"Video frames are not the same: {num_frams}"
+
     if len(compressed_len_list[0]) > 0:
         if compresser.padding:
             compresser.pad_size = np.array(compressed_len_list).max()
