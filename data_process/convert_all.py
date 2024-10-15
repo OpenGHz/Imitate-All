@@ -343,7 +343,9 @@ def raw_to_dict(
                 }
                 if flatten_mode is not None:
                     sep_prefix = mode_to_sep_prefix.get(flatten_mode, None)
-                    assert sep_prefix is not None, f"Invalid flatten mode {flatten_mode}."
+                    assert (
+                        sep_prefix is not None
+                    ), f"Invalid flatten mode {flatten_mode}."
                     data_flat: Dict[str, list] = flatten_dict(raw_data, "", *sep_prefix)
                 else:
                     data_flat = raw_data
@@ -438,10 +440,12 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
         root.attrs["compress"] = True
 
 
-def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optional[int] = None, fps: int = 30):
+def save_dict_to_json_and_mp4(
+    data: dict, target_path: str, pad_max_len: Optional[int] = None, fps: int = 30
+):
     """Save the data dict to the target path in hdf5 format.
     Parameters:
-        data(dict)          -- the data dict to be saved, 
+        data(dict)          -- the data dict to be saved,
             with keys as the data names and values as the array-like data
             the value of the dict whose key containing "images" will be saved as video data
         target_path(str)    -- the target path to save the data
@@ -458,11 +462,13 @@ def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optiona
         if isinstance(data[key], dict):
             continue
         if pad_max_len is not None:
+
             def pad(value):
                 size_to_pad = pad_max_len - len(value)
                 if size_to_pad > 0:
                     value = value + value[-size_to_pad:]
                 return value
+
             data[key] = pad(data[key])
         if "images" in key:
             images_dict[key] = data.pop(key)
@@ -471,19 +477,18 @@ def save_dict_to_json_and_mp4(data: dict, target_path: str, pad_max_len: Optiona
         json.dump(data, f)
     for key, value in images_dict.items():
         # create video writer
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
         w_h = (value[0].shape[1], value[0].shape[0])
         image_path = str(target_path / f"{key.split('/')[-1]}.avi")
         # print(f"Save images to {image_path} with w_h={w_h}, fps={fps}")
-        video_writer = cv2.VideoWriter(
-            image_path, fourcc, fps, w_h
-        )
+        video_writer = cv2.VideoWriter(image_path, fourcc, fps, w_h)
         # save images
         for img in value:
             video_writer.write(img)
 
         video_writer.release()
         # print(f"Save the video data to image_path.")
+
 
 def hdf5_to_dict(hdf5_path):
     def recursively_load_datasets(hdf5_group):
