@@ -20,24 +20,21 @@ class AIRBOTPlayDemonstration(object):
         if config is None:
             config = AIRBOTPlayDemonstrationConfig()
         # Overwrite config arguments using kwargs (used for yaml config)
-        print("kwargs=", kwargs)
         self.config = replace(config, **kwargs)
-        print("self.config=", self.config)
         # TODO: add cameras for each robot?
         self.cameras = self.config.cameras
         self._state_mode = "active"
         self.logs = {}
         self.leaders: Dict[str, AIRBOTPlay] = {}
         self.followers: Dict[str, List[AIRBOTPlay]] = {}
-        print(f"config.groups: {config.groups}")
-        input("test")
-        for g_name, g_value in config.groups.items():
+
+        for g_name, g_value in self.config.groups.items():
             leader_cfg = g_value["leader"]
             followers_cfg = g_value["followers"]
-            self.leaders[g_name] = AIRBOTPlay(leader_cfg)
+            self.leaders[g_name] = AIRBOTPlay(**leader_cfg)
             self.followers[g_name] = []
             for f_cfg in followers_cfg:
-                self.followers[g_name].append(AIRBOTPlay(f_cfg))
+                self.followers[g_name].append(AIRBOTPlay(**f_cfg))
         for name in self.cameras:
             self.cameras[name].connect()
         self.__sync_thread = Thread(target=self.__sync, daemon=True)
@@ -49,12 +46,12 @@ class AIRBOTPlayDemonstration(object):
             for g_name in self.config.groups.keys():
                 l_pos = self.leaders[g_name].get_current_joint_positions()
                 for follower in self.followers[g_name]:
-                    follower.set_joint_position_target(l_pos, 6.0)
+                    follower.set_joint_position_target(l_pos, [6.0])
             time.sleep(duration)
 
     def reset(self):
         for leader in self.leaders.values():
-            leader.set_joint_position_target(leader.config.default_action, 1.0, True)
+            leader.set_joint_position_target(leader.config.default_action, [1.0], True)
         self._state_mode = "active"
 
     def enter_active_mode(self):
@@ -130,11 +127,10 @@ class AIRBOTPlayDemonstration(object):
         return obs_act_dict
 
     def exit(self):
-        try:
-            for name in self.cameras:
-                self.cameras[name].disconnect()
-        except Exception as e:
-            pass
+        for name in self.cameras:
+            self.cameras[name].disconnect()
+        del self.leaders
+        del self.followers
         print("Robot exited")
 
     def get_state_mode(self):

@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace, field
 
 
 @dataclass
-class AIRBOTPlayConfig:
+class AIRBOTPlayConfig(object):
     model_path: str = "/usr/share/airbot_models/airbot_play_with_gripper.urdf"
     gravity_mode: str = "down"
     can_bus: str = "can0"
@@ -24,7 +24,9 @@ class AIRBOTPlay(object):
             config = AIRBOTPlayConfig()
         # Overwrite config arguments using kwargs (used for yaml config)
         self.config = replace(config, **kwargs)
-        self.robot = airbot.create_agent(*Configer.config2tuple(config)[:7])
+        cfg = Configer.config2tuple(self.config)[:7]
+        print("cfg", cfg)
+        self.robot = airbot.create_agent(*cfg)
         self._arm_joints_num = 6
         self._joints_num = 7
         self.end_effector_open = 1
@@ -44,19 +46,19 @@ class AIRBOTPlay(object):
 
     def get_current_joint_positions(self):
         joints = self.robot.get_current_joint_q()
-        if self.config.eef_mode in ["gripper"]:
+        if self.config.eef_mode in ["gripper", "teacherv2"]:
             joints += [self.robot.get_current_end()]
         return joints
 
     def get_current_joint_velocities(self):
         joints = self.robot.get_current_joint_v()
-        if self.config.eef_mode in ["gripper"]:
+        if self.config.eef_mode in ["gripper", "teacherv2"]:
             joints += [self.robot.get_current_end_v()]
         return joints
 
     def get_current_joint_efforts(self):
         joints = self.robot.get_current_joint_t()
-        if self.config.eef_mode in ["gripper"]:
+        if self.config.eef_mode in ["gripper", "teacherv2"]:
             joints += [self.robot.get_current_end_t()]
         return joints
 
