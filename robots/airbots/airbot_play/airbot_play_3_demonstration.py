@@ -181,29 +181,31 @@ class AIRBOTPlay(object):
         follower_robot = self.follower_robot
         data = {}
         data["/time"] = time.time()
+
+        action_arm_jq = []
+        action_eef_jq = []
+        action_eef_pose = []
+        for i in range(args.leader_number):
+            action_arm_jq.extend(leader_robot[i].get_current_joint_q())
+            action_eef_jq.append(leader_robot[i].get_current_end())
+            pose = leader_robot[i].get_current_pose()
+            action_eef_pose.extend(pose[0] + pose[1])  # xyz + quat(xyzw)
+        data["action/arm/joint_position"] = action_arm_jq
+        data["action/eef/joint_position"] = action_eef_jq
+        data["action/eef/pose"] = action_eef_pose
+
         obs_arm_jq = []
         obs_eef_jq = []
         obs_eef_pose = []
-        for i in range(args.leader_number):
-            obs_arm_jq.extend(leader_robot[i].get_current_joint_q())
-            obs_eef_jq.append(leader_robot[i].get_current_end())
-            pose = leader_robot[i].get_current_pose()
+        for i in range(args.follower_number):
+            obs_arm_jq.extend(follower_robot[i].get_current_joint_q())
+            obs_eef_jq.append(follower_robot[i].get_current_end())
+            pose = follower_robot[i].get_current_pose()
             obs_eef_pose.extend(pose[0] + pose[1])  # xyz + quat(xyzw)
         data["observation/arm/joint_position"] = obs_arm_jq
         data["observation/eef/joint_position"] = obs_eef_jq
         data["observation/eef/pose"] = obs_eef_pose
 
-        action_arm_jq = []
-        action_eef_jq = []
-        action_eef_pose = []
-        for i in range(args.follower_number):
-            action_arm_jq.extend(follower_robot[i].get_current_joint_q())
-            action_eef_jq.append(follower_robot[i].get_current_end())
-            pose = follower_robot[i].get_current_pose()
-            action_eef_pose.extend(pose[0] + pose[1])  # xyz + quat(xyzw)
-        data["action/arm/joint_position"] = action_arm_jq
-        data["action/eef/joint_position"] = action_eef_jq
-        data["action/eef/pose"] = action_eef_pose
         return data
 
     def capture_observation(self):
