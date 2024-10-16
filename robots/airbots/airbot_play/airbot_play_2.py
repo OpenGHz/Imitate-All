@@ -1,24 +1,29 @@
 import airbot
 from robots.common_robot import Configer
+from typing import Optional, List
+from dataclasses import dataclass, replace, field
 
 
-class AIRBOTPlayConfig(object):
-    def __init__(self) -> None:
-        # init * 7
-        self.model_path = "/usr/share/airbot_models/airbot_play_with_gripper.urdf"
-        self.gravity_mode = "down"
-        self.can_bus = "can0"
-        self.vel = 2.0
-        self.eef_mode = "none"
-        self.bigarm_type = "OD"
-        self.forearm_type = "DM"
-        # other
-        self.joint_vel = 6.0
+@dataclass
+class AIRBOTPlayConfig:
+    model_path: str = "/usr/share/airbot_models/airbot_play_with_gripper.urdf"
+    gravity_mode: str = "down"
+    can_bus: str = "can0"
+    vel: float = 2.0
+    eef_mode: str = "none"
+    bigarm_type: str = "OD"
+    forearm_type: str = "DM"
+    # other
+    joint_vel: float = 6.0
+    default_action: List[float] = field(default_factory=lambda: [0, 0, 0, 0, 0, 0, 0])
 
 
 class AIRBOTPlay(object):
-    def __init__(self, config: AIRBOTPlayConfig) -> None:
-        self.config = config
+    def __init__(self, config: Optional[AIRBOTPlayConfig] = None, **kwargs) -> None:
+        if config is None:
+            config = AIRBOTPlayConfig()
+        # Overwrite config arguments using kwargs (used for yaml config)
+        self.config = replace(config, **kwargs)
         self.robot = airbot.create_agent(*Configer.config2tuple(config)[:7])
         self._arm_joints_num = 6
         self._joints_num = 7
@@ -55,6 +60,9 @@ class AIRBOTPlay(object):
             joints += [self.robot.get_current_end_t()]
         return joints
 
+    def get_current_pose(self):
+        return self.robot.get_current_pose()
+
     def set_joint_position_target(self, qpos, qvel=None, blocking=False):
         if qvel is None:
             qvel = self.config.joint_vel
@@ -74,3 +82,9 @@ class AIRBOTPlay(object):
         self.robot.set_target_joint_t(qeffort[: self._arm_joints_num])
         if len(qeffort) - self._arm_joints_num > 0:
             self._set_eef(qeffort[self._arm_joints_num :], "eff")
+
+    def enter_passive_mode(self):
+        self.robot.manual_mode()
+
+    def enter_active_mode(self):
+        self.robot.online_mode()
