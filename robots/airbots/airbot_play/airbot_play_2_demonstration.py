@@ -39,6 +39,7 @@ class AIRBOTPlayDemonstration(object):
             self.cameras[name].connect()
         self.__sync_thread = Thread(target=self.__sync, daemon=True)
         self.__sync_thread.start()
+        self.reset()
 
     def __sync(self):
         duration = 0.001
@@ -51,7 +52,7 @@ class AIRBOTPlayDemonstration(object):
 
     def reset(self):
         for leader in self.leaders.values():
-            leader.set_joint_position_target(leader.config.default_action, [1.0], True)
+            leader.set_joint_position_target(leader.config.default_action, [0.2], True)
         self._state_mode = "active"
 
     def enter_active_mode(self):

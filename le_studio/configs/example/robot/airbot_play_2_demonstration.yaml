@@ -8,6 +8,15 @@ groups:
       _target_: robots.airbots.airbot_play.airbot_play_2.AIRBOTPlayConfig
       can_bus: "can0"
       eef_mode: "teacherv2"
+      default_action:
+        [
+          -0.05664911866188049,
+          -0.26874953508377075,
+          0.5613412857055664,
+          1.483367681503296,
+          -1.1999313831329346,
+          -1.3498512506484985,
+        ]
     followers:
       - _target_: robots.airbots.airbot_play.airbot_play_2.AIRBOTPlayConfig
         can_bus: "can1"
