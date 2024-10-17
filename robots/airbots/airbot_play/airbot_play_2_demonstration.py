@@ -2,7 +2,7 @@ from dataclasses import dataclass, field, replace
 from le_studio.common.robot_devices.cameras.utils import Camera
 from typing import Dict, Optional, List
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
-from threading import Thread
+from threading import Thread, Event
 import time
 import torch
 
@@ -37,6 +37,7 @@ class AIRBOTPlayDemonstration(object):
                 self.followers[g_name].append(AIRBOTPlay(**f_cfg))
         for name in self.cameras:
             self.cameras[name].connect()
+        self._reseting = Event()
         self.__sync_thread = Thread(target=self.__sync, daemon=True)
         self.__sync_thread.start()
         self.reset()
@@ -44,6 +45,7 @@ class AIRBOTPlayDemonstration(object):
     def __sync(self):
         duration = 0.001
         while True:
+            self._reseting.wait()
             for g_name in self.config.groups.keys():
                 l_pos = self.leaders[g_name].get_current_joint_positions()
                 for follower in self.followers[g_name]:
@@ -51,9 +53,20 @@ class AIRBOTPlayDemonstration(object):
             time.sleep(duration)
 
     def reset(self):
+        self._reseting.clear()
+        time.sleep(0.1)
+        leaders = list(self.leaders.values())
+        for index, followers in enumerate(self.followers.values()):
+            for follower in followers:
+                follower.enter_active_mode()
+                follower.set_joint_position_target(
+                    leaders[index].config.default_action, [0.2], True
+                )
         for leader in self.leaders.values():
+            leader.enter_active_mode()
             leader.set_joint_position_target(leader.config.default_action, [0.2], True)
         self._state_mode = "active"
+        self._reseting.set()
 
     def enter_active_mode(self):
         for leader in self.leaders.values():
