@@ -1,9 +1,18 @@
-# data collection
-termcolor >=2.4.0
-omegaconf >=2.3.0
-hydra-core >=1.3.2
-imagecodecs >=2024.1.1
-pynput >=1.7.7
+torchvision
+torch
+pyquaternion
+pyyaml
+rospkg
+pexpect
+opencv-python
+matplotlib
+einops
+packaging
+h5py
+ipython
+dm_env
+tqdm
+OneEuroFilter
 
 # wandb >=0.16.3
 # imageio >=2.34.0

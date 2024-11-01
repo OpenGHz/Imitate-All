@@ -109,9 +109,9 @@ from omegaconf import DictConfig
 from PIL import Image
 from termcolor import colored
 
-from le_studio.common.datasets.video_utils import encode_video_frames
-from le_studio.common.robot_devices.utils import busy_wait
-from le_studio.common.utils.utils import (
+from habitats.common.datasets.video_utils import encode_video_frames
+from habitats.common.robot_devices.utils import busy_wait
+from habitats.common.utils.utils import (
     init_logging,
 )
 

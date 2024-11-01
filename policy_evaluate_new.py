@@ -4,7 +4,7 @@ import os, time, logging, pickle, inspect
 from typing import Dict
 from tqdm import tqdm
 from utils import set_seed, save_eval_results
-from task_configs.config_tools.basic_configer import basic_parser, get_all_config
+from configurations.task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 from threading import Thread, Event

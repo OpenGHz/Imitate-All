@@ -1,12 +1,5 @@
-pyquaternion
-pyyaml
-rospkg
-pexpect
-opencv-python
-matplotlib
-einops
-packaging
-h5py
-ipython
-dm_env
-tqdm
+termcolor >=2.4.0
+omegaconf >=2.3.0
+hydra-core >=1.3.2
+imagecodecs >=2024.1.1
+pynput >=1.7.7

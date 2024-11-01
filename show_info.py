@@ -1,6 +1,6 @@
 import argparse
 import os
-from task_configs.config_tools.basic_configer import (
+from configurations.task_configs.config_tools.basic_configer import (
     get_all_config,
     replace_timestamp,
     get_stats_path,

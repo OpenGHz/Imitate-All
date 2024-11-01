@@ -18,11 +18,11 @@ import numpy as np
 import pyrealsense2 as rs
 from PIL import Image
 
-from le_studio.common.robot_devices.utils import (
+from habitats.common.robot_devices.utils import (
     RobotDeviceAlreadyConnectedError,
     RobotDeviceNotConnectedError,
 )
-from le_studio.common.utils.utils import capture_timestamp_utc
+from habitats.common.utils.utils import capture_timestamp_utc
 from control_robot import busy_wait
 from typing import List, Optional
 

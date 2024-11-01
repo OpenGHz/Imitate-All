@@ -17,12 +17,12 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from le_studio.common.robot_devices.utils import (
+from habitats.common.robot_devices.utils import (
     RobotDeviceAlreadyConnectedError,
     RobotDeviceNotConnectedError,
     busy_wait,
 )
-from le_studio.common.utils.utils import capture_timestamp_utc
+from habitats.common.utils.utils import capture_timestamp_utc
 from typing import List, Optional
 
 # Use 1 thread to avoid blocking the main thread. Especially useful during data collection

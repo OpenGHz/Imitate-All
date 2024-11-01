@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, replace
-from le_studio.common.robot_devices.cameras.utils import Camera
+from habitats.common.robot_devices.cameras.utils import Camera
 from typing import Dict, Optional, List
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
 from threading import Thread, Event

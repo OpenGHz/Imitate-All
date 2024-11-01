@@ -10,7 +10,7 @@ import time
 import argparse
 
 from utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer
-from task_configs.config_tools.basic_configer import basic_parser, get_all_config
+from configurations.task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
 import logging
 

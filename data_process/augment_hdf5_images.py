@@ -12,8 +12,8 @@
 import h5py
 import torch
 import numpy as np
-from task_configs.config_augmentation.image.basic import color_transforms_1
-from typing import List, Dict, Any, Tuple
+from configurations.task_configs.config_augmentation.image.basic import color_transforms_1
+from typing import List, Dict, Tuple
 import cv2
 import time
 import shutil
