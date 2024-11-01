@@ -97,8 +97,6 @@ import argparse
 import concurrent.futures
 import json
 import logging
-import os
-import platform
 import shutil
 import time
 import traceback
@@ -347,16 +345,21 @@ def record(
         def on_press(self, key, robot: Robot = None):
             print()
             if key == keyboard.Key.space:
-                if self.set_record_event():
+                if (not self.is_recording()) and self.set_record_event():
                     robot.enter_passive_mode()
                     print("Start recording data")
+                else:
+                    print("Still recording data, please wait or press 's' to save right now...")
             elif key.char == "s":
-                print("Save current episode right now")
-                self.exit_early = True
+                if self.is_recording():
+                    print("Save current episode right now")
+                    self.exit_early = True
+                else:
+                    print("Not recording data, no need to save")
             elif key.char == "q":
                 print("Rerecord current episode...")
                 self._rerecord_episode = True
-                if not self._is_waiting_start_recording:
+                if self.is_recording():
                     self.exit_early = True
                 else:
                     self.set_record_event()
@@ -366,24 +369,30 @@ def record(
                 print("Stopping data recording...")
                 self.exit_early = True
                 self._stop_recording = True
-                if self._is_waiting_start_recording:
+                if not self.is_recording():
                     self.set_record_event()
             elif key.char == "i":
                 self.show_instruction()
             elif key.char == "p":
                 pprint(robot.get_low_dim_data())
             elif key.char == "g":
-                if robot.get_state_mode() == "passive":
-                    print("Stop teaching mode")
-                    robot.enter_active_mode()
-                elif robot.get_state_mode() == "active":
-                    print("Start teaching mode")
-                    robot.enter_passive_mode()
+                if not self.is_recording():
+                    if robot.get_state_mode() == "passive":
+                        print("Stop teaching mode")
+                        robot.enter_active_mode()
+                    elif robot.get_state_mode() == "active":
+                        print("Start teaching mode")
+                        robot.enter_passive_mode()
+                    else:
+                        raise ValueError()
                 else:
-                    raise ValueError()
+                    print("Cannot switch mode while recording data")
             elif key.char == "0":
-                print("Reset robots")
-                robot.reset()
+                if not self.is_recording():
+                    print("Reset robots")
+                    robot.reset()
+                else:
+                    print("Cannot reset robots while recording data")
             elif key.char == "c":
                 # used for clearing boundary errors
                 # robot.enter_active_mode()
