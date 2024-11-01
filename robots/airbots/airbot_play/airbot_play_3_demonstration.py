@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field, replace
 import time
-import torch
 from le_studio.common.robot_devices.cameras.utils import Camera
 from typing import Dict, Optional, List
 import sys
@@ -220,7 +219,7 @@ class AIRBOTPlay(object):
         for name in self.cameras:
             before_camread_t = time.perf_counter()
             images[name] = self.cameras[name].async_read()
-            images[name] = torch.from_numpy(images[name])
+            # images[name] = torch.from_numpy(images[name])
             obs_act_dict[f"/time/{name}"] = time.time()
             self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
                 "delta_timestamp_s"
@@ -231,7 +230,7 @@ class AIRBOTPlay(object):
 
         low_dim_data = self.get_low_dim_data()
 
-        # Populate output dictionnaries and format to pytorch
+        # Populate output dictionnaries
         obs_act_dict["low_dim"] = low_dim_data
         for name in self.cameras:
             obs_act_dict[f"observation.images.{name}"] = images[name]

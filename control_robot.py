@@ -111,7 +111,6 @@ from pathlib import Path
 from threading import Event
 from functools import partial
 import cv2
-import torch
 import tqdm
 from omegaconf import DictConfig
 from PIL import Image
@@ -124,7 +123,7 @@ from le_studio.common.utils.utils import (
     init_logging,
 )
 
-from typing import Optional
+from typing import Optional, Callable
 from data_process.dataset.raw_dataset import RawDataset
 from robots.common import Robot, make_robot, make_robot_from_yaml
 from pprint import pprint
@@ -156,8 +155,8 @@ def say(text, blocking=False):
     os.system(cmd)
 
 
-def save_image(img_tensor: torch.Tensor, frame_index, images_dir: Path):
-    img = Image.fromarray(img_tensor.numpy())
+def save_image(img: np.array, frame_index, images_dir: Path):
+    img = Image.fromarray(img)
     path = images_dir / f"frame_{frame_index:06d}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     img.save(str(path), quality=100)
@@ -262,7 +261,7 @@ def teleoperate(
 
 def record(
     robot: Robot,
-    policy: Optional[torch.nn.Module] = None,
+    policy: Optional[Callable] = None,
     hydra_cfg: Optional[DictConfig] = None,
     fps: Optional[int] = None,
     root="data",
