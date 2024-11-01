@@ -2,7 +2,7 @@
 
 from typing import Protocol, Dict, List, Optional
 from dataclasses import dataclass, field, replace
-from le_studio.common.robot_devices.cameras.utils import Camera
+from habitats.common.robot_devices.cameras.utils import Camera
 import time
 
 # class Robot(Protocol):
@@ -157,7 +157,7 @@ def make_robot_from_hydra_config(cfg) -> Robot:
 def make_robot_from_yaml(
     robot_path: str, robot_overrides: Optional[List[str]] = None
 ) -> Robot:
-    from le_studio.common.utils.utils import init_hydra_config
+    from habitats.common.utils.utils import init_hydra_config
 
     robot_cfg = init_hydra_config(robot_path, robot_overrides)
     robot = make_robot_from_hydra_config(robot_cfg)

@@ -141,12 +141,12 @@ dmypy.json
 
 my_ckpt/
 eval_results/
-task_configs/*
-!task_configs/template.py
-!task_configs/example_task.py
-!task_configs/loader.py
-!task_configs/config_augmentation/
-!task_configs/config_tools/
+configurations/task_configs/*
+!configurations/task_configs/template.py
+!configurations/task_configs/example_task.py
+!configurations/task_configs/loader.py
+!configurations/task_configs/config_augmentation/
+!configurations/task_configs/config_tools/
 test.*
 test/
 demonstrations/

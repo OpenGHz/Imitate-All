@@ -36,9 +36,9 @@ conda config --set auto_activate_base false && conda deactivate
 - ``detr`` Model definitions modified from DETR: ACT, CNNMLP
 - ``envs`` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
 - ``images`` Images used by README.md
-- ``task_configs`` Configuration files for tasks training and evaluating
+- ``configurations`` Configuration files for demonstration, replay, tasks training and evaluating
 - ``conda_env.yaml`` Used by conda creating env (now requirements.txt is recommend)
-- ``requirements.txt`` Used for pip install
+- ``requirements`` Used for pip install required packages
 - ``utils.py`` Utils such as data loading and helper functions
 - ``visualize_episodes.py`` Save videos from a .hdf5 dataset
 - ``robot_utils.py`` Useful robot tools to record images and process data
@@ -69,7 +69,7 @@ What's more, for policy evaluation, make sure you have set up the robot control 
 
 ## Parameter Configuration
 
-**Before training or inference**, parameter configuration is necessary. **Create a Python file in the ./task_configs directory with the same name as the task ( not recommended to modify or rename the example_task.py file directly)** to configure the task. This configuration mainly involves modifying various paths (using the replace_task_name function to **use default paths** or manually specifying paths), camera names (camera_names), robot number (robot_num, **set to 2 for dual-arm tasks**), and so on. Below is an example from example_task.py, which demonstrates how to modify configs based on the default configuration in template.py without rewriting everything (for more adjustable configurations, refer to ./task_configs/template.py):
+**Before training or inference**, parameter configuration is necessary. **Create a Python file in the ./configurations/task_configs directory with the same name as the task ( not recommended to modify or rename the example_task.py file directly)** to configure the task. This configuration mainly involves modifying various paths (using the replace_task_name function to **use default paths** or manually specifying paths), camera names (camera_names), robot number (robot_num, **set to 2 for dual-arm tasks**), and so on. Below is an example from example_task.py, which demonstrates how to modify configs based on the default configuration in template.py without rewriting everything (for more adjustable configurations, refer to ./configurations/task_configs/template.py):
 
 <p align="center">
   <img src="images/basic_config.png" />
@@ -103,7 +103,7 @@ Then run the training command:
 python3 policy_train.py -tn example_task
 ```
 
-The above commands, with just `-tn` args, will **use the configurations from the `.py` config files in the `task_configs` folder corresponding to the given task name**. If you use command-line parameters (not all parameters support command-line configuration, use `-h` arg to show all supported args), they will override the configurations in the config file. This allows for temporary parameter changes but is not recommended for regular use.
+The above commands, with just `-tn` args, will **use the configurations from the `.py` config files in the `configurations/task_configs` folder corresponding to the given task name**. If you use command-line parameters (not all parameters support command-line configuration, use `-h` arg to show all supported args), they will override the configurations in the config file. This allows for temporary parameter changes but is not recommended for regular use.
 
 After training, by default, you can find two folders in `./my_ckpt/<task_name>/<time_stamp>` directory. The `ckpt` folder contains all weight files (referred to as the **process folder**), while the folder with the same name as `<task_name>` (called the **core folder**) contains the following files:
 

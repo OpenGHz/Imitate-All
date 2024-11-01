@@ -1,4 +1,4 @@
-from task_configs.template import (
+from configurations.task_configs.template import (
     get_task_name,
     replace_task_name,
     set_paths,
@@ -22,7 +22,7 @@ def environment_maker(config:dict):
 
 @activator(False)
 def augment_images(image):
-    from task_configs.config_augmentation.image.basic import color_transforms_1
+    from configurations.task_configs.config_augmentation.image.basic import color_transforms_1
     return color_transforms_1(image)
 
 # auto replace the task name in the default paths accoring to the file name
