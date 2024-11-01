@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch.nn import functional as F
 import torchvision.transforms as transforms
-from detr.main import build_CNNMLP_model, build_optimizer
+from policies.common.detr.main import build_CNNMLP_model, build_optimizer
 
 
 class CNNMLPPolicy(nn.Module):

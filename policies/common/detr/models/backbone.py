@@ -11,7 +11,7 @@ from typing import List
 from ..util.misc import NestedTensor, is_main_process
 from .position_encoding import build_position_encoding
 
-from detr.encoders.images_hl_dyh.images_hl_dyh import MultiImageObsEncoder
+from policies.common.detr.encoders.images_hl_dyh.images_hl_dyh import MultiImageObsEncoder
 
 
 class FrozenBatchNorm2d(torch.nn.Module):

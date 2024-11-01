@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch.nn import functional as F
 import torchvision.transforms as transforms
-from detr.main import build_ACT_model, build_optimizer, build_ACT_YHD_model
+from policies.common.detr.main import build_ACT_model, build_optimizer, build_ACT_YHD_model
 from policies.common.loss import kl_divergence
 from policies.common.wrapper import TemporalEnsembling
 

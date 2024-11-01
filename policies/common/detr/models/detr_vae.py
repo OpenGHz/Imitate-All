@@ -279,7 +279,7 @@ def build_vae(args):
 def build_vae_yhd(config, args):
 
     import hydra
-    from detr.encoders.images_hl_dyh.images_hl_dyh import MultiImageObsEncoder
+    from policies.common.detr.encoders.images_hl_dyh.images_hl_dyh import MultiImageObsEncoder
 
     transformer = build_transformer(args)
     encoder = build_encoder(args)

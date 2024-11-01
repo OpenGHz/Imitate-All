@@ -18,12 +18,13 @@ conda config --set auto_activate_base false && conda deactivate
 
 ## Repo Structure
 
+- ``configurations`` Configuration files for demonstration, replay, tasks training and evaluating
 - ``data_process`` Tools to process data
+  - ``raw_to_hdf5.ipynb`` Examples for converting raw airbot_play data to hdf5 data for training
   - ``test_convert_mmk2.ipynb`` Examples for converting mmk2 raw data to hdf5 data for training
   - ``test_convert_mujoco.ipynb`` Examples for converting airbot mujoco raw data to hdf5 data for training
   - ``convert_all.py`` Tools to process raw data for training
   - ``augment_hdf5_images.py`` Pipline of augmenting images from the hdf5 file
-  - ``data_check.py`` Check the integrity of the hdf5 data
 - ``policy_train.py`` Policy training: ACT and yours
 - ``policy_evaluate`` Policy evaluating/inferencing: ACT and yours
 - `policies`
@@ -33,10 +34,9 @@ conda config --set auto_activate_base false && conda deactivate
   - ``onnx`` Policy by loading a onnx model
     - ``ckpt2onnx`` Example of converting ckpt file to onnx file
     - ``onnx_policy.py`` Load a onnx model as the policy
-- ``detr`` Model definitions modified from DETR: ACT, CNNMLP
+- ``detr`` Model definitions modified from policies.common.detr: ACT, CNNMLP
 - ``envs`` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
 - ``images`` Images used by README.md
-- ``configurations`` Configuration files for demonstration, replay, tasks training and evaluating
 - ``conda_env.yaml`` Used by conda creating env (now requirements.txt is recommend)
 - ``requirements`` Used for pip install required packages
 - ``utils.py`` Utils such as data loading and helper functions
@@ -61,8 +61,7 @@ conda create -n imitall python=3.8.10 && conda activate imitall
 Install the necessary packages by running the following commands:
 
 ```bash
-pip install -e ./detr -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -r requirements/train_eval.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 What's more, for policy evaluation, make sure you have set up the robot control environment for both software and hardware, such as AIRBOT Play, TOK2, MMK2 and so on.
