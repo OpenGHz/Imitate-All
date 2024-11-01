@@ -69,7 +69,6 @@ class AIRBOTPlay(object):
         self.cameras = self.config.cameras
         self.logs = {}
         self.__init()
-        self._state_mode = "active"
 
     def __init(self):
         args = self.config

@@ -467,7 +467,7 @@ def record(
             image_keys = [key for key in observation if "image" in key]
             for key in image_keys:
                 cv2.imshow(
-                    key, cv2.cvtColor(observation[key].numpy(), cv2.COLOR_RGB2BGR)
+                    key, cv2.cvtColor(observation[key], cv2.COLOR_RGB2BGR)
                 )
             cv2.waitKey(1)
 
@@ -482,7 +482,8 @@ def record(
     # Save images using threads to reach high fps (30 and more)
     # Using `with` to exist smoothly if an execption is raised.
     futures = []
-    num_image_writers = num_image_writers_per_camera * len(robot.cameras)
+    camera_num = len(robot.cameras)
+    num_image_writers = num_image_writers_per_camera * camera_num
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=num_image_writers
     ) as executor:
@@ -564,7 +565,7 @@ def record(
                     for key in image_keys:
                         cv2.imshow(
                             key,
-                            cv2.cvtColor(observation[key].numpy(), cv2.COLOR_RGB2BGR),
+                            cv2.cvtColor(observation[key], cv2.COLOR_RGB2BGR),
                         )
                     cv2.waitKey(1)
 

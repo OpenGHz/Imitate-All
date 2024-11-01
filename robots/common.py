@@ -3,6 +3,7 @@
 from typing import Protocol, Dict, List, Optional
 from dataclasses import dataclass, field, replace
 from le_studio.common.robot_devices.cameras.utils import Camera
+import time
 
 # class Robot(Protocol):
 #     """Assume the __init__ method of the robot class is the same as the reset method.
@@ -51,17 +52,28 @@ class FakeRobot(object):
         if config is None:
             config = FakeRobotConfig()
         self.config = replace(config, **kwargs)
-        self.config = config
-        self.state = [0] * 6
         self.cameras = self.config.cameras
+        self.logs = {}
+        self.state = [0] * 6
+        self.__init()
+
+    def __init(self):
+        # Connect the cameras
+        for name in self.cameras:
+            self.cameras[name].connect()
+        self.reset()
 
     def reset(self):
+        self.state = [0] * 6
+        self._state_mode = "active"
         print("Fake robot reset")
 
     def enter_active_mode(self):
+        self._state_mode = "active"
         print("Fake robot entered active mode")
 
     def enter_passive_mode(self):
+        self._state_mode = "passive"
         print("Fake robot entered passive mode")
 
     def get_low_dim_data(self):
@@ -74,6 +86,35 @@ class FakeRobot(object):
         }
         return low_dim
 
+    def capture_observation(self):
+        """The returned observations do not have a batch dimension."""
+        # if not self.is_connected:
+        #     raise RobotDeviceNotConnectedError(
+        #         "ManipulatorRobot is not connected. You need to run `robot.connect()`."
+        #     )
+        obs_act_dict = {}
+        # Capture images from cameras
+        images = {}
+        for name in self.cameras:
+            before_camread_t = time.perf_counter()
+            images[name] = self.cameras[name].async_read()
+            # images[name] = torch.from_numpy(images[name])
+            obs_act_dict[f"/time/{name}"] = time.time()
+            self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
+                "delta_timestamp_s"
+            ]
+            self.logs[f"async_read_camera_{name}_dt_s"] = (
+                time.perf_counter() - before_camread_t
+            )
+
+        low_dim_data = self.get_low_dim_data()
+
+        # Populate output dictionnaries
+        obs_act_dict["low_dim"] = low_dim_data
+        for name in self.cameras:
+            obs_act_dict[f"observation.images.{name}"] = images[name]
+        return obs_act_dict
+    
     def init_teleop(self):
         print("init_teleop")
 
@@ -83,17 +124,20 @@ class FakeRobot(object):
     def teleop_step(self, record_data=False):
         print("teleop_step")
 
-    def capture_observation(self):
-        # print("capture_observation")
-        return self.state
-
     def send_action(self, action):
         # print(f"send_action:{action}")
         self.state = action
 
     def exit(self):
-        print("Fake robot exited")
+        try:
+            for name in self.cameras:
+                self.cameras[name].disconnect()
+        except Exception as e:
+            pass
+        print("Robot exited")
 
+    def get_state_mode(self):
+        return self._state_mode
 
 def make_robot(config) -> Robot:
     if isinstance(config, str):
