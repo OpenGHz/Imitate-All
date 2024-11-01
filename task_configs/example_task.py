@@ -58,6 +58,7 @@ TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
 TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 300
 TASK_CONFIG_DEFAULT["eval"]["ensemble"] = None
 TASK_CONFIG_DEFAULT["eval"]["environments"]["environment_maker"] = environment_maker
+TASK_CONFIG_DEFAULT["eval"]["ckpt_names"] = ["policy_best.ckpt"]
 
 # final config
 TASK_CONFIG = TASK_CONFIG_DEFAULT

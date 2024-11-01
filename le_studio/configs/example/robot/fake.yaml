@@ -1,0 +1,10 @@
+_target_: robots.common.FakeRobot
+
+
+cameras:
+  cam1:
+    _target_: le_studio.common.robot_devices.cameras.opencv.OpenCVCamera
+    camera_index: 0
+    fps: 30
+    width: 640
+    height: 480

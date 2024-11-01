@@ -4,7 +4,6 @@ import dm_env
 import torch
 from typing import List
 from einops import rearrange
-import dm_env
 from robots.common_robot import AssembledRobot
 
 

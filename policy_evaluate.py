@@ -7,6 +7,7 @@ from utils import set_seed, save_eval_results
 from task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
+import dm_env
 
 
 logging.basicConfig(level=logging.INFO)
@@ -193,12 +194,11 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     if filter_type is not None:  # filt action
                         for i, filter in enumerate(filters):
                             action[i] = filter(action[i], time.time())
+                    # limit the prediction frequency
                     time.sleep(max(0, 1/prediction_freq - (time.time() - start_time)))
                     logger.debug(f"prediction time: {time.time() - start_time}")
                     # step the environment
-                    sleep_time = dt
-                    # sleep_time = max(0, dt - (time.time() - start_time))
-                    ts = env.step(action, sleep_time=sleep_time, arm_vel=arm_velocity)
+                    ts:dm_env.TimeStep = env.step(action, sleep_time=dt)
 
                     # for visualization
                     qpos_list.append(qpos_numpy)
