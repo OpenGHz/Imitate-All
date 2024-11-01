@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import warnings
-
+import os, platform
 import imageio
 
 
@@ -25,3 +25,22 @@ def write_video(video_path, stacked_frames, fps):
             "ignore", "pkg_resources is deprecated as an API", category=DeprecationWarning
         )
         imageio.mimsave(video_path, stacked_frames, fps=fps)
+
+def say(text, blocking=False):
+    # Check if mac, linux, or windows.
+    if platform.system() == "Darwin":
+        cmd = f'say "{text}"'
+    elif platform.system() == "Linux":
+        cmd = f'spd-say "{text}"'
+    elif platform.system() == "Windows":
+        cmd = (
+            'PowerShell -Command "Add-Type -AssemblyName System.Speech; '
+            f"(New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('{text}')\""
+        )
+
+    if not blocking and platform.system() in ["Darwin", "Linux"]:
+        # TODO(rcadene): Make it work for Windows
+        # Use the ampersand to run command in the background
+        cmd += " &"
+
+    os.system(cmd)

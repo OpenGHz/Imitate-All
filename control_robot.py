@@ -6,11 +6,6 @@ and record an evaluation dataset, and to recalibrate your robot if needed.
 
 Examples of usage:
 
-- Recalibrate your robot:
-```bash
-python lerobot/scripts/control_robot.py calibrate
-```
-
 - Unlimited teleoperation at highest frequency (~200 Hz is expected), to exit with CTRL+C:
 ```bash
 python lerobot/scripts/control_robot.py teleoperate
@@ -117,7 +112,6 @@ from PIL import Image
 from termcolor import colored
 
 from le_studio.common.datasets.video_utils import encode_video_frames
-
 from le_studio.common.robot_devices.utils import busy_wait
 from le_studio.common.utils.utils import (
     init_logging,
@@ -125,7 +119,7 @@ from le_studio.common.utils.utils import (
 
 from typing import Optional, Callable
 from data_process.dataset.raw_dataset import RawDataset
-from robots.common import Robot, make_robot, make_robot_from_yaml
+from robots.common import Robot, make_robot_from_yaml
 from pprint import pprint
 import numpy as np
 
@@ -135,27 +129,7 @@ import numpy as np
 ########################################################################################
 
 
-def say(text, blocking=False):
-    # Check if mac, linux, or windows.
-    if platform.system() == "Darwin":
-        cmd = f'say "{text}"'
-    elif platform.system() == "Linux":
-        cmd = f'spd-say "{text}"'
-    elif platform.system() == "Windows":
-        cmd = (
-            'PowerShell -Command "Add-Type -AssemblyName System.Speech; '
-            f"(New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('{text}')\""
-        )
-
-    if not blocking and platform.system() in ["Darwin", "Linux"]:
-        # TODO(rcadene): Make it work for Windows
-        # Use the ampersand to run command in the background
-        cmd += " &"
-
-    os.system(cmd)
-
-
-def save_image(img: np.array, frame_index, images_dir: Path):
+def save_image(img: np.ndarray, frame_index, images_dir: Path):
     img = Image.fromarray(img)
     path = images_dir / f"frame_{frame_index:06d}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
