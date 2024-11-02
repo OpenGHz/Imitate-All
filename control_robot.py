@@ -436,8 +436,10 @@ def record(
                 / f"{key}_episode_{episode_index:06d}"
             )
             # say(f"Recording episode {episode_index}")
-            ep_dict = {}
-            ep_dict["low_dim"] = {}
+            ep_dict = {
+                "low_dim": {},
+                "images_timestamp": {},
+            }
             frame_index = 0
             timestamp = 0
             start_episode_t = time.perf_counter()
@@ -485,6 +487,12 @@ def record(
                     if key not in ep_dict["low_dim"]:
                         ep_dict["low_dim"][key] = []
                     ep_dict["low_dim"][key].append(observation["low_dim"][key])
+                for key in robot.cameras:
+                    if key not in ep_dict["images_timestamp"]:
+                        ep_dict["images_timestamp"][key] = []
+                    ep_dict["images_timestamp"][key].append(
+                        observation["/time/" + key]
+                    )
                 # for key in action:
                 #     if key not in ep_dict:
                 #         ep_dict["low_dim"][key] = []
@@ -514,8 +522,15 @@ def record(
             timestamp = 0
             start_vencod_t = time.perf_counter()
             # During env reset we save the data and encode the videos
+            low_dim_timestamps = ep_dict["low_dim"].pop("/time")
             with open(videos_dir / "low_dim.json", "w") as f:
                 json.dump(ep_dict["low_dim"], f)
+            with open(videos_dir / "timestamps.json", "w") as f:
+                timestamps = {
+                    "low_dim": low_dim_timestamps,
+                    "images": ep_dict["images_timestamp"],
+                }
+                json.dump(timestamps, f)
             num_frames = frame_index
             with open(videos_dir / "meta.json", "w") as f:
                 json.dump(
