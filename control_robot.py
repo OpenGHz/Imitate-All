@@ -257,65 +257,73 @@ def record(
                 return False
 
         def on_press(self, key, robot: Robot = None):
-            print()
-            if key == keyboard.Key.space:
-                if (not self.is_recording()) and self.set_record_event():
-                    robot.enter_passive_mode()
-                    print("Start recording data")
-                else:
-                    print("Still recording data, please wait or press 's' to save right now...")
-            elif key.char == "s":
-                if self.is_recording():
-                    print("Save current episode right now")
-                    self.exit_early = True
-                else:
-                    print("Not recording data, no need to save")
-            elif key.char == "q":
-                print("Rerecord current episode...")
-                self._rerecord_episode = True
-                if self.is_recording():
-                    self.exit_early = True
-                else:
-                    self.set_record_event()
-                    robot.enter_passive_mode()
-                    print("Start recording data")
-            elif (key == keyboard.Key.esc) or (key.char == "z"):
-                print("Stopping data recording...")
-                self.exit_early = True
-                self._stop_recording = True
-                if key == keyboard.Key.esc:
-                    self.no_convert = True
-                else:
-                    self.no_convert = False
-                if not self.is_recording():
-                    self.set_record_event()
-            elif key.char == "i":
-                self.show_instruction()
-            elif key.char == "p":
-                pprint(robot.get_low_dim_data())
-            elif key.char == "g":
-                if not self.is_recording():
-                    if robot.get_state_mode() == "passive":
-                        print("Stop teaching mode")
-                        robot.enter_active_mode()
-                    elif robot.get_state_mode() == "active":
-                        print("Start teaching mode")
+            try:
+                print()
+                if key == keyboard.Key.space:
+                    if (not self.is_recording()) and self.set_record_event():
                         robot.enter_passive_mode()
+                        print("Start recording data")
                     else:
-                        raise ValueError()
+                        print("Still recording data, please wait or press 's' to save right now...")
+                elif (key == keyboard.Key.esc) or (key.char == "z"):
+                    print("Stopping data recording...")
+                    self.exit_early = True
+                    self._stop_recording = True
+                    if key == keyboard.Key.esc:
+                        self.no_convert = True
+                    else:
+                        self.no_convert = False
+                    if not self.is_recording():
+                        self.set_record_event()
+                elif key.char == "s":
+                    if self.is_recording():
+                        print("Save current episode right now")
+                        self.exit_early = True
+                    else:
+                        print("Not recording data, no need to save")
+                elif key.char == "q":
+                    print("Rerecord current episode...")
+                    self._rerecord_episode = True
+                    if self.is_recording():
+                        self.exit_early = True
+                    else:
+                        self.set_record_event()
+                        robot.enter_passive_mode()
+                        print("Start recording data")
+                elif key.char == "i":
+                    self.show_instruction()
+                elif key.char == "p":
+                    pprint(robot.get_low_dim_data())
+                elif key.char == "g":
+                    if not self.is_recording():
+                        if robot.get_state_mode() == "passive":
+                            print("Stop teaching mode")
+                            robot.enter_active_mode()
+                        elif robot.get_state_mode() == "active":
+                            print("Start teaching mode")
+                            robot.enter_passive_mode()
+                        else:
+                            raise ValueError()
+                    else:
+                        print("Cannot switch mode while recording data")
+                elif key.char == "0":
+                    if not self.is_recording():
+                        print("Reset robots")
+                        robot.reset()
+                    else:
+                        print("Cannot reset robots while recording data")
+                elif key.char == "c":
+                    # used for clearing boundary errors
+                    # robot.enter_active_mode()
+                    robot.enter_passive_mode()
                 else:
-                    print("Cannot switch mode while recording data")
-            elif key.char == "0":
-                if not self.is_recording():
-                    print("Reset robots")
-                    robot.reset()
-                else:
-                    print("Cannot reset robots while recording data")
-            elif key.char == "c":
-                # used for clearing boundary errors
-                # robot.enter_active_mode()
-                robot.enter_passive_mode()
-            else:
+                    print(
+                        "Unknown key pressed:",
+                        key,
+                        f"type:{type(key)}, str value {str(key)}",
+                    )
+            except Exception as e:
+                # print(f"Error handling key press: {e}")
                 print(
                     "Unknown key pressed:",
                     key,

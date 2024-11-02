@@ -8,8 +8,8 @@ leader_end_effector: ["E2B"]
 follower_end_effector: ["G2"]
 leader_can_interface: ["can0"]
 follower_can_interface: ["can1"]
-leader_domain_id: [33]
-follower_domain_id: [44]
+leader_domain_id: [100]
+follower_domain_id: [88]
 start_arm_joint_position: [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
 start_eef_joint_position: [0.0]  # useless for encoder teachers
 
