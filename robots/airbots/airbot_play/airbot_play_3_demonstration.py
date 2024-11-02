@@ -26,7 +26,7 @@ class AIRBOTPlayConfig(object):
     start_arm_joint_position: List[List[float]] = field(
         default_factory=lambda: [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     )
-    start_eef_joint_position: List[float] = [0.0]
+    start_eef_joint_position: List[float] = field(default_factory=lambda: [0.0])
 
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
 
