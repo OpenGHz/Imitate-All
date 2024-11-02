@@ -10,8 +10,8 @@ leader_can_interface: ["can0"]
 follower_can_interface: ["can1"]
 leader_domain_id: [33]
 follower_domain_id: [44]
-start_arm_joint_position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-start_eef_joint_position: 0.0
+start_arm_joint_position: [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+start_eef_joint_position: [0.0]  # useless for encoder teachers
 
 # Troubleshooting: If one of your opencv cameras freeze during
 # data recording due to bandwidth limit, you might need to plug the camera

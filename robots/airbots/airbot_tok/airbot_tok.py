@@ -1,62 +1,37 @@
 from dataclasses import dataclass, field, replace
-import time
 from habitats.common.robot_devices.cameras.utils import Camera
-from typing import Dict, Optional, List
-import sys
-
-# TODO: remove this by installing the package
-sys.path.insert(0, "/home/ghz/Work/airbot_play/airbot_sdk/python3/host_sdk_service")
-
-from airbot_client import Robot
+from robots.airbots.airbot_play.airbot_play_3 import AIRBOTPlayConfig, AIRBOTPlay
+from typing import Dict, Optional
+import time
 
 
 @dataclass
-class AIRBOTPlayConfig(object):
-    arm_type: str = "play_long"
-    end_effector: str = "E2B"
-    can_interface: str = "can0"
-    domain_id: int = 77
-    start_arm_joint_position: List[float] = field(
-        default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    )
-    start_eef_joint_position: float = 0.0
-    # ONLINE_TRAJ, ONLINE_IDLE, ONLINE_SERVO, DEMONSTRATE_PREP
-    default_robot_mode: str = "ONLINE_IDLE"
-    cameras: dict = field(default_factory=lambda: {})
-    display: bool = False
-
-    def __post_init__(self):
-        assert self.default_robot_mode in [
-            "ONLINE_TRAJ",
-            "ONLINE_IDLE",
-            "ONLINE_SERVO",
-            "DEMONSTRATE_PREP",
-        ]
+class AIRBOTTOKConfig(object):
+    arms_cfg: Dict[str, AIRBOTPlayConfig] = field(default_factory=lambda: {})
+    cameras: Dict[str, Camera] = field(default_factory=lambda: {})
 
 
-class AIRBOTPlay(object):
-    def __init__(self, config: Optional[AIRBOTPlayConfig] = None, **kwargs) -> None:
+class AIRBOTTOK(object):
+    def __init__(self, config: Optional[AIRBOTTOKConfig] = None, **kwargs) -> None:
         if config is None:
-            config = AIRBOTPlayConfig()
+            config = AIRBOTTOKConfig()
         self.config = replace(config, **kwargs)
-        self.cameras: Dict[str, Camera] = self.config.cameras
+        print(self.config)
+        self.cameras = self.config.cameras
+        self.arms_cfg = self.config.arms_cfg
         self.logs = {}
         self.__init()
         self._state_mode = "active"
         self._exited = False
 
     def __init(self):
-        args = self.config
         # Connect the cameras
         for name in self.cameras:
             self.cameras[name].connect()
         # Connect the robot
-        self.robot = Robot(
-            arm_type=args.arm_type,
-            end_effector=args.end_effector,
-            can_interface=args.can_interface,
-            domain_id=args.domain_id,
-        )
+        self.arms = {}
+        for arm_name, arm_cfg in self.arms_cfg.items():
+            self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
         time.sleep(0.3)
         self.reset()
 

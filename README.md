@@ -181,3 +181,6 @@ This includes the absolute path to the HDF5 data used during training, training 
 This information ensures experiment reproducibility. If the camera is rigidly attached to the robotic arm, replicating the robotic arm's behavior is relatively straightforward. Object placement can be determined through retraining data replication.
 
 For dataset stats, just set `-in stats` in the above command.
+
+## Data Collection
+Refer to README_DataCollection.md

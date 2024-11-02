@@ -150,6 +150,7 @@ def make_robot_from_hydra_config(cfg) -> Robot:
     import hydra
 
     cfg: DictConfig
+    print(cfg)
     robot = hydra.utils.instantiate(cfg)
     return robot
 

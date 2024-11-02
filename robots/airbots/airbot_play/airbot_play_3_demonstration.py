@@ -12,12 +12,6 @@ from airbot_client import Robot
 
 @dataclass
 class AIRBOTPlayConfig(object):
-    """
-    Example of usage:
-    ```python
-    AIRBOTPlayConfig()
-    ```
-    """
 
     leader_number: int = 1
     follower_number: int = 1
@@ -29,23 +23,10 @@ class AIRBOTPlayConfig(object):
     follower_can_interface: List[str] = field(default_factory=lambda: ["can1"])
     leader_domain_id: List[int] = field(default_factory=lambda: [90])
     follower_domain_id: List[int] = field(default_factory=lambda: [88])
-    start_arm_joint_position: List[float] = field(
-        default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    start_arm_joint_position: List[List[float]] = field(
+        default_factory=lambda: [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     )
-    start_eef_joint_position: float = 0.0
-
-    # model_path: Optional[str] = "/usr/share/airbot_models/airbot_play_with_gripper.urdf"
-    # gravity_mode: str = "down"
-    # can_bus: str = "can0"
-    # vel: float = 2.0
-    # eef_mode: str = "gripper"
-    # bigarm_type: str = "OD"
-    # forearm_type: str = "DM"
-
-    # joint_vel: float = 0.5
-    # robot_type: Optional[str] = None
-    # joint_num: int = 7
-    # default_action: tuple[float] = (0, -0.766, 0.704, 1.537, -0.965, -1.576, 0)
+    start_eef_joint_position: List[float] = [0.0]
 
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
 
@@ -137,13 +118,13 @@ class AIRBOTPlay(object):
         for i in range(args.leader_number):
             if args.leader_arm_type[i] == "replay":
                 continue
-            assert leader_robot[i].set_target_joint_q(args.start_arm_joint_position), (
+            assert leader_robot[i].set_target_joint_q(args.start_arm_joint_position[i]), (
                 "Leader robot %d set target joint q failed" % i
             )
-            # now we can not set target end of the leader robot
-            # assert leader_robot[i].set_target_end(args.start_eef_joint_position), (
-            #     "Leader robot %d set target end failed" % i
-            # )
+            if args.leader_end_effector not in ["E2B"]:
+                assert leader_robot[i].set_target_end(args.start_eef_joint_position[i]), (
+                    "Leader robot %d set target end failed" % i
+                )
             assert leader_robot[i].online_idle_mode(), (
                 "Leader robot %d online idle mode failed" % i
             )

@@ -3,95 +3,8 @@ Utilities to control a robot.
 
 Useful to record a dataset, replay a recorded episode, run the policy on your robot
 and record an evaluation dataset, and to recalibrate your robot if needed.
-
-Examples of usage:
-
-- Unlimited teleoperation at highest frequency (~200 Hz is expected), to exit with CTRL+C:
-```bash
-python lerobot/scripts/control_robot.py teleoperate
-
-# Remove the cameras from the robot definition. They are not used in 'teleoperate' anyway.
-python lerobot/scripts/control_robot.py teleoperate --robot-overrides '~cameras'
-```
-
-- Unlimited teleoperation at a limited frequency of 30 Hz, to simulate data recording frequency:
-```bash
-python lerobot/scripts/control_robot.py teleoperate \
-    --fps 30
-```
-
-- Record one episode in order to test replay:
-```bash
-python lerobot/scripts/control_robot.py record \
-    --fps 30 \
-    --root tmp/data \
-    --repo-id $USER/koch_test \
-    --num-episodes 1 \
-    --run-compute-stats 0
-```
-
-- Visualize dataset:
-```bash
-python lerobot/scripts/visualize_dataset.py \
-    --root tmp/data \
-    --repo-id $USER/koch_test \
-    --episode-index 0
-```
-
-- Replay this test episode:
-```bash
-python lerobot/scripts/control_robot.py replay \
-    --fps 30 \
-    --root tmp/data \
-    --repo-id $USER/koch_test \
-    --episode 0
-```
-
-- Record a full dataset in order to train a policy, with 2 seconds of warmup,
-30 seconds of recording for each episode, and 10 seconds to reset the environment in between episodes:
-```bash
-python lerobot/scripts/control_robot.py record \
-    --fps 30 \
-    --root data \
-    --repo-id $USER/koch_pick_place_lego \
-    --num-episodes 50 \
-    --warmup-time-s 2 \
-    --episode-time-s 30 \
-    --reset-time-s 10
-```
-
-**NOTE**: You can use your keyboard to control data recording flow.
-- Tap right arrow key '->' to early exit while recording an episode and go to resseting the environment.
-- Tap right arrow key '->' to early exit while resetting the environment and got to recording the next episode.
-- Tap left arrow key '<-' to early exit and re-record the current episode.
-- Tap escape key 'esc' to stop the data recording.
-This might require a sudo permission to allow your terminal to monitor keyboard events.
-
-**NOTE**: You can resume/continue data recording by running the same data recording command twice.
-To avoid resuming by deleting the dataset, use `--force-override 1`.
-
-- Train on this dataset with the ACT policy:
-```bash
-DATA_DIR=data python lerobot/scripts/train.py \
-    policy=act_koch_real \
-    env=koch_real \
-    dataset_repo_id=$USER/koch_pick_place_lego \
-    hydra.run.dir=outputs/train/act_koch_real
-```
-
-- Run the pretrained policy on the robot:
-```bash
-python lerobot/scripts/control_robot.py record \
-    --fps 30 \
-    --root data \
-    --repo-id $USER/eval_act_koch_real \
-    --num-episodes 10 \
-    --warmup-time-s 2 \
-    --episode-time-s 30 \
-    --reset-time-s 10
-    -p outputs/train/act_koch_real/checkpoints/080000/pretrained_model
-```
 """
+
 
 import argparse
 import concurrent.futures
@@ -311,12 +224,13 @@ def record(
         def show_instruction(self):
             print(
                 """(Press:
-                'Space Bar' to start/stop recording,
-                'q' to quit current recording,
-                'p' to print current arms' state,
-                'g' to start/stop teach mode,
+                'Space Bar' to start recording the data,
+                'q' to discard current recording or rerecording the last episode,
+                'p' to print current arms' states,
+                'g' to start/stop teaching mode,
                 '0' to reset arms,
-                'z' to exit the program.
+                'z' to exit the program after converting all saved images to mp4 videos,
+                'ESC': to exit this program without converting data,
                 'i' to show this instructions again.
             )"""
             )
@@ -369,6 +283,10 @@ def record(
                 print("Stopping data recording...")
                 self.exit_early = True
                 self._stop_recording = True
+                if key == keyboard.Key.esc:
+                    self.no_convert = True
+                else:
+                    self.no_convert = False
                 if not self.is_recording():
                     self.set_record_event()
             elif key.char == "i":
@@ -647,6 +565,10 @@ def record(
 
     num_episodes = episode_index
 
+    if keyer.no_convert:
+        logging.info("Exiting without converting images to videos")
+        return
+
     # Encode all videos finally
     if start_episode < num_episodes - 1:
         logging.info(
@@ -687,7 +609,6 @@ def record(
                     shutil.rmtree(tmp_imgs_dir)
 
     logging.info("Exiting")
-    # say("Exiting")
 
 
 def replay(

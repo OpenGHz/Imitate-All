@@ -9,7 +9,7 @@ import torch
 
 @dataclass
 class AIRBOTPlayDemonstrationConfig(object):
-    groups: Dict[str, AIRBOTPlayConfig] = field(default_factory=lambda: {})
+    groups: Dict[str, Dict[str, AIRBOTPlayConfig]] = field(default_factory=lambda: {})
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
 
 
