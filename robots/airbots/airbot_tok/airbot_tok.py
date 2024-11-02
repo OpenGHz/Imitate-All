@@ -29,94 +29,56 @@ class AIRBOTTOK(object):
         for name in self.cameras:
             self.cameras[name].connect()
         # Connect the robot
-        self.arms = {}
+        self.arms: Dict[str, AIRBOTPlay] = {}
         for arm_name, arm_cfg in self.arms_cfg.items():
             self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
         time.sleep(0.3)
         self.reset()
 
     def reset(self):
-        args = self.config
-        robot = self.robot
-        print(f"Resetting robot to start position: {args.start_arm_joint_position}")
-        # set to traj mode
-        if args.arm_type != "replay" and robot.get_current_state() != "ONLINE_TRAJ":
-            assert robot.online_idle_mode(), "online idle mode failed"
-            assert robot.online_traj_mode(), "online traj mode failed"
-        time.sleep(0.3)
-        # go to start position
-        if args.arm_type != "replay":
-            if args.start_arm_joint_position is not None:
-                assert robot.set_target_joint_q(
-                    args.start_arm_joint_position, wait=True
-                ), "set target joint q failed"
-            if args.start_eef_joint_position is not None:
-                assert robot.set_target_end(
-                    args.start_eef_joint_position, wait=False
-                ), "set target end failed"
-            # enter default mode
-            if args.default_robot_mode == "ONLINE_TRAJ":
-                self.enter_traj_mode()
-            elif args.default_robot_mode == "ONLINE_IDLE":
-                self.enter_active_mode()
-            elif args.default_robot_mode == "ONLINE_SERVO":
-                self.enter_servo_mode()
-            else:
-                raise ValueError(
-                    f"Invalid default robot mode: {args.default_robot_mode}"
-                )
-
+        for arm in self.arms.values():
+            arm.reset()
         self._state_mode = "active"
 
     def enter_traj_mode(self):
         self.enter_active_mode()
-        if self.config.arm_type == "replay":
-            return
-        else:
-            assert self.robot.online_traj_mode(), "online traj mode failed"
-        time.sleep(0.5)
         self._state_mode = "active"
 
     def enter_active_mode(self):
-        if self.config.arm_type == "replay":
-            return
-        else:
-            assert self.robot.online_idle_mode(), "online idle mode failed"
+        for arm in self.arms.values():
+            arm.enter_active_mode()
         self._state_mode = "active"
 
     def enter_passive_mode(self):
-        if self.config.arm_type == "replay":
-            return
-        else:
-            assert self.robot.demonstrate_prep_mode(), "demonstrate start mode failed"
+        for arm in self.arms.values():
+            arm.enter_passive_mode()
         self._state_mode = "passive"
 
     def enter_servo_mode(self):
-        self.enter_active_mode()
-        if self.config.arm_type == "replay":
-            return
-        else:
-            assert self.robot.online_servo_mode(), "online_servo_mode mode failed"
+        for arm in self.arms.values():
+            arm.enter_servo_mode()
         self._state_mode = "active"
 
     def send_action(self, action, wait=False):
         assert self._state_mode == "active", "Robot is not in active mode"
-        if self.config.arm_type == "replay":
-            return
-        else:
-            assert self.robot.set_target_joint_q(
-                action[:6], wait
-            ), "set target joint q failed"
-            assert self.robot.set_target_end(action[6], wait), "set target end failed"
+        i = 0
+        for arm in self.arms.values():
+            joint_num = len(arm.config.start_arm_joint_position)
+            if isinstance(arm.config.start_eef_joint_position, list):
+                joint_num += len(arm.config.start_eef_joint_position)
+            else:
+                joint_num += 1
+            arm.send_action(action[i : i + joint_num], wait)
+            i += joint_num
         return action
 
     def get_low_dim_data(self):
         data = {}
-        data["/time"] = time.time()
-        pose = self.robot.get_current_pose()
-        data["observation/arm/joint_position"] = list(self.robot.get_current_joint_q())
-        data["observation/eef/joint_position"] = [self.robot.get_current_end()]
-        data["observation/eef/pose"] = pose[0] + pose[1]  # xyz + quat(xyzw)
+        for arm_name, arm in self.arms.items():
+            low_dim = arm.get_low_dim_data()
+            data[f"/time/{arm_name}"] = low_dim.pop("/time")
+            for key, value in low_dim.items():
+                data[key[:16] + arm_name + key[15:]] = value
         return data
 
     def capture_observation(self):

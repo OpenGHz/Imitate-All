@@ -457,6 +457,7 @@ def record(
                 image_keys = [key for key in observation if "image" in key]
                 # obs_not_image_keys = [key for key in observation if "image" not in key]
                 low_dim_keys = list(observation["low_dim"].keys())
+                low_dim_time_keys = [key for key in observation["low_dim"] if "time" in key]
 
                 # save temporal images as jpg files
                 for key in image_keys:
@@ -522,7 +523,11 @@ def record(
             timestamp = 0
             start_vencod_t = time.perf_counter()
             # During env reset we save the data and encode the videos
-            low_dim_timestamps = ep_dict["low_dim"].pop("/time")
+            low_dim_timestamps = {}
+            for key in low_dim_time_keys:
+                low_dim_timestamps[key.replace("/time", "")] = ep_dict["low_dim"].pop(key)
+            if len(low_dim_time_keys) == 1:
+                low_dim_timestamps = low_dim_timestamps.popitem()[1]
             with open(videos_dir / "low_dim.json", "w") as f:
                 json.dump(ep_dict["low_dim"], f)
             with open(videos_dir / "timestamps.json", "w") as f:
