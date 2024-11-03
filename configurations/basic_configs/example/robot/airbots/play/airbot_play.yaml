@@ -1,7 +1,7 @@
 _target_: robots.airbots.airbot_play.airbot_play_3.AIRBOTPlay
 
 arm_type: "play_long"
-end_effector: "E2B"
+end_effector: "G2"
 can_interface: "can1"
 domain_id: 88
 start_arm_joint_position: null

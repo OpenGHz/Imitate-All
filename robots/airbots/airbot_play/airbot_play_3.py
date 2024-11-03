@@ -2,12 +2,8 @@ from dataclasses import dataclass, field, replace
 import time
 from habitats.common.robot_devices.cameras.utils import Camera
 from typing import Dict, Optional, List
-import sys
+from airbot_python_sdk.airbot_client import Robot
 
-# TODO: remove this by installing the package
-sys.path.insert(0, "/home/ghz/Work/airbot_play/airbot_sdk/python3/host_sdk_service")
-
-from airbot_client import Robot
 
 
 @dataclass
