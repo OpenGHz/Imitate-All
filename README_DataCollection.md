@@ -63,9 +63,9 @@ The common usage of parameters for data collection command is as follows:
 ```bash
 python3 control_robot.py record \
   --robot-path configurations/basic_configs/example/robot/airbot_play_demonstration.yaml \
-  --fps 25 \
   --root data \
   --repo-id raw/example \
+  --fps 25 \
   --warmup-time-s 1 \
   --num-frames-per-episode 500 \
   --reset-time-s 1 \
@@ -76,16 +76,16 @@ python3 control_robot.py record \
 
 #### Explanation of Parameters
 
-  - --`robot-path`: path to the robot yaml file used to instantiate the robot
-  - --`fps`: frames per second
-  - --`root`: root directory where the dataset will be stored locally at `{root}/{repo_id}`
-  - --`repo-id`: dataset identifier
-  - --`warmup-time-s`: number of seconds before starting data collection
-  - --`num-frames-per-episode`: number of frames for data recording for each episode
-  - --`reset-time-s`: number of seconds for resetting the environment after each episode
-  - --`num-episodes`: number of episodes to record
-  - --`start-episode`: index of the first episode to record
-  - --`num-image-writers-per-camera`: number of threads writing the frames as png images on disk, per camera
+  - `--robot-path`: path to the robot yaml file used to instantiate the robot
+  - `--root`: root directory where the dataset will be stored locally at `{root}/{repo_id}`, defaulting to `data`
+  - `--repo-id`: dataset identifier, defaulting to `raw/example`
+  - `--fps`: frames per second
+  - `--num-episodes`: number of episodes to record
+  - `--start-episode`: index of the first episode to record
+  - `--warmup-time-s`: number of seconds before starting data collection
+  - `--num-frames-per-episode`: number of frames for data recording for each episode
+  - `--reset-time-s`: number of seconds for resetting the environment after each episode
+  - `--num-image-writers-per-camera`: number of threads writing the frames as png images on disk, per camera
 
 #### Key Descriptions
 
@@ -107,15 +107,17 @@ After excuting the command above, you can use the keyboard of your computer to c
 
 1. Start the program, and the real-time windows of each camera will appear (if not all cameras start, try adjusting device numbers or checking camera connections; try connecting only one camera per docking station; some computers may support only 1-2 external cameras when USB ports share the same bus, consider changing the computer).
 2. Press `Space Bar` to start recording data and teleoperating the robotic arms to complete the target task.
-3. After task completion, wait to collect the specified number of frames (the number of frames actually spent to complete the task should be as close as possible to the maximum collection frames):
-    - If the demonstration opration is not acceptable, press `q` to discard the current recording process, then press `0` to control the robotic arm to return to the initial position.
-    - If it is acceptable, press `Space Bar` to save the current teaching record. After saving, the robotic arm will automatically return to the initial position.
-4. (Optional) In the `data/raw/<task_name>` folder in the current directory, check the recorded episodes. Each collected episode data includes:
-    - `mp4` videos of the cameras
-    - `low_dim.json` contains the robots' states
-    - `meta.json` contains number of frames and collecting fps
+3. If the demonstration opration is not acceptable, press `q` to discard the current recording process.
+4. After task completion:
+    - Wait to collect the specified number of frames (the number of frames actually spent to complete the task should be as close as possible to the maximum collection frames) or press `s` to save the data immediately.
+    - Data will be automatically saved upon collecting all frames. After saving, the robotic arms will automatically return to the initial position.
+5. Data will be saved to the `data/raw/<task_name>` folder in the current directory by default. Each collected episode data includes:
+    - `mp4`: videos of the cameras
+    - `low_dim.json`: the robots' states
+    - `meta.json`: number of frames and collecting fps
+    - `timestamps.json`: timestamp of each frame (low_dim data and images)
 
-**Additional Notes:**
+**Additional Suggestions:**
 
 1. Try to ensure the task are completed **just before reaching the maximum frame count**, i.e., do not end the action too early.
 
@@ -127,9 +129,7 @@ After excuting the command above, you can use the keyboard of your computer to c
 
 ### Modify Default Configurations
 
-The defualt configurations are in `configurations/basic_configs/example/robot/airbots/play/airbot_play.yaml` which is used for one long airbot_play with a G2 gripper. You can modify these according to your usage, for example:
-
-
+The defualt configurations are in `play/airbot_play_with_usbcams.yaml` and `tok/airbot_tok.yaml` in `configurations/basic_configs/example/robot/airbots/` folder. The former is used for one long airbot_plays with a G2 gripper while the latter is used for two long airbot_plays with G2 grippers. You can modify them according to your usage.
 
 ### Starting Data Replay
 
@@ -138,22 +138,24 @@ The defualt configurations are in `configurations/basic_configs/example/robot/ai
 The data replay command and its parameters are as follows:
 
 ```bash
-python3 control_robot.py replay \       
-  --robot-path configurations/basic_configs/example/robot/airbot_play.yaml \
-  --fps 25 \
+python3 control_robot.py replay \
+  --robot-path configurations/basic_configs/example/robot/airbots/play/airbot_play.yaml \
   --root data \
   --repo-id raw/example \
-  --episode 0
+  --fps 25 \
+  --num-episodes 1 \
+  --start-episode 0 \
+  --num-rollouts 50
 ```
 
 **Parameter explanation:**
 
-- `-tn`: Specify the task name.
-- `-ei`: Specify the ID corresponding to the HDF file.
-- `-can`: CAN ID of the follower arms. For dual-arm tasks, you can set `-can 1 3` if you followed the connection order in [Starting-Robotic-Arms](#starting-robotic-arms). Also, you can unplug all the Type-C wires first and only connect the follower arms, then set `-can 0 1`.
-- `-ii`: Do not replay camera data.
-- `-ia`: Do not replay action data.
-- `-rn`: For dual-arm tasks, specify `-rn` 2.
-- `-cn`: The name of the cameras data to be replayed. For example, if there are two cameras, specify `-cn 0 1`.
+  - `--robot-path`: path to the robot yaml file used to instantiate the robot
+  - `--fps`: frames per second
+  - `--root`: root directory where the datasets are stored
+  - `--repo-id`: dataset identifier
+  - `--num-episodes`: number of episodes to record, defaulting to 1
+  - `--start-episode`: index of the first episode to replay
+  - `--num-rollouts`: number of times to replay the episode, defaulting to 50
 
-After executing the command above, you can see the instruction ``Press Enter to start replay or z and Enter to exit...`` in the terminal. Then press `Enter` to replay. And you will see the same prompt after the current replay ends.
+After executing the command above, you can see the instruction ``Press Enter to replay. ...`` in the terminal. Then press `Enter` to replay. And you will see the same prompt after the current replay ends.

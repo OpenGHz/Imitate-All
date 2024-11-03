@@ -30,6 +30,7 @@ from habitats.common.utils.utils import (
 
 from typing import Optional, Callable
 from data_process.dataset.raw_dataset import RawDataset
+from data_process.convert_all import concatenate_by_key, replace_keys
 from robots.common import Robot, make_robot_from_yaml
 from pprint import pprint
 import numpy as np
@@ -641,45 +642,63 @@ def record(
 
 def replay(
     robot: Robot,
-    episode: int,
-    fps: Optional[int] = None,
-    root="data",
-    repo_id="lerobot/debug",
-    num_rollouts=1,
+    root:str,
+    repo_id: str,
+    start_episode: int,
+    num_episodes:int,
+    num_rollouts: int,
+    fps: int,
 ):
     # TODO(rcadene): Add option to record logs
     local_dir = Path(root) / repo_id
     assert local_dir.exists(), f"Local directory not found: {local_dir}"
     logging.info(f"Loading dataset from {local_dir}")
     dataset = RawDataset(repo_id, root=root)
-    dataset.warm_up_episodes([episode], low_dim_only=True)
 
-    meta = dataset.raw_data[episode]["meta"]
-    low_dim = dataset.raw_data[episode]["low_dim"]
-    for roll in range(num_rollouts):
-        # go to first frame using trajectory mode
-        arm_qpos = low_dim["observation/arm/joint_position"][0]
-        eef_qpos = low_dim["observation/eef/joint_position"][0]
-        action = arm_qpos + eef_qpos
-        logging.info("Moving to the first frame of the episode")
-        robot.enter_traj_mode()
-        robot.send_action(action)
-        # time.sleep(1)
-        input(f"Press Enter to replay. Number: {roll}...")
-        logging.info("Replaying episode")
-        robot.enter_servo_mode()
-        for i in tqdm.tqdm(range(meta["length"])):
-            start_episode_t = time.perf_counter()
-            arm_qpos = low_dim["observation/arm/joint_position"][i]
-            eef_qpos = low_dim["observation/eef/joint_position"][i]
+    for episode_index in range(start_episode, start_episode + num_episodes):
+        logging.info(f"Replaying episode {episode_index}")
+
+        dataset.warm_up_episodes([start_episode], low_dim_only=True)
+
+        meta = dataset.raw_data[start_episode]["meta"]
+        low_dim = dataset.raw_data[start_episode]["low_dim"]
+
+        # concatenate different arms
+        obs_keys = ["observation/arm/joint_position", "observation/eef/joint_position"]
+        act_keys = replace_keys(obs_keys.copy(), "observation", "action")
+        if obs_keys[0] not in low_dim:
+            low_dim_concat:dict = robot.low_dim_concat
+            low_dim_concat.update(replace_keys(low_dim_concat.copy(), "observation", "action"))
+            low_dim = concatenate_by_key(low_dim, low_dim_concat, remove_ori=True)
+
+        for roll in range(num_rollouts):
+            # go to first frame using trajectory mode
+            arm_qpos = low_dim[obs_keys[0]][0]
+            eef_qpos = low_dim[obs_keys[1]][0]
             action = arm_qpos + eef_qpos
-            print("current joint:", robot.get_low_dim_data()["observation/arm/joint_position"])
-            print("target action:", action)
+            logging.info("Moving to the first frame of the episode")
+            robot.enter_traj_mode()
             robot.send_action(action)
-            dt_s = time.perf_counter() - start_episode_t
-            busy_wait(1 / fps - dt_s)
-            dt_s = time.perf_counter() - start_episode_t
-            # log_control_info(robot, dt_s, fps=fps)
+            # time.sleep(1)
+            key = input(f"Press Enter to replay. Episode: {episode_index} Number: {roll} or 'z and Enter' to exit current episode or 'x and Enter' to exit all episodes")
+            if key in ["z", "Z"]:
+                break
+            elif key in ["x", "X"]:
+                return
+            logging.info("Replaying episode")
+            robot.enter_servo_mode()
+            for i in tqdm.tqdm(range(meta["length"])):
+                start_episode_t = time.perf_counter()
+                arm_qpos = low_dim[obs_keys[0]][i]
+                eef_qpos = low_dim[obs_keys[1]][i]
+                action = arm_qpos + eef_qpos
+                # print("current joint:", robot.get_low_dim_data()["observation/arm/joint_position"])
+                # print("target action:", action)
+                robot.send_action(action)
+                dt_s = time.perf_counter() - start_episode_t
+                busy_wait(1.0 / fps - dt_s)
+                dt_s = time.perf_counter() - start_episode_t
+                # log_control_info(robot, dt_s, fps=fps)
 
 
 if __name__ == "__main__":
@@ -703,25 +722,34 @@ if __name__ == "__main__":
     base_parser.add_argument(
         "--fps",
         type=none_or_int,
-        default=None,
         help="Frames per second (set to None to disable)",
     )
 
-    parser_teleop = subparsers.add_parser("teleoperate", parents=[base_parser])
-
-    parser_record = subparsers.add_parser("record", parents=[base_parser])
-    parser_record.add_argument(
+    dataused_parser = argparse.ArgumentParser(add_help=False)
+    dataused_parser.add_argument(
         "--root",
         type=Path,
         default="data",
         help="Root directory where the dataset will be stored locally at '{root}/{repo_id}' (e.g. 'data/hf_username/dataset_name').",
     )
-    parser_record.add_argument(
+    dataused_parser.add_argument(
         "--repo-id",
         type=str,
-        default="lerobot/test",
+        default="raw/example",
         help="Dataset identifier. By convention it should match '{hf_username}/{dataset_name}' (e.g. `lerobot/test`).",
     )
+    dataused_parser.add_argument(
+        "--num-episodes", type=int, default=1, help="Number of episodes to record."
+    )
+    dataused_parser.add_argument(
+        "--start-episode",
+        type=int,
+        help="Index of the first episode to record; value < 0 means get the last episode index from 'data_recording_info.json' and add (value + 1) to it.",
+    )
+
+    parser_teleop = subparsers.add_parser("teleoperate", parents=[base_parser])
+
+    parser_record = subparsers.add_parser("record", parents=[base_parser, dataused_parser])
     parser_record.add_argument(
         "--warmup-time-s",
         type=int,
@@ -744,14 +772,6 @@ if __name__ == "__main__":
         type=int,
         default=0,
         help="Number of seconds for resetting the environment after each episode.",
-    )
-    parser_record.add_argument(
-        "--num-episodes", type=int, default=50, help="Number of episodes to record."
-    )
-    parser_record.add_argument(
-        "--start-episode",
-        type=int,
-        help="Index of the first episode to record; value < 0 means get the last episode index from 'data_recording_info.json' and add (value + 1) to it.",
     )
     parser_record.add_argument(
         "--run-compute-stats",
@@ -803,27 +823,12 @@ if __name__ == "__main__":
         help="Any key=value arguments to override config values (use dots for.nested=overrides)",
     )
 
-    parser_replay = subparsers.add_parser("replay", parents=[base_parser])
-    parser_replay.add_argument(
-        "--root",
-        type=Path,
-        default="data",
-        help="Root directory where the dataset will be stored locally at '{root}/{repo_id}' (e.g. 'data/hf_username/dataset_name').",
-    )
-    parser_replay.add_argument(
-        "--repo-id",
-        type=str,
-        default="lerobot/test",
-        help="Dataset identifier. By convention it should match '{hf_username}/{dataset_name}' (e.g. `lerobot/test`).",
-    )
-    parser_replay.add_argument(
-        "--episode", type=int, default=0, help="Index of the episode to replay."
-    )
+    parser_replay = subparsers.add_parser("replay", parents=[base_parser, dataused_parser])
     parser_replay.add_argument(
         "--num-rollouts",
         type=int,
-        default=1,
-        help="Number of times to replay the episode.",
+        default=50,
+        help="Number of times to replay each episode.",
     )
 
     args = parser.parse_args()

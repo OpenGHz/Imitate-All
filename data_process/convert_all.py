@@ -129,12 +129,22 @@ class Compresser(object):
         return all_padded_data
 
 
-def remove_after_last_dot(s):
+def remove_after_last_dot(s:str) -> str:
     last_dot_index = s.rfind(".")
     if last_dot_index != -1:
         return s[:last_dot_index]
     return s
 
+def replace_keys(data:dict, raw, target) -> dict:
+    """Replace the keys in the dict with the raw key to the target key.
+    This will change the original dict.
+    """
+    if isinstance(data, dict):
+        for key in list(data.keys()):
+            data[key.replace(raw, target)] = data.pop(key)
+        for key, v in data.items():
+            replace_keys(v, raw, target)
+    return data
 
 def video_to_dict(
     video_dir: str,
@@ -291,6 +301,22 @@ def convert_avi_to_mp4(
         out_names = mp4_names
     return out_names
 
+def concatenate_by_key(data: dict, concatenater: dict, remove_ori=True) -> dict:
+    for key, value in concatenater.items():
+        one_dim_reshape = lambda x: x.reshape(-1, 1) if len(x.shape) == 1 else x
+        if not set(value).issubset(set(data.keys())):
+            logger.warning(f"Keys {value} are not found in the data.")
+            continue
+        data[key] = np.concatenate(
+            [one_dim_reshape(np.array(data[v])) for v in value], axis=1
+        ).tolist()
+        # remove the original keys if v != key
+        if remove_ori:
+            for v in value:
+                if v != key:
+                    if data.pop(v, None) is None:
+                        logger.warning(f"Key {v} is not found.")
+    return data
 
 def raw_to_dict(
     raw_dir: str,
@@ -380,16 +406,7 @@ def raw_to_dict(
                 ep_dict[key] = value
 
         if concatenater is not None:
-            for key, value in concatenater.items():
-                one_dim_reshape = lambda x: x.reshape(-1, 1) if len(x.shape) == 1 else x
-                ep_dict[key] = np.concatenate(
-                    [one_dim_reshape(np.array(ep_dict[v])) for v in value], axis=1
-                ).tolist()
-                # remove the original keys if v != key
-                for v in value:
-                    if v != key:
-                        if ep_dict.pop(v, None) is None:
-                            print(f"Key {v} is not found in the episode {ep_name}.")
+            ep_dict = concatenate_by_key(ep_dict, concatenater, remove_ori=True)
         ep_dicts[ep_name] = ep_dict
 
     return ep_dicts

@@ -63,7 +63,6 @@ class AIRBOTPlay(object):
     def reset(self):
         args = self.config
         robot = self.robot
-        print(f"Resetting robot to start position: {args.start_arm_joint_position}")
         # set to traj mode
         if args.arm_type != "replay" and robot.get_current_state() != "ONLINE_TRAJ":
             assert robot.online_idle_mode(), "online idle mode failed"
@@ -132,7 +131,8 @@ class AIRBOTPlay(object):
             assert self.robot.set_target_joint_q(
                 action[:6], wait
             ), "set target joint q failed"
-            assert self.robot.set_target_end(action[6], wait), "set target end failed"
+            if self.config.end_effector not in ["none", "E2B"]:
+                assert self.robot.set_target_end(action[6], wait), "set target end failed"
         return action
 
     def get_low_dim_data(self):
