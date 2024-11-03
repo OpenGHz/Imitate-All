@@ -680,11 +680,11 @@ def replay(
             robot.enter_traj_mode()
             robot.send_action(action)
             # time.sleep(1)
-            key = input(f"Press Enter to replay. Episode: {episode_index} Number: {roll} or 'z and Enter' to exit current episode or 'x and Enter' to exit all episodes")
+            key = input(f"Press Enter to replay. Episode: {episode_index} Number: {roll} or 'x and Enter' to exit current episode or 'z and Enter' to exit all episodes")
             if key in ["z", "Z"]:
-                break
-            elif key in ["x", "X"]:
                 return
+            elif key in ["x", "X"]:
+                break
             logging.info("Replaying episode")
             robot.enter_servo_mode()
             for i in tqdm.tqdm(range(meta["length"])):
