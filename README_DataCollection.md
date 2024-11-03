@@ -62,7 +62,7 @@ The common usage of parameters for data collection command is as follows:
 
 ```bash
 python3 control_robot.py record \
-  --robot-path configurations/basic_configs/example/robot/airbot_play_demonstration.yaml \
+  --robot-path configurations/basic_configs/example/robot/airbots/play/airbot_play_demonstration.yaml \
   --root data \
   --repo-id raw/example \
   --fps 25 \

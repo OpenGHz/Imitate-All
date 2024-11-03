@@ -121,7 +121,7 @@ class AIRBOTPlay(object):
             assert leader_robot[i].set_target_joint_q(args.start_arm_joint_position[i]), (
                 "Leader robot %d set target joint q failed" % i
             )
-            if args.leader_end_effector[i] not in ["E2B"]:
+            if args.leader_end_effector[i] not in ["E2B", "none"]:
                 assert leader_robot[i].set_target_end(args.start_eef_joint_position[i]), (
                     "Leader robot %d set target end failed" % i
                 )
