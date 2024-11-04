@@ -152,6 +152,7 @@ def video_to_dict(
     video_type: Optional[str] = None,
     name_converter: Optional[Dict[str, str]] = None,
     compresser: Optional[Compresser] = None,
+    downsampling: int = 0,
     pre_process: Optional[Callable] = None,
     max_threads: int = -1,
 ) -> Dict[str, list]:
@@ -210,7 +211,8 @@ def video_to_dict(
                 if compresser.compress_method == "jpg":
                     compressed_len[video_name].append(len(frame))
             frames.append(pre_process(frame))
-
+        if downsampling > 0:
+            frames = frames[::downsampling]
         cap.release()
         name = name_converter.get(video_name, video_name)
         video_dict[f"{name}"] = frames
@@ -545,11 +547,12 @@ def merge_video_and_save(
     compresser: Optional[Compresser] = None,
     target_path: Optional[str] = None,
     pad_max_len: Optional[int] = None,
+    downsampling: int = 0,
     *args,
     **kwargs,
 ):
     # read images from video files
-    images = video_to_dict(video_dir, video_names, None, name_converter, compresser)
+    images = video_to_dict(video_dir, video_names, None, name_converter, compresser, downsampling)
     # merge the images into the raw data dict
     raw_data.update(images)
     # save the raw data dict to the target directory
