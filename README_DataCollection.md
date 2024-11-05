@@ -1,14 +1,25 @@
 # Data Collection and Replay
 
-
 ## Environment Setup
 
 !!! tip "Supported Operation Systems"
 
-    * Ubuntu 20.04 LTS AMD64(x86_64)
+    * Ubuntu AMD64(x86_64)
+
+It is recomended to use **anaconda** to manage python environments. You can download and install it by running the following commands(if download very slowly, you can [click here](https://mirrors.bfsu.edu.cn/anaconda/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh) to download manually):
+
+```bash
+wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && bash miniconda.sh
+```
+
+Restart your terminal and you can now use conda:
+```bash
+conda config --set auto_activate_base false && conda deactivate
+```
 
 Install the required python packages:
 ```bash
+conda create -n imitall python=3.8.10 && conda activate imitall
 pip install -r requirements/data_collection.txt
 ```
 
