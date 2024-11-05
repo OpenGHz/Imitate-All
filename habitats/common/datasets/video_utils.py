@@ -20,15 +20,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
-import torch
-import torchvision
+try:
+    import torch
+    import torchvision
+except Exception as e:
+    print(f"Error: {e}")
 # import warnings
 # import pyarrow as pa
 # from datasets.features.features import register_feature
 
 
 def load_from_videos(
-    item: Dict[str, torch.Tensor],
+    item: Dict[str, 'torch.Tensor'],
     video_frame_keys: List[str],
     videos_dir: Path,
     tolerance_s: float,
@@ -70,7 +73,7 @@ def decode_video_frames_torchvision(
     tolerance_s: float,
     backend: str = "pyav",
     log_loaded_timestamps: bool = False,
-) -> torch.Tensor:
+) -> 'torch.Tensor':
     """Loads frames associated to the requested timestamps of a video
 
     The backend can be either "pyav" (default) or "video_reader".

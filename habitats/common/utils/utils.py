@@ -24,9 +24,12 @@ from typing import Any, Generator, Dict, List, Optional
 
 import hydra
 import numpy as np
-import torch
 from omegaconf import DictConfig
 
+try:
+    import torch
+except Exception as e:
+    print(f"Error: {e}")
 
 def inside_slurm():
     """Check whether the python process was launched through slurm"""
@@ -34,7 +37,7 @@ def inside_slurm():
     return "SLURM_JOB_ID" in os.environ
 
 
-def get_safe_torch_device(cfg_device: str, log: bool = False) -> torch.device:
+def get_safe_torch_device(cfg_device: str, log: bool = False) -> 'torch.device':
     """Given a string, return a torch.device with checks on whether the device is available."""
     if cfg_device == "cuda":
         assert torch.cuda.is_available()

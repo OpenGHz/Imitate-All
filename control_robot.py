@@ -24,9 +24,7 @@ from termcolor import colored
 
 from habitats.common.datasets.video_utils import encode_video_frames
 from habitats.common.robot_devices.utils import busy_wait
-from habitats.common.utils.utils import (
-    init_logging,
-)
+from habitats.common.utils.utils import init_logging
 
 from typing import Optional, Callable
 from data_process.dataset.raw_dataset import RawDataset
