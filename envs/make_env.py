@@ -23,6 +23,7 @@ def make_environment(env_config):
     print(f"Start joint: {start_joint}")
 
     robot_instances: List[AssembledRobot] = []
+    env = None
     if "airbot_play" in robot_name:
         # set up can
         # from utils import CAN_Tools
@@ -86,7 +87,7 @@ def make_environment(env_config):
 
         for i in range(robot_num):
             robot_instances.append(AssembledMmkRobot())
-    elif robot_name == "none":
+    elif robot_name == "none" or habitat == "mujoco":
         print("No direct robot is used")
     else:
         raise NotImplementedError(f"{robot_name} is not implemented")
@@ -105,10 +106,12 @@ def make_environment(env_config):
             raise NotImplementedError(f"robot_name: {robot_name} is not implemented")
     elif habitat == "mujoco":
         from envs.airbot_play_mujoco_env import make_env
+        print(f"Using Mujoco environment with config file: {robot_name}")
+        env = make_env(robot_name)
     elif habitat == "isaac":
-        raise NotImplementedError
+        raise NotImplementedError(f"habitat: {habitat} is not implemented")
     else:
-        raise NotImplementedError(f"habitat:{habitat} is not implemented")
+        raise NotImplementedError(f"habitat: {habitat} is not implemented")
     camera_names = env_config["camera_names"]
     camera_indices = env_config["camera_indices"]
     if camera_indices != "":
@@ -117,6 +120,7 @@ def make_environment(env_config):
         }
     else:
         cameras = camera_names
-    env = make_env(robot_instance=robot_instances, cameras=cameras)
+    if env is None:
+        env = make_env(robot_instance=robot_instances, cameras=cameras)
     env.set_reset_position(start_joint)
     return env
