@@ -29,7 +29,7 @@ from omegaconf import DictConfig
 try:
     import torch
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"Warning: {e}")
 
 def inside_slurm():
     """Check whether the python process was launched through slurm"""

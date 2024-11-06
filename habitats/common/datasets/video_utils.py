@@ -24,7 +24,7 @@ try:
     import torch
     import torchvision
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"Warning: {e}")
 # import warnings
 # import pyarrow as pa
 # from datasets.features.features import register_feature

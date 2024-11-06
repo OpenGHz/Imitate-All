@@ -413,8 +413,10 @@ def raw_to_dict(
 
     return ep_dicts
 
-
-import h5py
+try:
+    import h5py
+except Exception as e:
+    print("Warning: no h5py module is found.")
 
 
 def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] = None):
