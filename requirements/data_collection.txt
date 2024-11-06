@@ -5,4 +5,4 @@ pynput >=1.7.7
 einops >=0.8.0
 imagecodecs
 opencv-python >=4.9.0
-pillow
+pillow >=10.2.0
