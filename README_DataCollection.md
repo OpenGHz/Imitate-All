@@ -17,6 +17,12 @@ Restart your terminal and you can now use conda:
 conda config --set auto_activate_base false && conda deactivate
 ```
 
+Clone the reposity and enter it:
+```bash
+git clone https://github.com/OpenGHz/Imitate-All.git
+cd Imitate-All
+```
+
 Install the required python packages:
 ```bash
 conda create -n imitall python=3.8.10 && conda activate imitall
