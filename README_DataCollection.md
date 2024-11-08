@@ -28,7 +28,7 @@ Install the required python packages:
 conda create -n imitall python=3.8.10 && conda activate imitall
 pip install -r requirements/data_collection.txt
 ```
-For AIRBOTPlay3.0 usage, make sure you have installed the `airbot_python_sdk` package.
+For AIRBOTPlay3.0 usage, make sure you have installed the `airbot_python_sdk` package (version >= 3.0.4, refer to `Environment-setup-for-AIRBOT-Play.md`).
 
 ## Data Collection
 
