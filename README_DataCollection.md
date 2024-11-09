@@ -33,7 +33,7 @@ For AIRBOTPlay3.0 usage, make sure you have installed the `airbot_python_sdk` pa
 ```bash
 python3 -m pip install --upgrade pip setuptools -i https://pypi.mirrors.ustc.edu.cn/simple/
 python3 -m pip install grpcio grpcio-tools -i https://pypi.mirrors.ustc.edu.cn/simple/
-cd airbot_sdk/tools
+cd /path/to/your/airbot_sdk/tools  # Don't put this package in the Imitate-All folder
 chmod +x ./grpc_generate.sh
 bash ./grpc_generate.sh
 cd ../python3
