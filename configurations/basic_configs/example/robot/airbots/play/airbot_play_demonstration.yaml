@@ -3,7 +3,7 @@ _target_: robots.airbots.airbot_play.airbot_play_3_demonstration.AIRBOTPlay
 leader_number: 1
 follower_number: 1
 leader_arm_type: ["play_long"]
-follower_arm_type: ["play_long"]
+follower_arm_type: ["lite"]
 leader_end_effector: ["E2B"]
 follower_end_effector: ["G2"]
 leader_can_interface: ["can0"]
@@ -23,12 +23,12 @@ cameras:
     fps: 30
     width: 640
     height: 480
-  # cam2:
-  #   _target_: habitats.common.robot_devices.cameras.opencv.OpenCVCamera
-  #   camera_index: 2
-  #   fps: 30
-  #   width: 640
-  #   height: 480
+  cam2:
+    _target_: habitats.common.robot_devices.cameras.opencv.OpenCVCamera
+    camera_index: 2
+    fps: 25
+    width: 640
+    height: 480
   # cam3:
   #   _target_: habitats.common.robot_devices.cameras.opencv.OpenCVCamera
   #   camera_index: 4
