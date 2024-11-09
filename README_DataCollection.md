@@ -29,7 +29,11 @@ conda create -n imitall python=3.8.10 && conda activate imitall
 pip install -r requirements/data_collection.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 sudo apt install ffmpeg
 ```
-For AIRBOTPlay3.0 usage, make sure you have installed the `airbot_python_sdk` package (version >= 3.0.4, refer to `Environment-setup-for-AIRBOT-Play.md`).
+For AIRBOTPlay3.0 usage, make sure you have installed the `airbot_python_sdk` package (version >= 3.0.4, refer to `Environment-setup-for-AIRBOT-Play.md`), you can install the grpc packages to your conda environment fitst:
+```bash
+python3 -m pip install --upgrade pip setuptools -i https://pypi.mirrors.ustc.edu.cn/simple/
+python3 -m pip install grpcio grpcio-tools -i https://pypi.mirrors.ustc.edu.cn/simple/
+```
 
 ## Data Collection
 
@@ -88,7 +92,7 @@ python3 control_robot.py record \
   --warmup-time-s 1 \
   --num-frames-per-episode 500 \
   --reset-time-s 1 \
-  --num-episodes 5 \
+  --num-episodes 10000 \
   --start-episode 0 \
   --num-image-writers-per-camera 1
 ```
