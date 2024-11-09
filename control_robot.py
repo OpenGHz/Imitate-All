@@ -111,6 +111,55 @@ def is_headless():
         return True
 
 
+def show_info_on_image(episode, fps, steps):
+    # 创建一个白色背景的图像 (height, width, channels)
+    height, width = 400, 600
+    image = np.ones((height, width, 3), dtype=np.uint8) * 255  # 白色背景
+
+    # 设置字体
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale_up = 1
+    font_scale_down = 6
+    thickness_up = 2
+    thickness_down = 5
+
+    # 文字内容
+    text_top = f"Episode:{episode}  FPS:{fps}"
+    text_bottom = f"{steps}"
+
+    # 计算文本大小，以便居中
+    (text_width_top, text_height_top), _ = cv2.getTextSize(
+        text_top, font, font_scale_up, thickness_up
+    )
+    (text_width_bottom, text_height_bottom), _ = cv2.getTextSize(
+        text_bottom, font, font_scale_down, thickness_down
+    )
+
+    # 设置文本位置（使文字居中）
+    x_top = (width - text_width_top) // 2
+    y_top = int(height * 0.25)  # 上栏位置
+
+    x_bottom = (width - text_width_bottom) // 2
+    y_bottom = int(height * 0.75)  # 下栏位置
+
+    # 在图像上添加文字
+    cv2.putText(
+        image, text_top, (x_top, y_top), font, font_scale_up, (0, 0, 255), thickness_up
+    )
+    cv2.putText(
+        image,
+        text_bottom,
+        (x_bottom, y_bottom),
+        font,
+        font_scale_down,
+        (0, 255, 0),
+        thickness_down,
+    )
+
+    # 显示图像
+    cv2.imshow("Demonstration Information", image)
+
+
 ########################################################################################
 # Control modes
 ########################################################################################
@@ -399,8 +448,10 @@ def record(
             logging.info(
                 f"Press 'Space Bar' to start recording episode {episode_index} or press 'q' to re-record the last episode {max(episode_index - 1, 0)}."
             )
-            # re_record, stop_record = keyer.wait_start_recording()
-            re_record, stop_record = keyer.wait_and_show_camera(robot)
+            if is_headless():
+                re_record, stop_record = keyer.wait_start_recording()
+            else:
+                re_record, stop_record = keyer.wait_and_show_camera(robot)
             if stop_record:
                 before_exit()
                 # episode_index = max(1, episode_index)
@@ -458,6 +509,7 @@ def record(
                             key,
                             cv2.cvtColor(observation[key], cv2.COLOR_RGB2BGR),
                         )
+                    show_info_on_image(episode_index, fps, frame_index + 1)
                     cv2.waitKey(1)
 
                 # logging.warning(f"2: save image time + 1: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
