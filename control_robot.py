@@ -219,6 +219,7 @@ def record(
             self.record_event: Event = Event()
             self._is_waiting_start_recording: bool = False
             self.is_dragging_mode: bool = False
+            self.no_convert = False
 
         def show_instruction(self):
             print(
