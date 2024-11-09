@@ -26,7 +26,8 @@ cd Imitate-All
 Install the required python packages:
 ```bash
 conda create -n imitall python=3.8.10 && conda activate imitall
-pip install -r requirements/data_collection.txt
+pip install -r requirements/data_collection.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+sudo apt install ffmpeg
 ```
 For AIRBOTPlay3.0 usage, make sure you have installed the `airbot_python_sdk` package (version >= 3.0.4, refer to `Environment-setup-for-AIRBOT-Play.md`).
 
