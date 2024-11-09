@@ -5,7 +5,6 @@ Useful to record a dataset, replay a recorded episode, run the policy on your ro
 and record an evaluation dataset, and to recalibrate your robot if needed.
 """
 
-
 import argparse
 import concurrent.futures
 import json
@@ -207,6 +206,13 @@ def record(
             "Headless environment detected. On-screen cameras display and keyboard inputs will not be available."
         )
 
+    def show_cameras(robot: Robot):
+        observation = robot.capture_observation()
+        image_keys = [key for key in observation if "image" in key]
+        for key in image_keys:
+            cv2.imshow(key, cv2.cvtColor(observation[key], cv2.COLOR_RGB2BGR))
+        cv2.waitKey(1)
+
     # Allow to exit early while recording an episode or resetting the environment,
     # by tapping the right arrow key '->'. This might require a sudo permission
     # to allow your terminal to monitor keyboard events.
@@ -242,6 +248,14 @@ def record(
             self._is_waiting_start_recording = False
             return self._rerecord_episode, self._stop_recording
 
+        def wait_and_show_camera(self, robot: Robot):
+            self._is_waiting_start_recording = True
+            while not self.record_event.is_set():
+                show_cameras(robot)
+            self.record_event.clear()
+            self._is_waiting_start_recording = False
+            return self._rerecord_episode, self._stop_recording
+
         def is_recording(self):
             return not self._is_waiting_start_recording
 
@@ -262,9 +276,11 @@ def record(
                 if key == keyboard.Key.space:
                     if (not self.is_recording()) and self.set_record_event():
                         robot.enter_passive_mode()
-                        print("Start recording data")
+                        # print("Start recording data")
                     else:
-                        print("Still recording data, please wait or press 's' to save right now...")
+                        print(
+                            "Still recording data, please wait or press 's' to save right now..."
+                        )
                 elif (key == keyboard.Key.esc) or (key.char == "z"):
                     print("Stopping data recording...")
                     self.exit_early = True
@@ -351,43 +367,6 @@ def record(
         lambda episode_index, key: get_videos_dir(episode_index) / f"{key}.mp4"
     )
 
-    # Execute a few seconds without recording data, to give times
-    # to the robot devices to connect and start synchronizing.
-    timestamp = 0
-    start_warmup_t = time.perf_counter()
-    is_warmup_print = False
-    while timestamp < warmup_time_s:
-        if not is_warmup_print:
-            logging.info("Warming up (no data recording)")
-            # say("Warming up")
-            is_warmup_print = True
-
-        start_loop_t = time.perf_counter()
-
-        # if policy is None:
-        #     observation, action = robot.teleop_step(record_data=True)
-        # else:
-        # observation = robot.get_low_dim_data()
-        observation = robot.capture_observation()
-
-        # logging.warning(f"0: get observation time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
-
-        if not is_headless():
-            image_keys = [key for key in observation if "image" in key]
-            for key in image_keys:
-                cv2.imshow(
-                    key, cv2.cvtColor(observation[key], cv2.COLOR_RGB2BGR)
-                )
-            cv2.waitKey(1)
-
-        dt_s = time.perf_counter() - start_loop_t
-        busy_wait(1 / fps - dt_s)
-        # logging.warning(f"0: warmup time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
-        dt_s = time.perf_counter() - start_loop_t
-        log_control_info(robot, dt_s, fps=fps)
-
-        timestamp = time.perf_counter() - start_warmup_t
-
     # Save images using threads to reach high fps (30 and more)
     # Using `with` to exist smoothly if an execption is raised.
     futures = []
@@ -420,7 +399,8 @@ def record(
             logging.info(
                 f"Press 'Space Bar' to start recording episode {episode_index} or press 'q' to re-record the last episode {max(episode_index - 1, 0)}."
             )
-            re_record, stop_record = keyer.wait_start_recording()
+            # re_record, stop_record = keyer.wait_start_recording()
+            re_record, stop_record = keyer.wait_and_show_camera(robot)
             if stop_record:
                 before_exit()
                 # episode_index = max(1, episode_index)
@@ -429,7 +409,7 @@ def record(
                 episode_index = max(episode_index - 1, 0)
                 keyer.clear_rerecord()
                 logging.info(f"Rerecording last episode {episode_index}")
-            logging.info(f"Recording episode {episode_index}")
+            logging.info(f"Start recording episode {episode_index}")
             videos_dir = get_videos_dir(episode_index)
             get_tmp_imgs_dir = (
                 lambda episode_index, key: get_videos_dir(episode_index)
@@ -447,9 +427,6 @@ def record(
             while timestamp < episode_time_s:
                 start_loop_t = time.perf_counter()
 
-                # if policy is None:
-                #     observation, action = robot.teleop_step(record_data=True)
-                # else:
                 observation = robot.capture_observation()
 
                 # logging.warning(f"1: get observation time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
@@ -457,7 +434,9 @@ def record(
                 image_keys = [key for key in observation if "image" in key]
                 # obs_not_image_keys = [key for key in observation if "image" not in key]
                 low_dim_keys = list(observation["low_dim"].keys())
-                low_dim_time_keys = [key for key in observation["low_dim"] if "time" in key]
+                low_dim_time_keys = [
+                    key for key in observation["low_dim"] if "time" in key
+                ]
 
                 # save temporal images as jpg files
                 for key in image_keys:
@@ -491,9 +470,7 @@ def record(
                 for key in robot.cameras:
                     if key not in ep_dict["images_timestamp"]:
                         ep_dict["images_timestamp"][key] = []
-                    ep_dict["images_timestamp"][key].append(
-                        observation["/time/" + key]
-                    )
+                    ep_dict["images_timestamp"][key].append(observation["/time/" + key])
                 # for key in action:
                 #     if key not in ep_dict:
                 #         ep_dict["low_dim"][key] = []
@@ -525,7 +502,9 @@ def record(
             # During env reset we save the data and encode the videos
             low_dim_timestamps = {}
             for key in low_dim_time_keys:
-                low_dim_timestamps[key.replace("/time", "")] = ep_dict["low_dim"].pop(key)
+                low_dim_timestamps[key.replace("/time", "")] = ep_dict["low_dim"].pop(
+                    key
+                )
             if len(low_dim_time_keys) == 1:
                 low_dim_timestamps = low_dim_timestamps.popitem()[1]
             with open(videos_dir / "low_dim.json", "w") as f:
@@ -641,10 +620,10 @@ def record(
 
 def replay(
     robot: Robot,
-    root:str,
+    root: str,
     repo_id: str,
     start_episode: int,
-    num_episodes:int,
+    num_episodes: int,
     num_rollouts: int,
     fps: int,
 ):
@@ -666,8 +645,10 @@ def replay(
         obs_keys = ["observation/arm/joint_position", "observation/eef/joint_position"]
         act_keys = replace_keys(obs_keys.copy(), "observation", "action")
         if obs_keys[0] not in low_dim:
-            low_dim_concat:dict = robot.low_dim_concat
-            low_dim_concat.update(replace_keys(low_dim_concat.copy(), "observation", "action"))
+            low_dim_concat: dict = robot.low_dim_concat
+            low_dim_concat.update(
+                replace_keys(low_dim_concat.copy(), "observation", "action")
+            )
             low_dim = concatenate_by_key(low_dim, low_dim_concat, remove_ori=True)
 
         for roll in range(num_rollouts):
@@ -679,7 +660,9 @@ def replay(
             robot.enter_traj_mode()
             robot.send_action(action)
             # time.sleep(1)
-            key = input(f"Press Enter to replay. Episode: {episode_index} Number: {roll} or 'x and Enter' to exit current episode or 'z and Enter' to exit all episodes")
+            key = input(
+                f"Press Enter to replay. Episode: {episode_index} Number: {roll} or 'x and Enter' to exit current episode or 'z and Enter' to exit all episodes"
+            )
             if key in ["z", "Z"]:
                 return
             elif key in ["x", "X"]:
@@ -748,7 +731,9 @@ if __name__ == "__main__":
 
     parser_teleop = subparsers.add_parser("teleoperate", parents=[base_parser])
 
-    parser_record = subparsers.add_parser("record", parents=[base_parser, dataused_parser])
+    parser_record = subparsers.add_parser(
+        "record", parents=[base_parser, dataused_parser]
+    )
     parser_record.add_argument(
         "--warmup-time-s",
         type=int,
@@ -822,7 +807,9 @@ if __name__ == "__main__":
         help="Any key=value arguments to override config values (use dots for.nested=overrides)",
     )
 
-    parser_replay = subparsers.add_parser("replay", parents=[base_parser, dataused_parser])
+    parser_replay = subparsers.add_parser(
+        "replay", parents=[base_parser, dataused_parser]
+    )
     parser_replay.add_argument(
         "--num-rollouts",
         type=int,
