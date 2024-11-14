@@ -48,7 +48,7 @@ class MujocoEnv(object):
         # print("post_obs", obs["qpos"])
         # obs["qvel"] = raw_obs["jv"]
         obs["images"] = {}
-        for id in self.exec_node.config.obs_camera_id:
+        for id in self.exec_node.config.obs_rgb_cam_id:
             obs["images"][f"{id}"] = raw_obs["img"][id][:, :, ::-1]
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
@@ -81,8 +81,8 @@ class MujocoEnv(object):
             obs = collections.OrderedDict()
             obs["qpos"] = list(raw_obs["jq"])
             obs["images"] = {}
-        for id in self.exec_node.config.obs_camera_id:
-            obs["images"][f"{id}"] = raw_obs["img"][id][:, :, ::-1]
+            for id in self.exec_node.config.obs_rgb_cam_id:
+                obs["images"][f"{id}"] = raw_obs["img"][id][:, :, ::-1]
         else:
             obs = None
         return dm_env.TimeStep(
