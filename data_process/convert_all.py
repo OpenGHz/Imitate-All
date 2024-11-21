@@ -380,7 +380,8 @@ def raw_to_dict(
                 # filter the keys
                 if key_filter is not None:
                     for key in key_filter:
-                        data_flat.pop(key, None)
+                        if data_flat.pop(key, None) is None:
+                            logger.warning(f"Key {key} is not found in flattend {state_file}.")
                         # if raw_data.pop(key, None) is None:
                         #     print(f"Key {key} is not found in {state_file}.")
                 # flatten the sub list

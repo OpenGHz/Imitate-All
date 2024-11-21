@@ -29,6 +29,12 @@ conda create -n imitall python=3.8.10 && conda activate imitall
 pip install -r requirements/data_collection.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 sudo apt install ffmpeg
 ```
+
+Some computers need to execute the following command to support simultaneous reading of multiple external cameras:
+```bash
+sudo rmmod uvcvideo && sudo modprobe uvcvideo nodrop=1 timeout=5000 quirks=0x80
+```
+
 For AIRBOTPlay3.0 usage, make sure you have installed the `airbot_python_sdk` package (version >= 3.0.4, refer to `Environment-setup-for-AIRBOT-Play.md`), you can install the grpc packages to your conda environment first:
 ```bash
 python3 -m pip install --upgrade pip setuptools -i https://pypi.mirrors.ustc.edu.cn/simple/
