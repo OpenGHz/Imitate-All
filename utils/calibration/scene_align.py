@@ -1,10 +1,12 @@
 import argparse
-import os
+import os, sys
 import json
 
 import numpy as np
 import logging
 from datetime import datetime
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from habitats.common.robot_devices.cameras.ros2 import ROS2Camera
 
@@ -49,7 +51,7 @@ def open_camera(cam_list, max_id=1, source="opencv"):
     if source == "opencv":
         cap = cv2.VideoCapture(cam_list[0])
     elif source == "ros2":
-        cap = ROS2Camera(f"/camera/color/image_raw")
+        cap = ROS2Camera(f"/usb_cam/image_raw")
     else:
         raise ValueError(f"Invalid source: {source}")
     # cap = mvcamera.VideoCapture(cam_list[0])
@@ -217,7 +219,7 @@ def to_pose(tvec, Rmat):
     return pose
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-cfg", "--config_path", type=str, required=True)
     parser.add_argument("-c", "--camera_ids", type=int, nargs="+", default=[0])
@@ -474,3 +476,8 @@ if __name__ == "__main__":
 
     cap.release()
     cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+
+    main()
