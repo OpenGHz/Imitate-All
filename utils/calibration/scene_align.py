@@ -243,6 +243,13 @@ def main():
         action="store_true",
         help="Overwrite existing config files",
     )
+    parser.add_argument(
+        "-s",
+        "--source",
+        type=str,
+        default="opencv",
+        help="Source of camera feed (opencv/ros1/ros2)",
+    )
     args = parser.parse_args()
 
     camera_ids = args.camera_ids
@@ -324,7 +331,7 @@ def main():
                 print(f"Reference image provided, detected pose: {reference_pose}")
 
     # TODO: support for multiple cameras simultaneously processing and displaying
-    cap = open_camera(camera_ids)
+    cap = open_camera(camera_ids, source=args.source)
     cv2.namedWindow("Current Camera View", cv2.WINDOW_KEEPRATIO)
     overlay = False
 
