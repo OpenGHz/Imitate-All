@@ -64,7 +64,7 @@ if __name__ == "__main__":
     np.set_printoptions(suppress=True, precision=5, linewidth=500)
     show = True
 
-    img_forder = "/home/tatp/ws/GreatWall/DLabSim/data/object/calibration/checkboard_realsense_435i_2335222070883"
+    img_forder = "/home/leexuanyi/study/Imitate-All/calibpicture/PCcam"
     img_files = os.listdir(img_forder)
     imgs = []
     for img_file in img_files:

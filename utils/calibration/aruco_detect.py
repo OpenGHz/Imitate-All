@@ -15,8 +15,8 @@ class ArucoDetector(object):
     def set_camera_params(self, camera, camera_matrix, dist_coeffs):
         if camera not in self.cam_params.keys():
             self.cam_params[camera] = {}
-        self.cam_params[camera]["camera_matrix"] = camera_matrix
-        self.cam_params[camera]["dist_coeffs"] = dist_coeffs
+        self.cam_params[camera]["camera_matrix"] = np.array(camera_matrix)
+        self.cam_params[camera]["dist_coeffs"] = np.array(dist_coeffs)
 
     @staticmethod
     def estimatePoseSingleMarkers(corners, marker_size, mtx, distortion):
@@ -51,9 +51,10 @@ class ArucoDetector(object):
             tvecs.append(t)
         return rvecs, Rmats, tvecs
 
-    def detect(self, camera, image, marker_size, putAxis=True):
+    def detect(self, image, camera, marker_size, putAxis=True):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         corners, ids, _ = self.detector.detectMarkers(gray)
+
         if len(corners) > 0:
             # Estimate the pose of each marker
             rvecs, Rmats, tvecs = self.estimatePoseSingleMarkers(
@@ -62,6 +63,7 @@ class ArucoDetector(object):
                 self.cam_params[camera]["camera_matrix"],
                 self.cam_params[camera]["dist_coeffs"],
             )
+
             if putAxis:
                 corners_int = np.array(corners).astype(np.int32)
                 image = cv2.drawContours(image, corners_int, -1, (0, 255, 0), 3)
@@ -69,8 +71,10 @@ class ArucoDetector(object):
                 for i in range(len(rvecs)):
                     cv2.drawFrameAxes(
                         image,
-                        self.camera_matrix,
-                        self.dist_coeffs,
+                        #self.camera_matrix,
+                        #self.dist_coeffs,
+                        self.cam_params[camera]["camera_matrix"],
+                        self.cam_params[camera]["dist_coeffs"],
                         rvecs[i],
                         tvecs[i],
                         0.02,
