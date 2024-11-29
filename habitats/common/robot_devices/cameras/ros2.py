@@ -3,6 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from threading import Thread
+import time
 
 
 class ROS2Camera(Node):
@@ -15,6 +16,9 @@ class ROS2Camera(Node):
         self.latest_frame = None  # 保存最新图像帧
         self.get_logger().info(f"Subscribed to topic: {topic_name}")
         Thread(target=rclpy.spin, args=(self,), daemon=True).start()
+        while self.latest_frame is None:
+            self.get_logger().info(f"Waiting for topic: {topic_name}")
+            time.sleep(0.5)
 
     def image_callback(self, msg):
         """ROS 回调函数，将消息转换为 OpenCV 格式的图像并保存。"""
@@ -35,3 +39,7 @@ class ROS2Camera(Node):
             return True, self.latest_frame
         else:
             return False, None
+
+    def release(self):
+        """释放资源。"""
+        self.destroy_node()

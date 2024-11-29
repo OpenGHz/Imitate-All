@@ -8,30 +8,29 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-try:
-    from habitats.common.robot_devices.cameras.ros2 import ROS2Camera
-except Exception as e:
-    print(e)
-
-try:
-    from habitats.common.robot_devices.cameras.ros1 import ROS1Camera
-except Exception as e:
-    print(e)
-
-try:
-    from aruco_detect import ArucoDetector
-except Exception as e:
-    print(e)
-try:
-    from apriltag_detect import ApriTagDetector
-except Exception as e:
-    print(e)
-
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 os.environ["OPENCV_LOG_LEVEL"] = "SILENT"
 import cv2
+
+
+try:
+    from habitats.common.robot_devices.cameras.ros2 import ROS2Camera
+except Exception as e:
+    logger.warning(e)
+try:
+    from habitats.common.robot_devices.cameras.ros1 import ROS1Camera
+except Exception as e:
+    logger.warning(e)
+try:
+    from aruco_detect import ArucoDetector
+except Exception as e:
+    logger.warning(e)
+try:
+    from apriltag_detect import ApriTagDetector
+except Exception as e:
+    logger.warning(e)
 
 
 def open_camera(cam_list, max_id=1, source="opencv"):
@@ -74,9 +73,9 @@ def open_camera(cam_list, max_id=1, source="opencv"):
     return cap
 
 
-def load_config(config_path):
+def load_config(config_path, camera_name):
     if config_path is None:
-        print("No config file provided; use None for all values")
+        logger.warning("No config file provided; use None for all values")
         config = {
             "reference_pose": None,
             "reference_image": None,
@@ -90,18 +89,17 @@ def load_config(config_path):
         return config
 
     with open(config_path, "r") as file:
-        config = json.load(file)
+        config: dict = json.load(file)
         for value in config.values():
             value = np.array(value)
-        reference_pose = config["reference_pose"]
-        reference_image = cv2.imread(config["reference_image"][camera_ref])
-        # refs = (reference_image, reference_pose)
-        # assert refs != (
-        #     None,
-        #     None,
-        # ), "You must provide either a reference image or a reference pose"
-        config["reference_pose"] = reference_pose
-        config["reference_image"] = reference_image
+        # TODO: camera reference be the same as the camera being used?
+        camera_ref = config["camera_ref"][camera_name]
+        image_ref = config["reference_image"][camera_ref]
+        if image_ref is not None:
+            reference_image = cv2.imread(image_ref)
+            config["reference_image"] = reference_image
+        else:
+            logger.warning("No reference image provided")
     return config
 
 
@@ -232,7 +230,7 @@ def to_pose(tvec, Rmat):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-cfg", "--config_path", type=str, required=True)
-    parser.add_argument("-c", "--camera_ids", type=int, nargs="+", default=[0])
+    parser.add_argument("-c", "--camera_ids", type=str, nargs="+", default=["0"])
     parser.add_argument("-f", "--fps", type=int, default=30)
     # TODO 值越低标记越灵敏
     parser.add_argument("-ss", "--sensitivity", type=float, default=0.2)
@@ -254,18 +252,12 @@ def main():
 
     camera_ids = args.camera_ids
     sensitivity = args.sensitivity
-    save_dir = (
-        os.path.dirname(args.config_path) if args.save_dir is None else args.save_dir
-    )
+    config_path = args.config_path
+    save_dir = os.path.dirname(config_path) if args.save_dir is None else args.save_dir
 
-    if args.config_path is None:
-        print("No config file provided; use None for all values")
-    else:
-        with open(args.config_path, "r") as file:
-            config = json.load(file)
-            camera_ref = config["camera_ref"][str(camera_ids[0])]
-
-    config = load_config(args.config_path)
+    camera_name = camera_ids[0]
+    config = load_config(config_path, camera_name)
+    camera_ref = config["camera_ref"][camera_name]
     cameras_intri_dict = config["cameras_intri_dict"]
     camera_ref_intri_dict = config["cameras_intri_dict"][camera_ref]
     camera_ref_intri_dict["camera_matrix"] = np.array(
@@ -300,11 +292,12 @@ def main():
     # detect pose from reference image if provided
     if reference_image is not None:
         if reference_pose != None:
-            print(
-                "Both reference image and reference, pose provided, using reference pose"
+            logger.info(
+                "Both reference image and reference pose provided, using the reference pose directly"
             )
             reference_image = None
         else:
+            logger.info("Reference image provided only, try to detect pose")
             detector.set_camera_params(
                 camera_ref,
                 camera_ref_intri_dict["camera_matrix"],
@@ -326,9 +319,15 @@ def main():
                 # print(reference_pose)
                 # input("wait")
             if reference_pose is None:
-                print("Failed to detect AprilTag/ArucoTag in reference image")
+                logger.warning(
+                    "Failed to detect AprilTag/ArucoTag in the reference image, assuming not using pose reference"
+                )
             else:
-                print(f"Reference image provided, detected pose: {reference_pose}")
+                logger.info(
+                    f"Reference image provided and pose detected: {reference_pose}"
+                )
+    else:
+        logger.warning("No reference image provided, assuming first time setup")
 
     # TODO: support for multiple cameras simultaneously processing and displaying
     cap = open_camera(camera_ids, source=args.source)
@@ -343,7 +342,8 @@ def main():
             )
             continue
 
-        camera = str(camera_ids[0])
+        # should this be the same as camera_ref?
+        camera = camera_ref
         detector.set_camera_params(
             camera,
             cameras_intri_dict[camera]["camera_matrix"],
@@ -383,11 +383,10 @@ def main():
 
         cv2.imshow("Current Camera View", frame)
 
-        print(
-            "q: quit, o: toggle overlay, s: save new reference image, n: switch camera"
-        )
+        # print(
+        #     "q: quit, o: toggle overlay, s: save new reference image, n: switch camera"
+        # )
         key = cv2.waitKey(1)
-        print(ord("q"), ord("o"), ord("s"), ord("n"))
         if key == ord("q") or key == 27:
             break
         elif key == ord("o"):
@@ -399,31 +398,31 @@ def main():
             ), "camera_ref_intri_dict must be provided"
             assert tag_size is not None, "Tag size must be provided"
             reference_pose = current_pose
-            if reference_pose is None:
-                input("no ArUcoTag found")
-                continue
-
-            save_config = {
-                "reference_pose": reference_pose.tolist(),
-            }
 
             if not args.overwrite:
-                time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                time_str = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
                 if reference_pose is not None:
+                    save_config = {
+                        "reference_pose": reference_pose.tolist(),
+                    }
                     file_name = f"config_{time_str}.json"
                     with open(f"{save_dir}/{file_name}", "w") as file:
                         json.dump(save_config, file)
-                    print(f"Reference pose saved to {save_dir}/{file_name}")
+                    logger.info(f"Reference pose saved to {save_dir}/{file_name}")
                     no_pose = ""
                 else:
                     file_name = None
-                    print("Failed to detect AprilTag/ArUcoTag in current frame")
+                    logger.warning(
+                        "Failed to detect AprilTag/ArUcoTag in current frame"
+                    )
                     no_pose = "no_pose_"
                 reference_image = frame
 
                 img_name = f"reference_image_{no_pose}{time_str}.jpg"
                 cv2.imwrite(f"{save_dir}/{img_name}", reference_image)
-                print(f"Reference image saved to {save_dir}/{img_name}")
+                logger.info(f"Reference image saved to {save_dir}/{img_name}")
+            else:
+                raise NotImplementedError("Overwrite option not implemented")
 
         elif key == ord("n"):
             # TODO: remove this
@@ -458,7 +457,7 @@ def main():
             # detect pose from reference image if provided
             if reference_image is not None:
                 if reference_pose is not None:
-                    print(
+                    logger.info(
                         "Both reference image and reference, pose provided, using reference pose"
                     )
                     reference_image = None
@@ -481,15 +480,13 @@ def main():
                     ):
                         reference_pose = to_pose(result["tvecs"][0], result["Rmats"][0])
                     if reference_pose is None:
-                        print("Failed to detect AprilTag/ArucoTag in reference image")
+                        logger.warning(
+                            "Failed to detect AprilTag/ArucoTag in reference image"
+                        )
                     else:
-                        print(
+                        logger.info(
                             f"Reference image provided, detected pose: {reference_pose}"
                         )
-
-            # input("abc")
-            # reference_image = load_config(args.config_path)["reference_image"]
-            # reference_pose = load_config(args.config_path)["reference_pose"]
 
     cap.release()
     cv2.destroyAllWindows()

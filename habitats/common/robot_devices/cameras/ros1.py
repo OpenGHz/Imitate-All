@@ -6,14 +6,18 @@ from cv_bridge import CvBridge
 import cv2
 
 
-class ROS1Camera:
+class ROS1Camera(object):
     def __init__(self, topic_name):
         """ROS 1 相机节点初始化"""
+        if rospy.get_name() == "/unnamed":
+            rospy.init_node("camera_node", anonymous=True)
         self.bridge = CvBridge()
         self.latest_frame = None  # 存储最新图像帧
         self.subscriber = rospy.Subscriber(
             topic_name, Image, self.image_callback, queue_size=10
         )
+        rospy.loginfo(f"Waiting for topic: {topic_name}")
+        rospy.wait_for_message(topic_name, Image)
         rospy.loginfo(f"Subscribed to topic: {topic_name}")
 
     def image_callback(self, msg):
@@ -35,6 +39,10 @@ class ROS1Camera:
             return True, self.latest_frame
         else:
             return False, None
+
+    def release(self):
+        """释放资源。"""
+        self.subscriber.unregister()
 
 
 def main():

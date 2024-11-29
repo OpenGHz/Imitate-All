@@ -157,3 +157,4 @@ model_weights/
 test_*.py
 
 *referee*
+reference_*.jpg
