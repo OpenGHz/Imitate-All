@@ -58,6 +58,12 @@ It is recommended to use a conda python environment. If you do not have one, cre
 conda create -n imitall python=3.8.10 && conda activate imitall
 ```
 
+Clone the reposity:
+
+```bash
+git clone --depth 1 https://github.com/OpenGHz/Imitate-All.git && cd Imitate-All
+```
+
 Install the necessary packages by running the following commands:
 
 ```bash
