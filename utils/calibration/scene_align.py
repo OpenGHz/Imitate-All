@@ -8,7 +8,15 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from habitats.common.robot_devices.cameras.ros2 import ROS2Camera
+try:
+    from habitats.common.robot_devices.cameras.ros2 import ROS2Camera
+except Exception as e:
+    print(e)
+
+try:
+    from habitats.common.robot_devices.cameras.ros1 import ROS1Camera
+except Exception as e:
+    print(e)
 
 try:
     from aruco_detect import ArucoDetector
@@ -33,7 +41,7 @@ def open_camera(cam_list, max_id=1, source="opencv"):
         while current < max_id:
             if source == "opencv":
                 cap = cv2.VideoCapture(current)
-            else:
+            elif source == "ros2":
                 cap = ROS2Camera(f"/camera/color/image_raw")
             # cap = mvcamera.VideoCapture(current)
             if cap.isOpened():
@@ -52,6 +60,8 @@ def open_camera(cam_list, max_id=1, source="opencv"):
         cap = cv2.VideoCapture(cam_list[0])
     elif source == "ros2":
         cap = ROS2Camera(f"/usb_cam/image_raw")
+    elif source == "ros1":
+        cap = ROS1Camera(f"/usb_cam/image_raw")
     else:
         raise ValueError(f"Invalid source: {source}")
     # cap = mvcamera.VideoCapture(cam_list[0])

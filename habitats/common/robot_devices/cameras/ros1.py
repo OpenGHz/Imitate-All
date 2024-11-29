@@ -6,7 +6,7 @@ from cv_bridge import CvBridge
 import cv2
 
 
-class CameraNode:
+class ROS1Camera:
     def __init__(self, topic_name):
         """ROS 1 相机节点初始化"""
         self.bridge = CvBridge()
@@ -40,7 +40,7 @@ class CameraNode:
 def main():
     rospy.init_node("camera_node", anonymous=True)
     topic_name = rospy.get_param("~topic_name", "/camera/image_raw")
-    camera_node = CameraNode(topic_name)
+    camera_node = ROS1Camera(topic_name)
 
     rate = rospy.Rate(10)  # 10Hz
     while not rospy.is_shutdown():
