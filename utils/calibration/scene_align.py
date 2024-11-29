@@ -6,6 +6,8 @@ import numpy as np
 import logging
 from datetime import datetime
 
+from habitats.common.robot_devices.cameras.ros2 import ROS2Camera
+
 try:
     from aruco_detect import ArucoDetector
 except Exception as e:
@@ -22,11 +24,15 @@ os.environ["OPENCV_LOG_LEVEL"] = "SILENT"
 import cv2
 
 
-def open_camera(cam_list, max_id=10):
+def open_camera(cam_list, max_id=1, source="opencv"):
+    # better to set cam_list
     if cam_list == []:
         current = 0
         while current < max_id:
-            cap = cv2.VideoCapture(current)
+            if source == "opencv":
+                cap = cv2.VideoCapture(current)
+            else:
+                cap = ROS2Camera(f"/camera/color/image_raw")
             # cap = mvcamera.VideoCapture(current)
             if cap.isOpened():
                 cam_list.append(current)
@@ -40,7 +46,12 @@ def open_camera(cam_list, max_id=10):
             exit()
         print(f"Cameras found: {cam_list}")
 
-    cap = cv2.VideoCapture(cam_list[0])
+    if source == "opencv":
+        cap = cv2.VideoCapture(cam_list[0])
+    elif source == "ros2":
+        cap = ROS2Camera(f"/camera/color/image_raw")
+    else:
+        raise ValueError(f"Invalid source: {source}")
     # cap = mvcamera.VideoCapture(cam_list[0])
     if cap.isOpened():
         print(f"Opened camera {cam_list[0]}")
@@ -233,13 +244,17 @@ if __name__ == "__main__":
     else:
         with open(args.config_path, "r") as file:
             config = json.load(file)
-            camera_ref=config["camera_ref"][str(camera_ids[0])]
+            camera_ref = config["camera_ref"][str(camera_ids[0])]
 
     config = load_config(args.config_path)
-    cameras_intri_dict=config["cameras_intri_dict"]
+    cameras_intri_dict = config["cameras_intri_dict"]
     camera_ref_intri_dict = config["cameras_intri_dict"][camera_ref]
-    camera_ref_intri_dict["camera_matrix"] = np.array(camera_ref_intri_dict["camera_matrix"], dtype=np.float32)
-    camera_ref_intri_dict["dist_coeffs"] = np.array(camera_ref_intri_dict["dist_coeffs"], dtype=np.float32)
+    camera_ref_intri_dict["camera_matrix"] = np.array(
+        camera_ref_intri_dict["camera_matrix"], dtype=np.float32
+    )
+    camera_ref_intri_dict["dist_coeffs"] = np.array(
+        camera_ref_intri_dict["dist_coeffs"], dtype=np.float32
+    )
     tag_size = config["tag"]["size"]
     tag_families = config["tag"]["families"]
     reference_image = config["reference_image"]
@@ -247,8 +262,8 @@ if __name__ == "__main__":
         reference_pose = config["reference_pose"][camera_ref]
     else:
         reference_pose = None
-    #print(reference_pose)
-    #input("wait")
+    # print(reference_pose)
+    # input("wait")
 
     # D455 RGB
     # camera_params = [384.904, 384.387, 321.351, 243.619]  # [fx, fy, cx, cy]
@@ -271,17 +286,26 @@ if __name__ == "__main__":
             )
             reference_image = None
         else:
-            detector.set_camera_params(camera_ref, camera_ref_intri_dict["camera_matrix"], camera_ref_intri_dict["dist_coeffs"])
+            detector.set_camera_params(
+                camera_ref,
+                camera_ref_intri_dict["camera_matrix"],
+                camera_ref_intri_dict["dist_coeffs"],
+            )
             result = detector.detect(
                 reference_image,
                 camera_ref,
                 config["tag"]["size"],
             )
             # TODO: implement to pose
-            if "tvecs" in result and len(result["tvecs"]) > 0 and "Rmats" in result and len(result["Rmats"]) > 0:
+            if (
+                "tvecs" in result
+                and len(result["tvecs"]) > 0
+                and "Rmats" in result
+                and len(result["Rmats"]) > 0
+            ):
                 reference_pose = to_pose(result["tvecs"][0], result["Rmats"][0])
-                #print(reference_pose)
-                #input("wait")
+                # print(reference_pose)
+                # input("wait")
             if reference_pose is None:
                 print("Failed to detect AprilTag/ArucoTag in reference image")
             else:
@@ -292,8 +316,6 @@ if __name__ == "__main__":
     cv2.namedWindow("Current Camera View", cv2.WINDOW_KEEPRATIO)
     overlay = False
 
-
-
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -301,20 +323,26 @@ if __name__ == "__main__":
                 f"Failed to read frame from camera {camera_ids[0]}: {datetime.now().timestamp()}"
             )
             continue
-        
+
         camera = str(camera_ids[0])
-        detector.set_camera_params(camera, cameras_intri_dict[camera]["camera_matrix"],cameras_intri_dict[camera]["dist_coeffs"])
-        
+        detector.set_camera_params(
+            camera,
+            cameras_intri_dict[camera]["camera_matrix"],
+            cameras_intri_dict[camera]["dist_coeffs"],
+        )
+
         result = detector.detect(frame, camera, tag_size)
 
-        if "tvecs" in result and len(result["tvecs"]) > 0 and "Rmats" in result and len(result["Rmats"]) > 0:
-          
+        if (
+            "tvecs" in result
+            and len(result["tvecs"]) > 0
+            and "Rmats" in result
+            and len(result["Rmats"]) > 0
+        ):
+
             current_pose = to_pose(result["tvecs"][0], result["Rmats"][0])
         else:
             current_pose = None
-            
-        
-
 
         ncc_value = None
         if overlay:
@@ -347,15 +375,17 @@ if __name__ == "__main__":
             overlay = not overlay
         elif key == ord("s"):
             # save current frame as reference image and its pose
-            assert camera_ref_intri_dict is not None, "camera_ref_intri_dict must be provided"
-            assert tag_size is not None, "Tag size must be provided"            
+            assert (
+                camera_ref_intri_dict is not None
+            ), "camera_ref_intri_dict must be provided"
+            assert tag_size is not None, "Tag size must be provided"
             reference_pose = current_pose
-            if reference_pose is None:  
-             input("no ArUcoTag found")
-             continue      
+            if reference_pose is None:
+                input("no ArUcoTag found")
+                continue
 
             save_config = {
-                "reference_pose":reference_pose.tolist(),
+                "reference_pose": reference_pose.tolist(),
             }
 
             if not args.overwrite:
@@ -371,39 +401,42 @@ if __name__ == "__main__":
                     print("Failed to detect AprilTag/ArUcoTag in current frame")
                     no_pose = "no_pose_"
                 reference_image = frame
-              
+
                 img_name = f"reference_image_{no_pose}{time_str}.jpg"
                 cv2.imwrite(f"{save_dir}/{img_name}", reference_image)
                 print(f"Reference image saved to {save_dir}/{img_name}")
-                
+
         elif key == ord("n"):
             # TODO: remove this
-            camera_ref=config["camera_ref"][str(camera_ids[0])]
-          
+            camera_ref = config["camera_ref"][str(camera_ids[0])]
+
             cap = open_camera(camera_ids)
             config = load_config(args.config_path)
-            cameras_intri_dict=config["cameras_intri_dict"]
+            cameras_intri_dict = config["cameras_intri_dict"]
             camera_ref_intri_dict = config["cameras_intri_dict"][camera_ref]
-            camera_ref_intri_dict["camera_matrix"] = np.array(camera_ref_intri_dict["camera_matrix"], dtype=np.float32)
-            camera_ref_intri_dict["dist_coeffs"] = np.array(camera_ref_intri_dict["dist_coeffs"], dtype=np.float32)
+            camera_ref_intri_dict["camera_matrix"] = np.array(
+                camera_ref_intri_dict["camera_matrix"], dtype=np.float32
+            )
+            camera_ref_intri_dict["dist_coeffs"] = np.array(
+                camera_ref_intri_dict["dist_coeffs"], dtype=np.float32
+            )
             tag_size = config["tag"]["size"]
             tag_families = config["tag"]["families"]
             reference_image = config["reference_image"]
 
             if config["reference_pose"] is not None:
                 reference_pose = config["reference_pose"][camera_ref]
-            else :
-                reference_pose= None
-    #print(reference_pose)
-    #input("wait")
+            else:
+                reference_pose = None
+            # print(reference_pose)
+            # input("wait")
 
-    # D455 RGB
-    # camera_params = [384.904, 384.387, 321.351, 243.619]  # [fx, fy, cx, cy]
-    # camera_width = 1280
-    # camera_height = 800
+            # D455 RGB
+            # camera_params = [384.904, 384.387, 321.351, 243.619]  # [fx, fy, cx, cy]
+            # camera_width = 1280
+            # camera_height = 800
 
-
-    # detect pose from reference image if provided
+            # detect pose from reference image if provided
             if reference_image is not None:
                 if reference_pose is not None:
                     print(
@@ -411,24 +444,33 @@ if __name__ == "__main__":
                     )
                     reference_image = None
                 else:
-                    detector.set_camera_params(camera_ref, camera_ref_intri_dict["camera_matrix"], camera_ref_intri_dict["dist_coeffs"])
+                    detector.set_camera_params(
+                        camera_ref,
+                        camera_ref_intri_dict["camera_matrix"],
+                        camera_ref_intri_dict["dist_coeffs"],
+                    )
                     result = detector.detect(
                         reference_image,
                         camera_ref,
                         config["tag"]["size"],
-                        )
-                    if "tvecs" in result and len(result["tvecs"]) > 0 and "Rmats" in result and len(result["Rmats"]) > 0:
+                    )
+                    if (
+                        "tvecs" in result
+                        and len(result["tvecs"]) > 0
+                        and "Rmats" in result
+                        and len(result["Rmats"]) > 0
+                    ):
                         reference_pose = to_pose(result["tvecs"][0], result["Rmats"][0])
                     if reference_pose is None:
                         print("Failed to detect AprilTag/ArucoTag in reference image")
                     else:
-                        print(f"Reference image provided, detected pose: {reference_pose}")
+                        print(
+                            f"Reference image provided, detected pose: {reference_pose}"
+                        )
 
-
-            
-            #input("abc")       
-            #reference_image = load_config(args.config_path)["reference_image"]
-            #reference_pose = load_config(args.config_path)["reference_pose"]
+            # input("abc")
+            # reference_image = load_config(args.config_path)["reference_image"]
+            # reference_pose = load_config(args.config_path)["reference_pose"]
 
     cap.release()
     cv2.destroyAllWindows()
