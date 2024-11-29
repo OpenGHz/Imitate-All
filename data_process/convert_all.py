@@ -457,6 +457,7 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
                     if size_to_pad > 0:
                         for _ in range(pad_times - 1):
                             value += value
+                        size_to_pad -= len(value) * (pad_times - 1)
                         value += value[-size_to_pad:]
                     return value
 
