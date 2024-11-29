@@ -454,14 +454,13 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
                 def pad(value):
                     raw_len = len(value)
                     size_to_pad = pad_max_len - raw_len
-                    # print(f"size_to_pad = {size_to_pad}")
-                    pad_times = int(np.ceil(size_to_pad / raw_len))
+                    # print(f"raw_len = {raw_len}, size_to_pad = {size_to_pad}")
+                    pad_times = size_to_pad // raw_len
+                    size_to_pad = size_to_pad % raw_len
+                    # print(f"size_to_pad = {size_to_pad}, pad_times = {pad_times}")
                     if size_to_pad > 0:
-                        for _ in range(pad_times - 1):
-                            value += value
-                        size_to_pad -= raw_len * (pad_times - 1)
+                        value *= (pad_times + 1)
                         value += value[-size_to_pad:]
-                        # print(f"size_to_pad = {size_to_pad}, pad_times = {pad_times}")
                         # print(f"len(value) = {len(value)}")
                     return value
 
