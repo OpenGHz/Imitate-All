@@ -129,13 +129,14 @@ class Compresser(object):
         return all_padded_data
 
 
-def remove_after_last_dot(s:str) -> str:
+def remove_after_last_dot(s: str) -> str:
     last_dot_index = s.rfind(".")
     if last_dot_index != -1:
         return s[:last_dot_index]
     return s
 
-def replace_keys(data:dict, raw, target) -> dict:
+
+def replace_keys(data: dict, raw, target) -> dict:
     """Replace the keys in the dict with the raw key to the target key.
     This will change the original dict.
     """
@@ -145,6 +146,7 @@ def replace_keys(data:dict, raw, target) -> dict:
         for key, v in data.items():
             replace_keys(v, raw, target)
     return data
+
 
 def video_to_dict(
     video_dir: str,
@@ -303,6 +305,7 @@ def convert_avi_to_mp4(
         out_names = mp4_names
     return out_names
 
+
 def concatenate_by_key(data: dict, concatenater: dict, remove_ori=True) -> dict:
     for key, value in concatenater.items():
         one_dim_reshape = lambda x: x.reshape(-1, 1) if len(x.shape) == 1 else x
@@ -319,6 +322,7 @@ def concatenate_by_key(data: dict, concatenater: dict, remove_ori=True) -> dict:
                     if data.pop(v, None) is None:
                         logger.warning(f"Key {v} is not found.")
     return data
+
 
 def raw_to_dict(
     raw_dir: str,
@@ -381,7 +385,9 @@ def raw_to_dict(
                 if key_filter is not None:
                     for key in key_filter:
                         if data_flat.pop(key, None) is None:
-                            logger.warning(f"Key {key} is not found in flattend {state_file}.")
+                            logger.warning(
+                                f"Key {key} is not found in flattend {state_file}."
+                            )
                         # if raw_data.pop(key, None) is None:
                         #     print(f"Key {key} is not found in {state_file}.")
                 # flatten the sub list
@@ -413,6 +419,7 @@ def raw_to_dict(
         ep_dicts[ep_name] = ep_dict
 
     return ep_dicts
+
 
 try:
     import h5py
@@ -446,8 +453,11 @@ def save_dict_to_hdf5(data: dict, target_path: str, pad_max_len: Optional[int] =
 
                 def pad(value):
                     size_to_pad = pad_max_len - len(value)
+                    pad_times = int(np.ceil(size_to_pad / len(value)))
                     if size_to_pad > 0:
-                        value = value + value[-size_to_pad:]
+                        for _ in range(pad_times - 1):
+                            value += value
+                        value += value[-size_to_pad:]
                     return value
 
                 if is_dict_value:
@@ -555,7 +565,9 @@ def merge_video_and_save(
     **kwargs,
 ):
     # read images from video files
-    images = video_to_dict(video_dir, video_names, None, name_converter, compresser, downsampling)
+    images = video_to_dict(
+        video_dir, video_names, None, name_converter, compresser, downsampling
+    )
     # merge the images into the raw data dict
     raw_data.update(images)
     # save the raw data dict to the target directory
