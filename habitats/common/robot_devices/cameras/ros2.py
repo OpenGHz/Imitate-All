@@ -18,10 +18,7 @@ class ROS2Camera(Node):
 
     def image_callback(self, msg):
         """ROS 回调函数，将消息转换为 OpenCV 格式的图像并保存。"""
-        try:
-            self.latest_frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
-        except Exception as e:
-            self.get_logger().error(f"Failed to convert image: {e}")
+        self.latest_frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
 
     def isOpened(self):
         """检查是否有新图像。"""
