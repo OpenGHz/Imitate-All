@@ -1,7 +1,5 @@
 _target_: robots.airbots.airbot_play.airbot_play_2_demonstration.AIRBOTPlayDemonstration
 
-# TODO: use demonstration groups, each of which has only one leader and multiple followers
-# e.g. {group1:{leader:1, followers:[2,3]}, group2:{leader:4, followers:[5,6]}}
 groups:
   g1:
     leader:

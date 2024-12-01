@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field, replace
 from habitats.common.robot_devices.cameras.utils import Camera
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Union
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
 from threading import Thread, Event
 import time
-import torch
+import numpy as np
 
 
 @dataclass
@@ -78,7 +78,7 @@ class AIRBOTPlayDemonstration(object):
             leader.enter_passive_mode()
         self._state_mode = "passive"
 
-    def get_low_dim_data(self):
+    def get_low_dim_data(self) -> Dict[str, list]:
         data = {}
         data["/time"] = time.time()
 
@@ -111,19 +111,15 @@ class AIRBOTPlayDemonstration(object):
 
         return data
 
-    def capture_observation(self):
+    def capture_observation(self) -> Dict[str, Union[dict, np.ndarray]]:
         """The returned observations do not have a batch dimension."""
-        # if not self.is_connected:
-        #     raise RobotDeviceNotConnectedError(
-        #         "ManipulatorRobot is not connected. You need to run `robot.connect()`."
-        #     )
         obs_act_dict = {}
         # Capture images from cameras
         images = {}
         for name in self.cameras:
             before_camread_t = time.perf_counter()
             images[name] = self.cameras[name].async_read()
-            images[name] = torch.from_numpy(images[name])
+            # images[name] = torch.from_numpy(images[name])
             obs_act_dict[f"/time/{name}"] = time.time()
             self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
                 "delta_timestamp_s"
@@ -132,10 +128,7 @@ class AIRBOTPlayDemonstration(object):
                 time.perf_counter() - before_camread_t
             )
 
-        low_dim_data = self.get_low_dim_data()
-
-        # Populate output dictionnaries and format to pytorch
-        obs_act_dict["low_dim"] = low_dim_data
+        obs_act_dict["low_dim"] = self.get_low_dim_data()
         for name in self.cameras:
             obs_act_dict[f"observation.images.{name}"] = images[name]
         return obs_act_dict

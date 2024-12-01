@@ -1,19 +1,22 @@
 import airbase_py
-from typing import Tuple
+from typing import Tuple, Optional
+from dataclasses import dataclass
 
 
-class AirBase(object):
+@dataclass
+class AIRBOTBaseConfig(object):
+    ip: str = "192.168.11.1"
+    velocity: str = "high"
 
-    def __init__(self, ip="192.168.11.1", vel="high") -> None:
-        if None not in (ip, vel):
-            self.airbase = airbase_py.AirBase(ip, vel)
+
+class AIRBOTBase(object):
+
+    def __init__(self, config: Optional[AIRBOTBaseConfig] = None) -> None:
+        self.airbase = airbase_py.AirBase(config.ip, config.velocity)
         self.forward = airbase_py.Direction(airbase_py.ACTION_DIRECTION.FORWARD)
         self.backward = airbase_py.Direction(airbase_py.ACTION_DIRECTION.BACKWARD)
         self.turn_left = airbase_py.Direction(airbase_py.ACTION_DIRECTION.TURNLEFT)
         self.turn_right = airbase_py.Direction(airbase_py.ACTION_DIRECTION.TURNRIGHT)
-
-    def set_instance(self, airbase):
-        self.airbase = airbase
 
     def lock_change(self):
         self.airbase.set_base_lock_state(not self.airbase.get_base_lock_state())
@@ -94,7 +97,7 @@ if __name__ == "__main__":
 
     import time
 
-    airbase = AirBase()
+    airbase = AIRBOTBase()
     for _ in range(10):
         airbase.move_at_velocity((0.0, 0.0, -0.5))
         time.sleep(0.5)
