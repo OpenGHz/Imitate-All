@@ -22,7 +22,6 @@ class AIRBOTTOK(object):
         print(self.config)
         self.cameras = self.config.cameras
         self.arms_cfg = self.config.arms_cfg
-        self.base = AIRBOTBase(self.config.base)
         self.logs = {}
         self.__init()
         self._state_mode = "active"
@@ -45,6 +44,7 @@ class AIRBOTTOK(object):
         self.arms: Dict[str, AIRBOTPlay] = {}
         for arm_name, arm_cfg in self.arms_cfg.items():
             self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
+        self.base = AIRBOTBase(self.config.base)
         time.sleep(0.3)
         self.reset()
 
