@@ -1,5 +1,4 @@
-import sys
-from mmk2_client import MMK2
+from robots.airbots.airbot_mmk2.airbot_mmk2 import MMK2
 from typing import Dict
 import cv2
 
