@@ -15,7 +15,7 @@ class AIRBOTPlayConfig(object):
     forearm_type: str = "DM"
     # other
     joint_vel: float = 6.0
-    default_action: List[float] = field(default_factory=lambda: [0, 0, 0, 0, 0, 0, 0])
+    default_action: List[float] = field(default_factory=lambda: [0] * 7)
 
 
 class AIRBOTPlay(object):
