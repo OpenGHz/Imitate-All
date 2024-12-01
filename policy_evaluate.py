@@ -4,7 +4,10 @@ import os, time, logging, pickle, inspect
 from typing import Dict
 from tqdm import tqdm
 from utils import set_seed, save_eval_results
-from configurations.task_configs.config_tools.basic_configer import basic_parser, get_all_config
+from configurations.task_configs.config_tools.basic_configer import (
+    basic_parser,
+    get_all_config,
+)
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 import dm_env
@@ -44,11 +47,15 @@ def get_ckpt_path(ckpt_dir, ckpt_name, stats_path):
     if not os.path.exists(ckpt_path):
         ckpt_dir = os.path.dirname(ckpt_dir)  # check the upper dir
         ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-        logger.warning(f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}...")
+        logger.warning(
+            f"Warning: not found ckpt_path: {raw_ckpt_path}, try {ckpt_path}..."
+        )
         if not os.path.exists(ckpt_path):
             ckpt_dir = os.path.dirname(stats_path)
             ckpt_path = os.path.join(ckpt_dir, ckpt_name)
-            logger.warning(f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}...")
+            logger.warning(
+                f"Warning: also not found ckpt_path: {ckpt_path}, try {ckpt_path}..."
+            )
     return ckpt_path
 
 
@@ -129,7 +136,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         post_process = lambda a: a
 
     # evaluation loop
-    if hasattr(policy, "eval"): policy.eval()
+    if hasattr(policy, "eval"):
+        policy.eval()
     env_max_reward = 0
     episode_returns = []
     highest_rewards = []
@@ -156,7 +164,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             if v == "z":
                 break
             ts = env.reset()
-            if hasattr(policy, "reset"): policy.reset()
+            if hasattr(policy, "reset"):
+                policy.reset()
             try:
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
@@ -185,9 +194,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
 
                     # post-process predicted action
                     # dim: (1,7) -> (7,)
-                    raw_action = (
-                        raw_action.squeeze(0).cpu().numpy()
-                    )
+                    raw_action = raw_action.squeeze(0).cpu().numpy()
                     logger.debug(f"raw action: {raw_action}")
                     action = post_process(raw_action)  # de-normalize action
                     logger.debug(f"post action: {action}")
@@ -195,10 +202,10 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         for i, filter in enumerate(filters):
                             action[i] = filter(action[i], time.time())
                     # limit the prediction frequency
-                    time.sleep(max(0, 1/prediction_freq - (time.time() - start_time)))
+                    time.sleep(max(0, 1 / prediction_freq - (time.time() - start_time)))
                     logger.debug(f"prediction time: {time.time() - start_time}")
                     # step the environment
-                    ts:dm_env.TimeStep = env.step(action, sleep_time=dt)
+                    ts: dm_env.TimeStep = env.step(action, sleep_time=dt)
 
                     # for visualization
                     qpos_list.append(qpos_numpy)
@@ -242,7 +249,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
         avg_return = np.mean(episode_returns)
-        summary_str = f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
+        summary_str = (
+            f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
+        )
         for r in range(env_max_reward + 1):
             more_or_equal_r = (np.array(highest_rewards) >= r).sum()
             more_or_equal_r_rate = more_or_equal_r / num_rollouts
@@ -382,6 +391,15 @@ if __name__ == "__main__":
     # action filter type TODO: move to post process; and will use obs filter?
     parser.add_argument(
         "-ft", "--filter", action="store", type=str, help="filter_type", required=False
+    )
+    # yaml config path
+    parser.add_argument(
+        "-cf",
+        "--env_config_path",
+        action="store",
+        type=str,
+        help="env_config_path",
+        required=False,
     )
 
     args = parser.parse_args()
