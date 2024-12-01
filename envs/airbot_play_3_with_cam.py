@@ -1,7 +1,7 @@
 import time
 import collections
 import dm_env
-from typing import List
+from typing import List, Union
 from robots.airbots.airbot_play.airbot_play_3 import AIRBOTPlay
 from robots.common import make_robot_from_yaml
 
@@ -10,7 +10,7 @@ class AIRBOTPlayWithCameraEnv(object):
 
     def __init__(
         self,
-        config_paths: List[str],
+        config_paths: Union[List[str], str],
     ):
         self.robots: List[AIRBOTPlay] = []
         if isinstance(config_paths, str):
@@ -29,25 +29,20 @@ class AIRBOTPlayWithCameraEnv(object):
             self._all_joints_num.append(7)
 
     def _get_obs(self):
-        q_pos = []
-        images = []
-        images_cnt = 0
+        obs = collections.OrderedDict()
+        obs["qpos"] = []
+        obs["images"] = {}
         for robot in self.robots:
             raw_obs = robot.capture_observation()
             low_dim = raw_obs["low_dim"]
-            q_pos.extend(
+            obs["qpos"].extend(
                 low_dim["observation/arm/joint_position"]
                 + low_dim["observation/eef/joint_position"]
             )
             for name in robot.cameras:
-                images.append(raw_obs[f"observation.images.{name}"])
-                images_cnt += 1
-            images.append(images)
-        obs = collections.OrderedDict()
-        obs["qpos"] = q_pos
-        obs["images"] = {}
-        for i in range(images_cnt):
-            obs["images"][str(i)] = images[i]
+                assert name not in obs["images"], f"Duplicate camera name: {name}"
+                obs["images"][name] = raw_obs[f"observation.images.{name}"]
+
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
             reward=0,

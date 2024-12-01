@@ -44,7 +44,7 @@ class AIRBOTPlay(object):
         else:
             raise ValueError(f"Invalid type: {ctrl_type}")
 
-    def get_current_joint_positions(self):
+    def get_current_joint_positions(self) -> List[float]:
         joints = self.robot.get_current_joint_q()
         if self.config.eef_mode in ["gripper", "teacherv2"]:
             joints += [self.robot.get_current_end()]
