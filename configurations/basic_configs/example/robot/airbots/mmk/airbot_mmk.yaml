@@ -1,0 +1,11 @@
+_target_: robots.airbots.airbot_mmk.airbot_mmk2.AIRBOTMMK
+
+ip: "192.168.40.211"
+
+default_action:
+  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+cameras:
+  # left_camera: "rgb"
+  # right_camera: "rgb"
+  head_camera: "rgb"

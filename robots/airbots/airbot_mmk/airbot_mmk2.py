@@ -16,8 +16,8 @@ class AIRBOTMMK2Config(object):
     domain_id: int = -1
     ip: str = "localhost"
     port: int = 50055
-    cameras: Dict[str, str] = field(default_factory=lambda: {})
     default_action: List[float] = field(default_factory=lambda: [0] * 14)
+    cameras: Dict[str, str] = field(default_factory=lambda: {})
 
 
 class AIRBOTMMK2(object):
