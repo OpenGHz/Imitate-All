@@ -33,7 +33,6 @@ class CommonEnv:
 def get_image(ts: dm_env.TimeStep, camera_names, mode=0):
     # TODO: remove this function
     images: dict = ts.observation["images"]
-    print("images:", images.keys())
     if mode == 0:  # 输出拼接之后的张量图
         curr_images = []
         for cam_name in camera_names:
