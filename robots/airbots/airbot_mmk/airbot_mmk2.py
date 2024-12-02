@@ -44,7 +44,7 @@ class AIRBOTMMK2(object):
             self.config.port,
         )
         self.joint_names = {}
-        self.cameras = {}
+        self.cameras: Dict[MMK2Components, str] = {}
         self.components: Dict[MMK2Components, ComponentTypes] = {}
         all_joint_names = JointNames()
         self.joint_num = 0
