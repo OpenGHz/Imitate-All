@@ -1,12 +1,12 @@
 from mmk2_sdk.mmk2_client import AIRBOTMMK2 as AIRBOTMMK2Client
 from mmk2_types.types import MMK2Components, JointNames, ComponentTypes
-from mmk2_sdk.mmk2_grpc_types import (
+from mmk2_types.grpc_msgs import (
     JointState,
     TrajectoryParams,
     MoveServoParams,
 )
 from typing import Optional, Dict, List
-from dataclasses import dataclass, replace, asdict, field
+from dataclasses import dataclass, replace, field
 import time
 
 
