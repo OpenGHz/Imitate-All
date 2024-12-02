@@ -275,7 +275,7 @@ class IntelRealSenseCamera:
             if self.camera_index not in available_cam_ids:
                 raise ValueError(
                     f"`camera_index` is expected to be one of these available cameras {available_cam_ids}, but {self.camera_index} is provided instead. "
-                    "To find the camera index you should use, run `python lerobot/common/robot_devices/cameras/intelrealsense.py`."
+                    "To find the camera index you should use, run `python habitats/common/robot_devices/cameras/intelrealsense.py`."
                 )
 
             raise OSError(f"Can't access IntelRealSenseCamera({self.camera_index}).")

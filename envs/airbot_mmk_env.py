@@ -1,99 +1,54 @@
+from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2
+from robots.common import make_robot_from_yaml
 import time
-import numpy as np
 import collections
 import dm_env
-from typing import List
-from robots.ros_robots.ros1_robot import AssembledROS1Robot as MMK2Robot
-from robot_tools.recorder import ImageRecorderRos
-import rospy
 
 
-class AirbotMmkEnv:
-    """
-    Environment of ROS1 images topic.
-    """
+class AIRBOTMMK2Env(object):
+    def __init__(self, config_path: str):
+        self.robot: AIRBOTMMK2 = make_robot_from_yaml(config_path)
+        assert isinstance(self.robot, AIRBOTMMK2)
+        self._all_joints_num = self.robot.joint_num
 
-    def __init__(
-        self,
-        robot_instances: List[MMK2Robot] = None,
-        camera_names=None,
-    ):
-        self.mmk2_robots = robot_instances
-        self.robot_num = len(self.mmk2_robots)
-
-        if rospy.get_name() == "/unnamed":
-            rospy.init_node("real_env", anonymous=True)
-        name_converter = {
-            "0": "camera_head",
-            "1": "camera_left",
-            "2": "camera_right",
-        }
-        self.name_converter_rev = {v: k for k, v in name_converter.items()}
-        for i in range(camera_names):
-            camera_names[i] = name_converter[camera_names[i]]
-        self.image_recorder = ImageRecorderRos(camera_names)
-        self.all_joints_num = 7 * 2 + 2 + 1
-        print("AIRBOT MMK Real Environment Created.")
-
-    def _get_images(self):
-        images_dic = self.image_recorder.get_images()
-        images = {}
-        for key, value in images_dic.items():
-            images[self.name_converter_rev[key]] = value
-        return images
-
-    def get_reward(self):
-        return 0
+    def set_reset_position(self, reset_position):
+        assert (
+            len(reset_position) == self._all_joints_num
+        ), f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
+        self.robot.config.default_action = reset_position
 
     def reset(self, sleep_time=0):
-        for robot in self.mmk2_robots:
-            robot.reset()
+        self.robot.reset()
+        time.sleep(sleep_time)
+        return self._get_obs()
+
+    def _get_obs(self):
+        obs = collections.OrderedDict()
+        obs["qpos"] = []
+        obs["images"] = {}
+        raw_obs = self.robot.capture_observation()
+        low_dim = raw_obs["low_dim"]
+        arms_names = self.robot.joint_names.left_arm + self.robot.joint_names.right_arm
+        for arm_name in arms_names:
+            obs["qpos"].extend(low_dim[f"observation/{arm_name}/joint_position"])
+        for name in self.robot.cameras:
+            assert name not in obs["images"], f"Duplicate camera name: {name}"
+            obs["images"][name] = raw_obs[f"observation.images.{name}"]
 
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
-            reward=self.get_reward(),
+            reward=0,
             discount=None,
-            observation=self._get_observation(),
+            observation=obs,
         )
 
     def step(
         self,
         action,
         sleep_time=0,
-        arm_vel=0,
+        get_obs=True,
     ):
-        for index, robot in enumerate(self.mmk2_robots):
-            jn = robot.all_joints_num
-            robot.set_target_states(
-                action[jn * index : jn * (index + 1)],
-                [arm_vel],
-                False,
-            )
+        self.robot.send_action(action)
         time.sleep(sleep_time)
-        obs = self._get_observation()
-        return dm_env.TimeStep(
-            step_type=dm_env.StepType.MID,
-            reward=self.get_reward(),
-            discount=None,
-            observation=obs,
-        )
-
-    def _get_state(self):
-        """17 dof: (6 arm joints + 1 gripper joint) * 2 + 2 head joints + 1 spine joint"""
-        qpos = []
-        for robot in self.mmk2_robots:
-            qpos.append(robot.get_current_states())
-        return np.hstack(qpos)
-
-    def _get_observation(self):
-        obs = collections.OrderedDict()
-        obs["qpos"] = self._get_state()
-        obs["images"] = self._get_images()
+        obs = self._get_obs() if get_obs else None
         return obs
-
-def make_env(
-    robot_instance=None,
-    cameras=None,
-):
-    env = AirbotMmkEnv(robot_instance, cameras)
-    return env

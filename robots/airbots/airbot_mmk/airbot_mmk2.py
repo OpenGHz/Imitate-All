@@ -1,5 +1,5 @@
 from mmk2_sdk.mmk2_client import AIRBOTMMK2 as AIRBOTMMK2Client
-from mmk2_types.types import MMK2Components, JointNames, MMK2ComponentsGroup
+from mmk2_types.types import MMK2Components, JointNames, ComponentTypes
 from mmk2_sdk.mmk2_grpc_types import (
     JointState,
     TrajectoryParams,
@@ -18,6 +18,14 @@ class AIRBOTMMK2Config(object):
     port: int = 50055
     default_action: List[float] = field(default_factory=lambda: [0] * 14)
     cameras: Dict[str, str] = field(default_factory=lambda: {})
+    components: List[str] = field(
+        default_factory=lambda: [
+            MMK2Components.LEFT_ARM.value,
+            MMK2Components.RIGHT_ARM.value,
+            MMK2Components.LEFT_EEF.value,
+            MMK2Components.RIGHT_EEF.value,
+        ]
+    )
 
 
 class AIRBOTMMK2(object):
@@ -26,19 +34,32 @@ class AIRBOTMMK2(object):
             config = AIRBOTMMK2Config()
         self.config = replace(config, **kwargs)
         self.robot = AIRBOTMMK2Client(asdict(self.config))
+        self.joint_names = {}
         self.cameras = {}
+        self.components: Dict[MMK2Components, ComponentTypes] = {}
+        all_joint_names = JointNames()
+        self.joint_num = 0
         for k, v in self.config.cameras:
             self.cameras[MMK2Components(k)] = v
-        self.all_joints_num = 14
+        for comp_str in self.config.components:
+            comp = MMK2Components(comp_str)
+            self.components[comp] = ComponentTypes.UNKNOWN
+            names = all_joint_names.__dict__[comp_str]
+            self.joint_names[comp] = names
+            self.joint_num += len(names)
         self.logs = {}
 
     def reset(self):
         goal = {
             MMK2Components.LEFT_ARM: JointState(
-                position=self.config.default_action[:7]
+                position=self.config.default_action[:6]
             ),
+            MMK2Components.LEFT_EEF: JointState(position=self.config.default_action[6]),
             MMK2Components.RIGHT_ARM: JointState(
-                position=self.config.default_action[:7]
+                position=self.config.default_action[7:13]
+            ),
+            MMK2Components.RIGHT_EEF: JointState(
+                position=self.config.default_action[13]
             ),
         }
         self.robot.set_goal(goal, TrajectoryParams())
@@ -60,12 +81,12 @@ class AIRBOTMMK2(object):
 
     def get_low_dim_data(self):
         data = {}
-        all_names = JointNames()
         all_joints = self.robot.get_robot_state().joint_state
-        for comp in MMK2ComponentsGroup.ARMS_EEFS:
-            joint_names = all_names.__dict__[comp.value]
-            joint_states = self.robot.get_joint_values_by_names(all_joints, joint_names)
-            data[f"observation/{comp}/left/joint_position"] = joint_states
+        for comp in self.components:
+            joint_states = self.robot.get_joint_values_by_names(
+                all_joints, self.joint_names[comp]
+            )
+            data[f"observation/{comp.value}/joint_position"] = joint_states
         return data
 
     def capture_observation(self):
@@ -108,6 +129,7 @@ class AIRBOTMMK2(object):
 
 def main(args=object):
     robot = AIRBOTMMK2()
+    robot.reset()
 
 
 if __name__ == "__main__":
