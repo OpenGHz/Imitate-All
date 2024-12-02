@@ -8,6 +8,10 @@ from mmk2_types.grpc_msgs import (
 from typing import Optional, Dict, List
 from dataclasses import dataclass, replace, field
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,7 +48,7 @@ class AIRBOTMMK2(object):
         self.components: Dict[MMK2Components, ComponentTypes] = {}
         all_joint_names = JointNames()
         self.joint_num = 0
-        for k, v in self.config.cameras:
+        for k, v in self.config.cameras.items():
             self.cameras[MMK2Components(k)] = v
         for comp_str in self.config.components:
             comp = MMK2Components(comp_str)
