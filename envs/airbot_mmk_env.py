@@ -28,12 +28,13 @@ class AIRBOTMMK2Env(object):
         obs["images"] = {}
         raw_obs = self.robot.capture_observation()
         low_dim = raw_obs["low_dim"]
-        arms_names = self.robot.joint_names.left_arm + self.robot.joint_names.right_arm
-        for arm_name in arms_names:
-            obs["qpos"].extend(low_dim[f"observation/{arm_name}/joint_position"])
-        for name in self.robot.cameras:
-            assert name not in obs["images"], f"Duplicate camera name: {name}"
-            obs["images"][name] = raw_obs[f"observation.images.{name}"]
+        for joint_name in self.robot.joint_names:
+            obs["qpos"].extend(low_dim[f"observation/{joint_name}/joint_position"])
+        for camera_name in self.robot.cameras:
+            assert (
+                camera_name not in obs["images"]
+            ), f"Duplicate camera name: {camera_name}"
+            obs["images"][camera_name] = raw_obs[f"observation.images.{camera_name}"]
 
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
