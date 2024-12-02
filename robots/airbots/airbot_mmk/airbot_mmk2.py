@@ -33,7 +33,12 @@ class AIRBOTMMK2(object):
         if config is None:
             config = AIRBOTMMK2Config()
         self.config = replace(config, **kwargs)
-        self.robot = AIRBOTMMK2Client(asdict(self.config))
+        self.robot = AIRBOTMMK2Client(
+            self.config.name,
+            self.config.domain_id,
+            self.config.ip,
+            self.config.port,
+        )
         self.joint_names = {}
         self.cameras = {}
         self.components: Dict[MMK2Components, ComponentTypes] = {}
