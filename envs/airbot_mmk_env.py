@@ -18,8 +18,7 @@ class AIRBOTMMK2Env(object):
         self.robot.config.default_action = reset_position
 
     def reset(self, sleep_time=0):
-        self.robot.reset()
-        time.sleep(sleep_time)
+        self.robot.reset(sleep_time)
         return self._get_obs()
 
     def _get_obs(self):

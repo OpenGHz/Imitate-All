@@ -11,6 +11,8 @@ from configurations.task_configs.config_tools.basic_configer import (
 from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 import dm_env
+import cv2
+from threading import Thread
 
 
 logging.basicConfig(level=logging.INFO)
@@ -135,6 +137,19 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         pre_process = lambda s_qpos: s_qpos
         post_process = lambda a: a
 
+    eval_done = False
+    showing_images = config.get("show_images", False)
+    if showing_images:
+        def show_images():
+            while not eval_done:
+                images: dict = ts.observation["images"]
+                for name, value in images.items():
+                    cv2.imshow(name, value)
+                cv2.waitKey(1)
+            cv2.destroyAllWindows()
+
+        show_image_thread = Thread(target=show_images)
+
     # evaluation loop
     if hasattr(policy, "eval"):
         policy.eval()
@@ -158,7 +173,10 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         rewards = []
         with torch.inference_mode():
             logger.info("Reset environment...")
-            env.reset(sleep_time=1)
+            ts = env.reset(sleep_time=1)
+            if showing_images:
+                if not show_image_thread.is_alive():
+                    show_image_thread.start()
             logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
             v = input(f"Press Enter to start evaluation or z and Enter to exit...")
             if v == "z":
@@ -272,6 +290,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     else:
         success_rate = 0
         avg_return = 0
+    eval_done = True
+    if showing_images:
+        show_image_thread.join()
     return success_rate, avg_return
 
 
@@ -399,6 +420,13 @@ if __name__ == "__main__":
         action="store",
         type=str,
         help="env_config_path",
+        required=False,
+    )
+    parser.add_argument(
+        "-show",
+        "--show_images",
+        action="store_true",
+        help="show_images",
         required=False,
     )
 
