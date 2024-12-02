@@ -59,12 +59,14 @@ class AIRBOTMMK2(object):
             MMK2Components.LEFT_ARM: JointState(
                 position=self.config.default_action[:6]
             ),
-            MMK2Components.LEFT_EEF: JointState(position=self.config.default_action[6]),
+            MMK2Components.LEFT_EEF: JointState(
+                position=self.config.default_action[6:7]
+            ),
             MMK2Components.RIGHT_ARM: JointState(
                 position=self.config.default_action[7:13]
             ),
             MMK2Components.RIGHT_EEF: JointState(
-                position=self.config.default_action[13]
+                position=self.config.default_action[13:14]
             ),
         }
         self.robot.set_goal(goal, TrajectoryParams())
