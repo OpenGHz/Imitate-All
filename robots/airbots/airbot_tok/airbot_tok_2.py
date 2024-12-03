@@ -5,6 +5,11 @@ from robots.airbots.airbot_base.airbot_base import AIRBOTBase, AIRBOTBaseConfig
 from data_process.convert_all import replace_keys
 from typing import Dict, Optional
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,8 +40,10 @@ class AIRBOTTOK(object):
         eef_concat = replace_keys(self.low_dim_concat.copy(), "arm", "eef")
         eef_concat.update(replace_keys(eef_concat.copy(), "joint_position", "pose"))
         self.low_dim_concat.update(eef_concat)
+        logger.info("TOK2 started")
 
     def __init(self):
+        logger.info("TOK2 initiating")
         # Connect the cameras
         for name in self.cameras:
             self.cameras[name].connect()
@@ -49,6 +56,7 @@ class AIRBOTTOK(object):
         self.reset()
 
     def reset(self):
+        logger.info("TOK2 reseting")
         for arm in self.arms.values():
             arm.set_joint_position_target(arm.config.default_action, blocking=True)
         self._state_mode = "active"
