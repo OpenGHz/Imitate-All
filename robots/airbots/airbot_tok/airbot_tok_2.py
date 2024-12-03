@@ -45,20 +45,24 @@ class AIRBOTTOK(object):
     def __init(self):
         logger.info("TOK2 initiating")
         # Connect the cameras
+        logger.info("Conneting cameras")
         for name in self.cameras:
             self.cameras[name].connect()
         # Connect the robot
+        logger.info("Connecting arms")
         self.arms: Dict[str, AIRBOTPlay] = {}
         for arm_name, arm_cfg in self.arms_cfg.items():
             self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
+        logger.info("Connecting the base")
         self.base = AIRBOTBase(self.config.base)
-        time.sleep(0.3)
         self.reset()
 
     def reset(self):
         logger.info("TOK2 reseting")
         for arm in self.arms.values():
-            arm.set_joint_position_target(arm.config.default_action, blocking=True)
+            target = arm.config.default_action
+            logger.info(f"Seting target {target} for {arm} arm")
+            arm.set_joint_position_target(target, blocking=True)
         self._state_mode = "active"
 
     def enter_traj_mode(self):
