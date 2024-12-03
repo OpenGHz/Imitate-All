@@ -67,7 +67,7 @@ class AIRBOTPlay(object):
 
     def set_joint_position_target(self, qpos, qvel=None, blocking=False):
         if qvel is None:
-            qvel = self.config.joint_vel
+            qvel = [self.config.joint_vel]
         use_planning = blocking
         self.robot.set_target_joint_q(
             qpos[: self._arm_joints_num], use_planning, qvel[0], blocking
