@@ -2,7 +2,6 @@ from dataclasses import dataclass, field, replace
 from habitats.common.robot_devices.cameras.utils import Camera
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlayConfig, AIRBOTPlay
 from robots.airbots.airbot_base.airbot_base import AIRBOTBase, AIRBOTBaseConfig
-from data_process.convert_all import replace_keys
 from typing import Dict, Optional
 import time
 import logging
@@ -31,15 +30,6 @@ class AIRBOTTOK(object):
         self.__init()
         self._state_mode = "active"
         self._exited = False
-        self.low_dim_concat = {
-            "observation/arm/joint_position": [
-                "observation/arm/left/joint_position",
-                "observation/arm/right/joint_position",
-            ],
-        }
-        eef_concat = replace_keys(self.low_dim_concat.copy(), "arm", "eef")
-        eef_concat.update(replace_keys(eef_concat.copy(), "joint_position", "pose"))
-        self.low_dim_concat.update(eef_concat)
         logger.info("TOK2 started")
 
     def __init(self):
