@@ -58,10 +58,10 @@ class AIRBOTTOK(object):
         self.reset()
 
     def reset(self):
-        logger.info("TOK2 reseting")
+        logger.info("TOK2 resetting")
         for arm in self.arms.values():
             target = arm.config.default_action
-            logger.info(f"Seting target {target} for {arm} arm")
+            logger.info(f"Setting target {target} for {arm} arm")
             arm.set_joint_position_target(target, blocking=True)
         self._state_mode = "active"
 
