@@ -694,20 +694,10 @@ def replay(
         low_dim = dataset.raw_data[start_episode]["low_dim"]
 
         # concatenate different arms
-        obs_keys = ["observation/arm/joint_position", "observation/eef/joint_position"]
-        act_keys = replace_keys(obs_keys.copy(), "observation", "action")
-        if obs_keys[0] not in low_dim:
-            low_dim_concat: dict = robot.low_dim_concat
-            low_dim_concat.update(
-                replace_keys(low_dim_concat.copy(), "observation", "action")
-            )
-            low_dim = concatenate_by_key(low_dim, low_dim_concat, remove_ori=True)
 
         for roll in range(num_rollouts):
             # go to first frame using trajectory mode
-            arm_qpos = low_dim[obs_keys[0]][0]
-            eef_qpos = low_dim[obs_keys[1]][0]
-            action = arm_qpos + eef_qpos
+            action = robot.low_dim_to_action(low_dim, 0)
             logging.info("Moving to the first frame of the episode")
             robot.enter_traj_mode()
             robot.send_action(action)
@@ -723,9 +713,7 @@ def replay(
             robot.enter_servo_mode()
             for i in tqdm.tqdm(range(meta["length"])):
                 start_episode_t = time.perf_counter()
-                arm_qpos = low_dim[obs_keys[0]][i]
-                eef_qpos = low_dim[obs_keys[1]][i]
-                action = arm_qpos + eef_qpos
+                action = robot.low_dim_to_action(low_dim, i)
                 # print("current joint:", robot.get_low_dim_data()["observation/arm/joint_position"])
                 # print("target action:", action)
                 robot.send_action(action)

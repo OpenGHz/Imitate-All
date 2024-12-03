@@ -54,15 +54,15 @@ class AIRBOTTOK(object):
         for arm_name, arm_cfg in self.arms_cfg.items():
             self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
         logger.info("Connecting the base")
-        self.base = AIRBOTBase(self.config.base)
+        # self.base = AIRBOTBase(self.config.base)
         self.reset()
 
     def reset(self):
         logger.info("TOK2 resetting")
-        for arm in self.arms.values():
+        for name, arm in self.arms.items():
             target = arm.config.default_action
-            logger.info(f"Setting target {target} for {arm} arm")
-            arm.set_joint_position_target(target, blocking=True)
+            logger.info(f"Setting target {target} for {name} arm")
+            arm.set_joint_position_target(target, blocking=False, use_planning=True)
         self._state_mode = "active"
 
     def enter_traj_mode(self):
@@ -78,17 +78,20 @@ class AIRBOTTOK(object):
             arm.enter_passive_mode()
         self._state_mode = "passive"
 
+    def enter_servo_mode(self):
+        self.enter_active_mode()
+
     def send_action(self, action, wait=False):
         assert self._state_mode == "active", "Robot is not in active mode"
         velocity = action[-2:]
-        self.base.move_at_velocity2D(velocity)
+        logger.info(f"Sending action {action}")
+        # self.base.move_at_velocity2D(velocity)
         i = 0
-        joint_num = 0
         for arm in self.arms.values():
-            if isinstance(arm.config.default_action, list):
-                joint_num == len(arm.config.default_action)
+            if isinstance(arm.config.default_action, (float, int)):
+                joint_num = 1
             else:
-                joint_num == 1
+                joint_num = len(arm.config.default_action)
             arm.set_joint_position_target(action[i : i + joint_num], blocking=wait)
             i += joint_num
         return action
@@ -102,6 +105,7 @@ class AIRBOTTOK(object):
                 arm.get_current_joint_positions()
             )
             data[f"/time/{arm_name}"] = time.time()
+        data["observation/base/velocity"] = list(self.base.get_current_velocity2D())
 
         return data
 
@@ -139,3 +143,21 @@ class AIRBOTTOK(object):
 
     def get_state_mode(self):
         return self._state_mode
+
+    def low_dim_to_action(self, low_dim: dict, step: int) -> list:
+        action = []
+        arm_action: list = low_dim[f"action/arm/joint_position"][step]
+        eef_action: list = low_dim[f"action/eef/joint_position"][step]
+        if len(arm_action) == 12:
+            left_arm, right_arm = arm_action[:6], arm_action[6:]
+            assert len(eef_action) == 2, "Expected 2 eef joint positions"
+            left_eef, right_eef = eef_action[:6], eef_action[6:]
+            action = left_arm + left_eef + right_arm + right_eef
+            assert len(action) == 14 + 2, "Expected 14 joint positions and 2 velocities"
+        elif len(arm_action) == 6:
+            assert len(eef_action) == 1, "Expected 1 eef joint position"
+            action = arm_action + eef_action
+        else:
+            raise ValueError("Unexpected number of joint positions")
+        action.extend(low_dim["observation/base/velocity"][step])
+        return action

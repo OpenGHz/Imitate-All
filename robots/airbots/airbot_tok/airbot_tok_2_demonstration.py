@@ -48,7 +48,7 @@ class AIRBOTTOKDemonstration(object):
         """The returned observations do not have a batch dimension."""
         obs_act_dict = self.airbot_play_demon.capture_observation()
 
-        obs_act_dict["low_dim"]["action/base/velocity"] = list(
+        obs_act_dict["low_dim"]["observation/base/velocity"] = list(
             self.airbot_base.get_current_velocity2D()
         )
 

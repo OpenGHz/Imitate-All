@@ -40,6 +40,7 @@ class Robot(Protocol):
     def reset(self): ...
     def exit(self): ...
     def get_state_mode(self): ...
+    def low_dim_to_action(self, low_dim, step): ...
 
 
 @dataclass
@@ -114,7 +115,7 @@ class FakeRobot(object):
         for name in self.cameras:
             obs_act_dict[f"observation.images.{name}"] = images[name]
         return obs_act_dict
-    
+
     def init_teleop(self):
         print("init_teleop")
 
@@ -138,6 +139,7 @@ class FakeRobot(object):
 
     def get_state_mode(self):
         return self._state_mode
+
 
 def make_robot(config) -> Robot:
     if isinstance(config, str):

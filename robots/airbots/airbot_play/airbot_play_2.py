@@ -65,10 +65,12 @@ class AIRBOTPlay(object):
     def get_current_pose(self):
         return self.robot.get_current_pose()
 
-    def set_joint_position_target(self, qpos, qvel=None, blocking=False):
+    def set_joint_position_target(
+        self, qpos, qvel=None, blocking=False, use_planning=None
+    ):
         if qvel is None:
             qvel = [self.config.joint_vel]
-        use_planning = blocking
+        use_planning = blocking if use_planning is None else use_planning
         self.robot.set_target_joint_q(
             qpos[: self._arm_joints_num], use_planning, qvel[0], blocking
         )
