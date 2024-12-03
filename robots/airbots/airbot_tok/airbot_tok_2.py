@@ -68,7 +68,8 @@ class AIRBOTTOK(object):
 
     def send_action(self, action, wait=False):
         assert self._state_mode == "active", "Robot is not in active mode"
-        self.base.move_at_velocity2D(*action[-2:])
+        velocity = action[-1:]
+        self.base.move_at_velocity2D(*velocity)
         i = 0
         joint_num = 0
         for arm in self.arms.values():
