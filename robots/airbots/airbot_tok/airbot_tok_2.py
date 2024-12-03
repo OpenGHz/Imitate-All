@@ -54,7 +54,7 @@ class AIRBOTTOK(object):
         for arm_name, arm_cfg in self.arms_cfg.items():
             self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
         logger.info("Connecting the base")
-        # self.base = AIRBOTBase(self.config.base)
+        self.base = AIRBOTBase(self.config.base)
         self.reset()
 
     def reset(self):
@@ -84,8 +84,8 @@ class AIRBOTTOK(object):
     def send_action(self, action, wait=False):
         assert self._state_mode == "active", "Robot is not in active mode"
         velocity = action[-2:]
-        logger.info(f"Sending action {action}")
-        # self.base.move_at_velocity2D(velocity)
+        # logger.info(f"Sending action {action}")
+        self.base.move_at_velocity2D(velocity)
         i = 0
         for arm in self.arms.values():
             if isinstance(arm.config.default_action, (float, int)):
