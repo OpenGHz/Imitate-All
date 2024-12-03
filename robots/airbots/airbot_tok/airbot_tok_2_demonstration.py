@@ -21,12 +21,13 @@ class AIRBOTTOKDemonstration(object):
     ) -> None:
         if config is None:
             config = AIRBOTTOKDemonstrationConfig()
+        self.airbot_base = AIRBOTBase(self.config.base)
         self.config = replace(config, **kwargs)
         self.airbot_play_demon = AIRBOTPlayDemonstration(
             self.config.airbot_play_demonstration
         )
-        self.airbot_base = AIRBOTBase(self.config.base)
-
+        self.logs = {}
+        self.cameras = self.airbot_play_demon.cameras
         print(self.config)
 
     def reset(self):
