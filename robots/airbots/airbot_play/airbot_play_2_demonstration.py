@@ -37,6 +37,7 @@ class AIRBOTPlayDemonstration(object):
                 self.followers[g_name].append(AIRBOTPlay(**f_cfg))
         for name in self.cameras:
             self.cameras[name].connect()
+        self._is_running = True
         self._reseting = Event()
         self.__sync_thread = Thread(target=self.__sync, daemon=True)
         self.__sync_thread.start()
@@ -44,7 +45,7 @@ class AIRBOTPlayDemonstration(object):
 
     def __sync(self):
         duration = 0.001
-        while True:
+        while self._is_running:
             self._reseting.wait()
             for g_name in self.config.groups.keys():
                 l_pos = self.leaders[g_name].get_current_joint_positions()
@@ -136,6 +137,8 @@ class AIRBOTPlayDemonstration(object):
     def exit(self):
         for name in self.cameras:
             self.cameras[name].disconnect()
+        self._is_running = False
+        self.__sync_thread.join()
         del self.leaders
         del self.followers
         print("Robot exited")
