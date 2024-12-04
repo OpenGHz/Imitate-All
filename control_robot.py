@@ -703,7 +703,7 @@ def replay(
             robot.send_action(action)
             # time.sleep(1)
             key = input(
-                f"Press Enter to replay. Episode: {episode_index} Number: {roll} or 'x and Enter' to exit current episode or 'z and Enter' to exit all episodes"
+                f"Press Enter to replay episode {episode_index} with number {roll} or press 'x and Enter' to exit current episode or 'z and Enter' to exit all episodes"
             )
             if key in ["z", "Z"]:
                 return
