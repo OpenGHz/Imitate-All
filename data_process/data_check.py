@@ -1,5 +1,6 @@
 import cv2
 import argparse
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-tn", "--task_name", type=str, default="example")
@@ -21,7 +22,12 @@ def get_video_length(video_path):
     return frame_count, duration
 
 
-for name in args.video_names:
-    video_path = f"data/raw/{args.task_name}/{args.episode}/{name}"
+root_dir = f"data/raw/{args.task_name}/{args.episode}"
+for video_name in args.video_names:
+    video_path = f"{root_dir}/{video_name}"
     frame_count, duration = get_video_length(video_path)
-    print(f"{name}: {frame_count} frames {duration} seconds")
+    print(f"{video_name}: {frame_count} frames {duration} seconds")
+
+low_dim = json.load(open(f"{root_dir}/low_dim.json"))
+for key, value in low_dim.items():
+    print(f"{key}: {len(value)} frames")
