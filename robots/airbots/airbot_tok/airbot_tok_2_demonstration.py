@@ -21,8 +21,8 @@ class AIRBOTTOKDemonstration(object):
     ) -> None:
         if config is None:
             config = AIRBOTTOKDemonstrationConfig()
-        self.airbot_base = AIRBOTBase(self.config.base)
         self.config = replace(config, **kwargs)
+        self.airbot_base = AIRBOTBase(self.config.base)
         self.airbot_play_demon = AIRBOTPlayDemonstration(
             self.config.airbot_play_demonstration
         )

@@ -22,7 +22,12 @@ def basic_parser():
 def load_task_config(path: str):
     """Load task config from task config python file"""
     #TODO: support for yaml config file?
-    module = importlib.import_module(path)
+    try:
+        module = importlib.import_module(path)
+    except Exception as e:
+        print(f"Error: {e}")
+        raise ImportError("Is your configuration file name the same as the task name? Or have you added the configuration file to the configurations/task_configs folder?")
+
     TASK_CONFIG = getattr(module, "TASK_CONFIG")
     image_augmentor = getattr(module, "augment_images")
     assert TASK_CONFIG != {}, f"No task config found for {path}"
