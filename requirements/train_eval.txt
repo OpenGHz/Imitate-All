@@ -13,6 +13,8 @@ ipython
 dm_env
 tqdm
 OneEuroFilter
+omegaconf >=2.3.0
+hydra-core >=1.3.2
 
 # wandb >=0.16.3
 # imageio >=2.34.0
