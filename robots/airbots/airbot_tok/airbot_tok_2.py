@@ -143,7 +143,7 @@ class AIRBOTTOK(object):
             assert len(eef_action) == 2, "Expected 2 eef joint positions"
             left_eef, right_eef = eef_action[:6], eef_action[6:]
             action = left_arm + left_eef + right_arm + right_eef
-            assert len(action) == 14 + 2, "Expected 14 joint positions and 2 velocities"
+            assert len(action) == 14, "Expected 14 joint positions"
         elif len(arm_action) == 6:
             assert len(eef_action) == 1, "Expected 1 eef joint position"
             action = arm_action + eef_action
