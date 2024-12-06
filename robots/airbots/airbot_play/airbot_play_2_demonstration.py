@@ -64,8 +64,8 @@ class AIRBOTPlayDemonstration(object):
                     leaders[index].config.default_action, [0.2], True
                 )
         for leader in self.leaders.values():
-            leader.enter_active_mode()
-            leader.set_joint_position_target(leader.config.default_action, [0.2], True)
+            if leader.enter_active_mode():
+                leader.set_joint_position_target(leader.config.default_action, [0.2], True)
         self._state_mode = "active"
         self._reseting.set()
 

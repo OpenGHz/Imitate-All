@@ -90,5 +90,12 @@ class AIRBOTPlay(object):
     def enter_passive_mode(self):
         self.robot.manual_mode()
 
-    def enter_active_mode(self):
-        self.robot.online_mode()
+    def enter_active_mode(self) -> bool:
+        if (
+            self.config.bigarm_type == "encoder"
+            or self.config.forearm_type == "encoder"
+        ):
+            return False
+        else:
+            self.robot.online_mode()
+            return True
