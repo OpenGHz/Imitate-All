@@ -46,7 +46,7 @@ class AIRBOTPlay(object):
 
     def get_current_joint_positions(self) -> List[float]:
         joints = self.robot.get_current_joint_q()
-        if self.config.eef_mode in ["gripper", "teacherv2"]:
+        if self.config.eef_mode in ["gripper", "teacherv2", "encoder"]:
             joints += [self.robot.get_current_end()]
         return joints
 
