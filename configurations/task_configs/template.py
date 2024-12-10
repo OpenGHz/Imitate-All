@@ -15,22 +15,28 @@ The default task config is TASK_CONFIG_DEFAULT, which is a dict containing the c
 The final config is TASK_CONFIG, which is used by the training, evaluating and so on.
 """
 
-def get_task_name(cur_file:str):
+
+def get_task_name(cur_file: str):
     """Get the task name from the current file __file__ arg."""
     return cur_file.split("/")[-1].replace(".py", "")
 
-def activator(flag:bool):
-    '''A decorator to add a activated flag to the function.'''
+
+def activator(flag: bool):
+    """A decorator to add a activated flag to the function."""
     from functools import wraps
+
     def decorator(func):
         @wraps(func)
         def func_add_flag(*args, **kwargs):
             return func(*args, **kwargs)
+
         func_add_flag.__dict__["activated"] = flag
         return func_add_flag
+
     return decorator
 
-def policy_maker(config:dict, stage=None):
+
+def policy_maker(config: dict, stage=None):
     """
     Make the policy instance.
     Arg:
@@ -46,7 +52,8 @@ def policy_maker(config:dict, stage=None):
     print("stage", stage)
     return None
 
-def environment_maker(config:dict, stage=None):
+
+def environment_maker(config: dict, stage=None):
     """
     Make the environment instance. A environment is the combination of the habitat and robot.
     Arg:
@@ -62,20 +69,22 @@ def environment_maker(config:dict, stage=None):
     print("stage", stage)
     return None
 
+
 @activator(False)  # set to True to use augment_images function
 def augment_images(image):
     """Augment the images."""
     # this shows no augmentation
     return image
 
-def policy_ensembler(grouped_out:dict):
+
+def policy_ensembler(grouped_out: dict):
     """Ensemble the output of all policies and return one to execute."""
     # this shows equal-weight average ensemble for all groups
     # TODO: move to the wrapper class
     outputs = tuple(grouped_out.values())
     group_num = len(outputs)
-    grouped_ave = [sum(x)/len(x) for x in outputs]
-    weights = [1/group_num] * group_num
+    grouped_ave = [sum(x) / len(x) for x in outputs]
+    weights = [1 / group_num] * group_num
     return sum([x * w for x, w in zip(grouped_ave, weights)])
 
 
@@ -105,13 +114,13 @@ ENV_EVAL_CONFIG_DEFAULT = {
     # e.g. "habitats": ["habitat1", "habitat2"], "robots": [["robot1", "robot2"], "robot2"]
     "habitats": [],
     "robots": [],
-    "environment_maker": environment_maker
+    "environment_maker": environment_maker,
 }
 ENV_TRAIN_CONFIG_DEFAULT = {
     # TODO:the habitat and robot configs for training
     "habitats": ["CKPT_PATH"],
     "robots": ["DataLoader"],
-    "environment_maker": None
+    "environment_maker": None,
 }
 
 # TODO: use robot_config class instead of robot_num and joint_num
@@ -134,10 +143,11 @@ COMMON_CONFIG_DEFAULT = {
 }
 
 TRAIN_CONFIG_DEFAULT = {
-    "dataset_dir": DATA_DIR_DEFAULT + f"/{TASK_NAME}",  # directory containing the hdf5 files
+    "dataset_dir": DATA_DIR_DEFAULT
+    + f"/{TASK_NAME}",  # directory containing the hdf5 files
     # 0/"ALL" if use all episodes or a number to use the first n episodes
     # or a tuple of (start, end) to use the episodes from start to end, e.g. (50, 100)
-    # or a tuple of (start, end, postfix) to use the episodes from start to end with the postfix, 
+    # or a tuple of (start, end, postfix) to use the episodes from start to end with the postfix,
     # e.g. (50, 100, "augmented")
     # or a list(not tuple!) of multi tuples e.g. [(0, 49), (100, 199)]
     # TODO: not implemented; support custom name postfix, e.g. "episode_0_augmented"
@@ -162,7 +172,7 @@ TRAIN_CONFIG_DEFAULT = {
     "cotrain_dir": "",
     "sample_weights": None,  # TODO: change to 1 or 0?
     "parallel": None,  # {"mode":str, "device_ids":list}, mode: "DP" or "DDP"; device_ids: e.g. [0, 1] or None for all
-    "environments": ENV_TRAIN_CONFIG_DEFAULT
+    "environments": ENV_TRAIN_CONFIG_DEFAULT,
 }
 
 EVAL_CONFIG_DEFAULT = {
@@ -179,18 +189,20 @@ EVAL_CONFIG_DEFAULT = {
     "start_joint": [0.0] * 7,  # the start joint angles of the robot
     "max_timesteps": 400,  # 一般可以设置跟数据采集时的episode_len相等
     "num_rollouts": 50,  # 程序一次运行最大的推理次数
-    "save_dir": EVAL_DIR_DEFAULT, # "" if not save the evaluation results, AUTO means the same as the ckpt_dir
+    "save_dir": EVAL_DIR_DEFAULT,  # "" if not save the evaluation results, AUTO means the same as the ckpt_dir
     "time_stamp": None,  # None if not used
     "fps": 25,  # the frequency for executing actions (should > inference frequency)
-    "ckpt_names": ["policy_best.ckpt"],  # policy_last or any other ckpts to evaluate 'num_rollouts' times in sequence
+    "ckpt_names": [
+        "policy_best.ckpt"
+    ],  # policy_last or any other ckpts to evaluate 'num_rollouts' times in sequence
     "ensemble": {  # will replace the corresponding configs in the other configs; None if not used
-        "Group1":{  # the name of the ensemble group
+        "Group1": {  # the name of the ensemble group
             "policies": [POLICY_CONFIG_ACT_DEFAULT],
-            "ckpt_dirs": [TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/ckpt"], 
+            "ckpt_dirs": [TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/ckpt"],
             "ckpt_names": [("policy_best.ckpt",)],
-            "fps": [25]
+            "fps": [25],
         },
-        "ensembler": policy_ensembler
+        "ensembler": policy_ensembler,
     },
     "environments": ENV_EVAL_CONFIG_DEFAULT,
     "info_records": {
@@ -201,8 +213,8 @@ EVAL_CONFIG_DEFAULT = {
             "action": "npy",
             "trajectory": "hdf5",
             "config": "pkl",
-        }
-    }
+        },
+    },
 }
 
 TASK_CONFIG_DEFAULT = {
@@ -211,9 +223,12 @@ TASK_CONFIG_DEFAULT = {
     "eval": EVAL_CONFIG_DEFAULT,
 }
 
+
 def get_time_stamp():
     from datetime import datetime
+
     return datetime.now().strftime("%Y%m%d-%H%M%S")
+
 
 def replace_task_name(name: str, stats_name="dataset_stats.pkl", time_stamp="now"):
     """Replace the task name in the default dirs/paths."""
@@ -229,14 +244,28 @@ def replace_task_name(name: str, stats_name="dataset_stats.pkl", time_stamp="now
     COMMON_CONFIG_DEFAULT["ckpt_dir"] = TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{ts}ckpt"
     EVAL_CONFIG_DEFAULT["save_dir"] = EVAL_DIR_DEFAULT + f"/{TASK_NAME}/{ts}"
     if stats_name not in ["", None]:
-        COMMON_CONFIG_DEFAULT["stats_path"] = TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{ts}{TASK_NAME}/{ts}{stats_name}"
+        COMMON_CONFIG_DEFAULT["stats_path"] = (
+            TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{ts}{TASK_NAME}/{ts}{stats_name}"
+        )
 
-def set_paths(data_dir: str, ckpt_dir: str, stats_path: str = "", save_dir: str = "AUTO"):
+
+def set_paths(
+    data_dir: str, ckpt_dir: str, stats_path: str = "", save_dir: str = "AUTO"
+):
     """Replace the default data, ckpt, stats and eval dirs/paths."""
     TRAIN_CONFIG_DEFAULT["dataset_dir"] = data_dir
     COMMON_CONFIG_DEFAULT["ckpt_dir"] = ckpt_dir
     COMMON_CONFIG_DEFAULT["stats_path"] = stats_path
     EVAL_CONFIG_DEFAULT["save_dir"] = save_dir
+
+
+def is_valid_module_name(name):
+    import re
+
+    # 只允许字母、数字、下划线，且必须以字母或下划线开头
+    pattern = r"^[a-z_][a-z0-9_]*$"
+    return bool(re.match(pattern, name))
+
 
 # finally choose one of the data and model configs
 replace_task_name(TASK_NAME)

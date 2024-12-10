@@ -2,31 +2,43 @@ from configurations.task_configs.template import (
     get_task_name,
     replace_task_name,
     set_paths,
+    is_valid_module_name,
     activator,
     TASK_CONFIG_DEFAULT,
 )
 
-def policy_maker(config:dict, stage=None):
+
+def policy_maker(config: dict, stage=None):
     from policies.act.act import ACTPolicy
     from policies.common.maker import post_init_policies
+
     policy = ACTPolicy(config)
     # TODO: now the ckpt_path are set automatically in train and eval
     post_init_policies([policy], stage, [config["ckpt_path"]])
     return policy
 
-def environment_maker(config:dict):
+
+def environment_maker(config: dict):
     from envs.make_env import make_environment
+
     env_config = config["environments"]
     # TODO: use env_config only
     return make_environment(config)
 
+
 @activator(False)
 def augment_images(image):
-    from configurations.task_configs.config_augmentation.image.basic import color_transforms_1
+    from configurations.task_configs.config_augmentation.image.basic import (
+        color_transforms_1,
+    )
+
     return color_transforms_1(image)
+
 
 # auto replace the task name in the default paths accoring to the file name
 TASK_NAME = get_task_name(__file__)
+assert is_valid_module_name(TASK_NAME), f"Invalid task name {TASK_NAME}"
+
 replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # but we also show how to set the whole paths manually
 # DATA_DIR = f"./data/hdf5/{TASK_NAME}"
