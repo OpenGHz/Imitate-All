@@ -105,6 +105,7 @@ class AIRBOTMMK2(object):
                 all_joints, self.joint_names[comp]
             )
             data[f"observation/{comp.value}/joint_position"] = joint_states
+            # data[f"action/{comp.value}/joint_position"] = None
         return data
 
     def capture_observation(self):

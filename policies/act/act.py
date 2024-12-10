@@ -35,7 +35,7 @@ class ACTPolicy(nn.Module):
     # TODO: 使用装饰器在外部进行包装
     def __call__(self, qpos, image, actions=None, is_pad=None):
         if image.ndim == 4:
-            image = image.unsqueeze(1)
+            image = image.unsqueeze(0)
         env_state = None
         # TODO: imagenet norm, move this outside
         normalize = transforms.Normalize(
