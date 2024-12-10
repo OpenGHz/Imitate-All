@@ -146,7 +146,7 @@ class AIRBOTMMK2(object):
         return obs_act_dict
 
 
-def main(args=object):
+def main():
     robot = AIRBOTMMK2()
     robot.reset()
 
