@@ -4,6 +4,7 @@ from collections import deque
 import numpy as np
 from threading import Thread
 from typing import Union
+import os
 
 
 class ImageRecorderRos:
@@ -269,3 +270,11 @@ if __name__ == "__main__":
                 break
         else:
             time.sleep(1)
+
+
+def ping_ip(ip) -> bool:
+    response = os.system(f"ping -c 1 -w 2 {ip}")  # 对于Windows，使用 "ping -n 1 {ip}"
+    if response == 0:
+        return True
+    else:
+        return False

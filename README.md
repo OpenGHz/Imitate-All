@@ -155,7 +155,7 @@ conda activate imitall
 
 Evaluation command and parameters:
 
-- AIRBOT PlayV2.x
+- AIRBOT PlayV2.x and TOKv2.x without base
 
   ```bash
   python3 policy_evaluate.py -tn example_task -ci 0 -ts 20240322-194244
@@ -166,7 +166,7 @@ Evaluation command and parameters:
   - `-can`: Specify which CAN to use for control; default is CAN0. Change to CAN1 with -can can1, for example. For dual-arm tasks, specify multiple cans like ```-can can0 can1```.
   - `-cki`: Don't start the robotic arm, only show captured camera images, useful for verifying if the camera order matches the data collection order.
 
-- AIRBOT TOK/MMK
+- AIRBOT PlayV3.x/TOK/MMK
   ```bash
   python3 policy_evaluate.py -tn example_task -cf configurations/basic_configs/example/robot/airbots/tok/airbot_tok_2.yaml
   ```

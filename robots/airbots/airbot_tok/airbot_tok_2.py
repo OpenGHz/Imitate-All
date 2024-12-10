@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, replace
 from habitats.common.robot_devices.cameras.utils import Camera
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlayConfig, AIRBOTPlay
 from robots.airbots.airbot_base.airbot_base import AIRBOTBase, AIRBOTBaseConfig
+from robot_utils import ping_ip
 from typing import Dict, Optional
 import time
 import logging
@@ -44,7 +45,11 @@ class AIRBOTTOK(object):
         for arm_name, arm_cfg in self.arms_cfg.items():
             self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
         logger.info("Connecting the base")
-        self.base = AIRBOTBase(self.config.base)
+        if ping_ip(self.config.base.ip):
+            self.base = AIRBOTBase(self.config.base)
+        else:
+            logger.warning("Base IP is not reachable, base will not be connected")
+            self.base = None
         self.reset()
 
     def reset(self):
@@ -73,9 +78,10 @@ class AIRBOTTOK(object):
 
     def send_action(self, action, wait=False):
         assert self._state_mode == "active", "Robot is not in active mode"
-        velocity = action[-2:]
-        # logger.info(f"Sending action {action}")
-        self.base.move_at_velocity2D(velocity)
+        if self.base is not None:
+            velocity = action[-2:]
+            # logger.info(f"Sending action {action}")
+            self.base.move_at_velocity2D(velocity)
         i = 0
         for arm in self.arms.values():
             if isinstance(arm.config.default_action, (float, int)):
@@ -95,7 +101,8 @@ class AIRBOTTOK(object):
                 arm.get_current_joint_positions()
             )
             data[f"/time/{arm_name}"] = time.time()
-        data["observation/base/velocity"] = list(self.base.get_current_velocity2D())
+        if self.base is not None:
+            data["observation/base/velocity"] = list(self.base.get_current_velocity2D())
 
         return data
 
