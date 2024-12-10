@@ -85,12 +85,12 @@ for key, low_d in low_dim_data.items():
     # if length < 200:
     #     print(f"{key} has length {length}")
 
-max_pad_lenth = max(episode_lens)
+max_pad_length = max(episode_lens)
 
 # save all data
 episode_names = list(low_dim_data.keys())
 print(f"Episode lengths: {episode_lens}")
-print(f"Max episode length: {max_pad_lenth}")
+print(f"Max episode length: {max_pad_length}")
 print(f"All episodes: {episode_names}")
 print(f"episode number: {len(episode_names)}")
 downsampling = 0
@@ -105,7 +105,7 @@ def save_one(index, ep_name):
         name_converter,
         compresser,
         f"{target_dir}/" + target_namer(index),
-        max_pad_lenth,
+        max_pad_length,
         downsampling,
     )
     data.pop(ep_name)

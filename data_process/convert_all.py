@@ -57,22 +57,22 @@ def flatten_list(l):
 def flatten_sublist_in_flat_dict(d: dict) -> dict:
     """Flatten the sublist in the flat dict.
     This will change the original dict.
-    Returns the lenth of each value list.
+    Returns the length of each value list.
     """
-    trajs_lenth = {}
+    trajs_length = {}
     for key, traj in d.items():
         if not isinstance(traj, list):
-            trajs_lenth[key] = None
+            trajs_length[key] = None
             continue
-        traj_lenth = len(traj)
-        if traj_lenth > 0:
+        traj_length = len(traj)
+        if traj_length > 0:
             point = traj[0]
             if isinstance(point, list):
                 if isinstance(point[0], list):
                     for i, p in enumerate(traj):
                         traj[i] = sum(p, [])
-        trajs_lenth[key] = traj_lenth
-    return trajs_lenth
+        trajs_length[key] = traj_length
+    return trajs_length
 
 
 class Compresser(object):
@@ -391,16 +391,16 @@ def raw_to_dict(
                         # if raw_data.pop(key, None) is None:
                         #     print(f"Key {key} is not found in {state_file}.")
                 # flatten the sub list
-                lenths = flatten_sublist_in_flat_dict(data_flat)
-                for key, value in lenths.copy().items():
+                lengths = flatten_sublist_in_flat_dict(data_flat)
+                for key, value in lengths.copy().items():
                     if value == 0:
                         # remove not used keys
                         # print(f"Remove not used key: {key}")
                         data_flat.pop(key)
-                        lenths.pop(key)
-                lenths = tuple(lenths.values())
+                        lengths.pop(key)
+                lengths = tuple(lengths.values())
                 assert np.all(
-                    np.array(lenths) == lenths[0]
+                    np.array(lengths) == lengths[0]
                 ), "The length of each value list should be the same."
                 for key, value in data_flat.items():
                     name = name_converter.get(key, key)

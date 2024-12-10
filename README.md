@@ -137,6 +137,14 @@ For ease of use in the future, it's recommended to **store the core folder in th
   <img src="images/robot_arm_connect.png" />
 </p>
 
+### Check Task Configurations
+
+Policy inference requires the same configuration file as used for training, and the parameters of the inference part need to be adjusted. This mainly includes modify the `environment_maker` funtion and the `TASK_CONFIG_DEFAULT["eval"]` dictionary. Mainly used parameters are explained as follows
+
+- `robot_num`: The number of the robot, 1 for single Play, TOK and MMK, 2 for dual Plays.
+- `joint_num`: The number of the joint for each PlayV2.x robot.
+- `max_timesteps`: The total steps for inference during each rollout of the evaluation, usually equal to or slightly larger than the episode length.
+
 ### Executing Commands
 
 Navigate to the repo folder and activate the conda environment:
@@ -145,16 +153,26 @@ Navigate to the repo folder and activate the conda environment:
 conda activate imitall
 ```
 
-Here are the evaluation command and its parameters:
+Evaluation command and parameters:
 
-```bash
-python3 policy_evaluate.py -tn example_task -ci 0 -ts 20240322-194244
-```
+- AIRBOT PlayV2.x
 
-- -ci: Camera device numbers, corresponding to the device order of the configured camera names. For example, if two cameras are used and their id are 2 and 4, specify `-ci 2 4`.
-- -ts: Timestamp corresponding to the task (check the path where policy training results are saved, e.g., ```./my_ckpt/example_task/20240325-153007```).
-- -can: Specify which CAN to use for control; default is CAN0. Change to CAN1 with -can can1, for example. For dual-arm tasks, specify multiple cans like ```-can can0 can1```.
-- -cki: Don't start the robotic arm, only show captured camera images, useful for verifying if the camera order matches the data collection order.
+  ```bash
+  python3 policy_evaluate.py -tn example_task -ci 0 -ts 20240322-194244
+  ```
+
+  - `-ts`: Timestamp corresponding to the task (check the path where policy training results are saved, e.g., ```./my_ckpt/example_task/20240325-153007```).
+  - -`ci`: Camera device numbers, corresponding to the device order of the configured camera names. For example, if two cameras are used and their id are 2 and 4, specify `-ci 2 4`.
+  - `-can`: Specify which CAN to use for control; default is CAN0. Change to CAN1 with -can can1, for example. For dual-arm tasks, specify multiple cans like ```-can can0 can1```.
+  - `-cki`: Don't start the robotic arm, only show captured camera images, useful for verifying if the camera order matches the data collection order.
+
+- AIRBOT TOK/MMK
+  ```bash
+  python3 policy_evaluate.py -tn example_task -cf configurations/basic_configs/example/robot/airbots/tok/airbot_tok_2.yaml
+  ```
+  
+  - `-cf`: The path of the configuration file. The above command specifies the configuration file for TOKv2.x. For PlayV3.x, TOKv3.x and MMK, modify the last parts of the path to `play/airbot_play.yaml`, `tok/airbot_tok.yaml` and `mmk/airbot_mmk.yaml`. You should modify the configurations in the file according to your usage.
+
 
 After the robotic arm starts and moves to the initial pose defined by the task, you can see the instructions in the terminal: **press Enter to start inference** and press z and then press Enter to end inference and exit. The robotic arm will return to the zero pose before the program exiting.
 

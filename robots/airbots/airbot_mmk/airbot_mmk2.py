@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace, field
 import time
 import logging
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
