@@ -2,18 +2,24 @@ import onnx
 import onnxruntime as ort
 import logging
 import torch
+import numpy as np
+from policies.common.wrapper import TemporalEnsembling
+
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
-class ONNX(object):
+class ONNXPolicy(object):
     # define the observation space and action space
     # these are used to check the input and output data interaction
     # between the policy and the environment
     observation_space = {"state": 7, "image": [1, 3, 480, 640]}
     action_space = 7
 
-    def __init__(self, path) -> None:
+    def __init__(self, args_override, config=None) -> None:
+        path = args_override["ckpt_path"]
+        logger.info(f"Loading ONNX model from {path}")
         self.path = path
         # 加载和检查模型
         onnx_model = onnx.load(path)
@@ -21,6 +27,22 @@ class ONNX(object):
         # 获取输出层，包含层名称、维度信息
         # output = onnx_model.graph.output
         # logging.info(output)
+        try:
+            if args_override["temporal_agg"]:
+                self.temporal_ensembler = TemporalEnsembling(
+                    args_override["chunk_size"],
+                    args_override["action_dim"],
+                    args_override["max_timesteps"],
+                )
+        except Exception as e:
+            print(e)
+            print(
+                "The above Exception can be ignored when training instead of evaluating."
+            )
+
+    def reset(self):
+        if self.temporal_ensembler is not None:
+            self.temporal_ensembler.reset()
 
     def eval(self):
         # 创建推理会话
@@ -32,18 +54,18 @@ class ONNX(object):
         for i in self.ort_session.get_outputs():
             self.output_names.append(i.name)
 
-    def __call__(self, qpos, image, actions=None, is_pad=None) -> torch.Tensor:
+    def __call__(
+        self, qpos: torch.Tensor, image: torch.Tensor, actions=None, is_pad=None
+    ) -> torch.Tensor:
         # TODO: change the input data to just one dictionary
-
-        # input_data = {
-        #     self.input_names[0]: qpos,
-        #     self.input_names[1]: image,
-        #    self.input_names[2]: actions,
-        # }
+        # if image.ndim == 4:
+        #     image = image.unsqueeze(0)
+        if image.ndim == 5:
+            image = image.squeeze(0)
         # Convert PyTorch tensors to NumPy arrays
-        # qpos = qpos.cpu().numpy()
-        # qpos = torch.tensor(qpos, device="cuda").cpu().numpy().astype(np.float32)
-        qpos = qpos.astype("float32")
+        qpos = qpos.cpu().numpy()
+        qpos = torch.tensor(qpos, device="cuda").cpu().numpy().astype(np.float32)
+        # qpos = qpos.astype("float32")
         image = image.cpu().numpy().astype(np.float32)
         input_feed = {}
         # for name in self.input_names:
@@ -55,7 +77,10 @@ class ONNX(object):
         }
         output = self.ort_session.run(self.output_names, input_feed)
         output = torch.tensor(output[0], device="cuda")
-        # logging.debug(f"output shape: {output.shape}")
+        # logging.error(f"output shape: {output.shape}")
+        if self.temporal_ensembler is not None:
+            a_hat_one = self.temporal_ensembler.update(output)
+            output[0][0] = a_hat_one
         return output
 
 
@@ -63,7 +88,7 @@ if __name__ == "__main__":
 
     import numpy as np
 
-    onnx_policy = ONNX(
+    onnx_policy = ONNXPolicy(
         "/home/ghz/Work/OpenGHz/Imitate-All/onnx_output/act_policy_4d.onnx"
     )
     onnx_policy.eval()

@@ -1,7 +1,12 @@
 import torch.nn as nn
+from torch import Tensor
 from torch.nn import functional as F
 import torchvision.transforms as transforms
-from policies.common.detr.main import build_ACT_model, build_optimizer, build_ACT_YHD_model
+from policies.common.detr.main import (
+    build_ACT_model,
+    build_optimizer,
+    build_ACT_YHD_model,
+)
 from policies.common.loss import kl_divergence
 from policies.common.wrapper import TemporalEnsembling
 
@@ -26,14 +31,17 @@ class ACTPolicy(nn.Module):
                 )
         except Exception as e:
             print(e)
-            print("The above Exception can be ignored when training instead of evaluating.")
+            print(
+                "The above Exception can be ignored when training instead of evaluating."
+            )
+
     # TODO: 使用装饰器在外部进行包装
     def reset(self):
         if self.temporal_ensembler is not None:
             self.temporal_ensembler.reset()
 
     # TODO: 使用装饰器在外部进行包装
-    def __call__(self, qpos, image, actions=None, is_pad=None):
+    def __call__(self, qpos, image: Tensor, actions=None, is_pad=None):
         if image.ndim == 4:
             image = image.unsqueeze(0)
         env_state = None
@@ -62,9 +70,7 @@ class ACTPolicy(nn.Module):
             a_hat, _, (_, _) = self.model(
                 qpos, image, env_state
             )  # no action, sample from prior
-            if self.temporal_ensembler is None:
-                return a_hat
-            else:
+            if self.temporal_ensembler is not None:
                 a_hat_one = self.temporal_ensembler.update(a_hat)
                 a_hat[0][0] = a_hat_one
             return a_hat
