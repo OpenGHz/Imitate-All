@@ -19,6 +19,7 @@ class AIRBOTPlayWithCameraEnv(object):
             robot = make_robot_from_yaml(cfg)
             assert isinstance(robot, AIRBOTPlay)
             self.robots.append(robot)
+        self._all_joints_num = [7] * len(self.robots)
         print("robot number:", len(self.robots))
 
     def set_reset_position(self, reset_position):
