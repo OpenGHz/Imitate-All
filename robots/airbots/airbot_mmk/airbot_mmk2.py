@@ -46,10 +46,10 @@ class AIRBOTMMK2(object):
             config = AIRBOTMMK2Config()
         self.config = replace(config, **kwargs)
         self.robot = AIRBOTMMK2Client(
-            self.config.name,
-            self.config.domain_id,
             self.config.ip,
             self.config.port,
+            self.config.name,
+            self.config.domain_id,
         )
         self.joint_names = {}
         self.cameras: Dict[MMK2Components, str] = {}

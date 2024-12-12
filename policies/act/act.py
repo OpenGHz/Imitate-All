@@ -67,9 +67,8 @@ class ACTPolicy(nn.Module):
             loss_dict["loss"] = loss_dict["l1"] + loss_dict["kl"] * self.kl_weight
             return loss_dict
         else:  # inference time
-            a_hat, _, (_, _) = self.model(
-                qpos, image, env_state
-            )  # no action, sample from prior
+            # no action, sample from prior
+            a_hat, _, (_, _) = self.model(qpos, image, env_state)
             if self.temporal_ensembler is not None:
                 a_hat_one = self.temporal_ensembler.update(a_hat)
                 a_hat[0][0] = a_hat_one

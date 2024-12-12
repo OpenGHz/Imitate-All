@@ -502,6 +502,7 @@ def record(
                     ]
 
                 # show current images
+                # TODO: use a separate thread to show?
                 if not is_headless():
                     image_keys = [key for key in observation if "image" in key]
                     for key in image_keys:
