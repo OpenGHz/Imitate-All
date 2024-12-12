@@ -5,7 +5,6 @@ from typing import Dict, Optional, List
 from airbot_python_sdk.airbot_client import Robot
 
 
-
 @dataclass
 class AIRBOTPlayConfig(object):
     arm_type: str = "play_long"
@@ -128,7 +127,9 @@ class AIRBOTPlay(object):
                 action[:6], wait
             ), "set target joint q failed"
             if self.config.end_effector not in ["none", "E2B"]:
-                assert self.robot.set_target_end(action[6], wait), "set target end failed"
+                assert self.robot.set_target_end(
+                    action[6], wait
+                ), "set target end failed"
         return action
 
     def get_low_dim_data(self):
