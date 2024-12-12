@@ -1,5 +1,11 @@
 from mmk2_sdk.mmk2_client import AIRBOTMMK2 as AIRBOTMMK2Client
-from mmk2_types.types import MMK2Components, JointNames, ComponentTypes
+from mmk2_types.types import (
+    MMK2Components,
+    JointNames,
+    ComponentTypes,
+    TopicNames,
+    MMK2ComponentsGroup,
+)
 from mmk2_types.grpc_msgs import (
     JointState,
     TrajectoryParams,
@@ -31,6 +37,7 @@ class AIRBOTMMK2Config(object):
             MMK2Components.RIGHT_EEF.value,
         ]
     )
+    demonstrate: bool = False
 
 
 class AIRBOTMMK2(object):
@@ -53,40 +60,61 @@ class AIRBOTMMK2(object):
             self.cameras[MMK2Components(k)] = v
         for comp_str in self.config.components:
             comp = MMK2Components(comp_str)
+            # TODO: get the type info from SDK
             self.components[comp] = ComponentTypes.UNKNOWN
             names = all_joint_names.__dict__[comp_str]
             self.joint_names[comp] = names
             self.joint_num += len(names)
+        if self.config.demonstrate:
+            comp_action_topic = {
+                comp: TopicNames.tracking.format(comp.value)
+                for comp in MMK2ComponentsGroup.ARMS
+            }
+            comp_action_topic.update(
+                {
+                    comp: TopicNames.forward_position.format(comp.value)
+                    for comp in MMK2ComponentsGroup.HEAD_SPINE
+                }
+            )
+            self.robot.listen_to(list(comp_action_topic.values()))
+            self._comp_action_topic = comp_action_topic
         self.logs = {}
+        self.enter_active_mode = lambda: self._set_mode("active")
+        self.enter_passive_mode = lambda: self._set_mode("passive")
+        self.get_state_mode = lambda: self._state_mode
+        self.exit = lambda: None
 
     def reset(self, sleep_time=0):
-        # goal = {
-        #     MMK2Components.LEFT_ARM: JointState(
-        #         position=self.config.default_action[:6]
-        #     ),
-        #     MMK2Components.LEFT_EEF: JointState(
-        #         position=self.config.default_action[6:7]
-        #     ),
-        #     MMK2Components.RIGHT_ARM: JointState(
-        #         position=self.config.default_action[7:13]
-        #     ),
-        #     MMK2Components.RIGHT_EEF: JointState(
-        #         position=self.config.default_action[13:14]
-        #     ),
-        # }
-        # self.robot.set_goal(goal, TrajectoryParams())
-        goal = {
-            MMK2Components.LEFT_ARM: JointState(
-                position=self.config.default_action[:7]
-            ),
-            MMK2Components.RIGHT_ARM: JointState(
-                position=self.config.default_action[7:14]
-            ),
-        }
-        if sleep_time > 0:
-            for _ in range(5):
-                self.robot.set_goal(goal, MoveServoParams(header=self.robot.get_header()))
-                time.sleep(5 / 5)
+        if self.config.default_action is not None:
+            goal = {
+                MMK2Components.LEFT_ARM: JointState(
+                    position=self.config.default_action[:6]
+                ),
+                MMK2Components.LEFT_EEF: JointState(
+                    position=self.config.default_action[6:7]
+                ),
+                MMK2Components.RIGHT_ARM: JointState(
+                    position=self.config.default_action[7:13]
+                ),
+                MMK2Components.RIGHT_EEF: JointState(
+                    position=self.config.default_action[13:14]
+                ),
+            }
+            self.robot.set_goal(goal, TrajectoryParams())
+            # goal = {
+            #     MMK2Components.LEFT_ARM: JointState(
+            #         position=self.config.default_action[:7]
+            #     ),
+            #     MMK2Components.RIGHT_ARM: JointState(
+            #         position=self.config.default_action[7:14]
+            #     ),
+            # }
+            # if sleep_time > 0:
+            #     for _ in range(5):
+            #         self.robot.set_goal(
+            #             goal, MoveServoParams(header=self.robot.get_header())
+            #         )
+            #         time.sleep(5 / 5)
 
     def send_action(self, action, wait=False):
         goal = {
@@ -106,7 +134,18 @@ class AIRBOTMMK2(object):
                 all_joints, self.joint_names[comp]
             )
             data[f"observation/{comp.value}/joint_position"] = joint_states
-            # data[f"action/{comp.value}/joint_position"] = None
+            if comp in MMK2ComponentsGroup.ARMS:
+                arm_jn = JointNames().__dict__[comp.value]
+                comp_eef = comp.value.replace("arm", "eef")
+                eef_jn = JointNames().__dict__[comp_eef]
+                js = self.robot.get_listened(self._comp_action_topic[comp])
+                jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
+                data[f"action/{comp.value}/joint_position"] = jq[:-1]
+                # the eef joint is in arms
+                data[f"action/{comp_eef}/joint_position"] = jq[-1:]
+            elif comp in MMK2ComponentsGroup.HEAD_SPINE:
+                jq = list(self.robot.get_listened(self._comp_action_topic[comp]).data)
+                data[f"action/{comp.value}/joint_position"] = jq
         return data
 
     def capture_observation(self):
@@ -145,6 +184,9 @@ class AIRBOTMMK2(object):
         for name in images:
             obs_act_dict[f"observation.images.{name}"] = images[name]
         return obs_act_dict
+
+    def _set_mode(self, mode):
+        self._state_mode = mode
 
 
 def main():
