@@ -113,7 +113,7 @@ class AIRBOTTOK(object):
         images = {}
         for name in self.cameras:
             before_camread_t = time.perf_counter()
-            images[name] = self.cameras[name].async_read()
+            images[name] = self.cameras[name].async_read()[:, :, ::-1]
             # images[name] = torch.from_numpy(images[name])
             obs_act_dict[f"/time/{name}"] = time.time()
             self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
