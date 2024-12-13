@@ -25,7 +25,7 @@ from habitats.common.datasets.video_utils import encode_video_frames
 from habitats.common.robot_devices.utils import busy_wait
 from habitats.common.utils.utils import init_logging
 
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
 from data_process.dataset.raw_dataset import RawDataset
 from data_process.convert_all import concatenate_by_key, replace_keys
 from robots.common import Robot, make_robot_from_yaml
@@ -411,11 +411,6 @@ def record(
         listener = keyboard.Listener(on_press=partial(keyer.on_press, robot=robot))
         listener.start()
 
-    get_videos_dir = lambda episode_index: episodes_dir / f"{episode_index}"
-    get_video_path = (
-        lambda episode_index, key: get_videos_dir(episode_index) / f"{key}.mp4"
-    )
-
     # Save images using threads to reach high fps (30 and more)
     # Using `with` to exist smoothly if an execption is raised.
     futures = []
@@ -461,21 +456,12 @@ def record(
                 keyer.clear_rerecord()
                 logging.info(f"Rerecording last episode {episode_index}")
             logging.info(f"Start recording episode {episode_index}")
-            videos_dir = get_videos_dir(episode_index)
-            get_tmp_imgs_dir = (
-                lambda episode_index, key: get_videos_dir(episode_index)
-                / f"{key}_episode_{episode_index:06d}"
-            )
-            # say(f"Recording episode {episode_index}")
-            ep_dict = {
-                "low_dim": {},
-                "images_timestamp": {},
-            }
+
             frame_index = 0
             timestamp = 0
             start_episode_t = time.perf_counter()
             # Record one episode
-            bson_dict = {
+            bson_dict: Dict[str, Dict[str, list]] = {
                 # "id": "734ad1c8-66ee-4479-b3cb-41d16c9b2e22",
                 # "timestamp": 1734076528859,
                 "metadata": {},
@@ -484,28 +470,7 @@ def record(
             while timestamp < episode_time_s:
                 start_loop_t = time.perf_counter()
 
-                observation = robot.capture_observation()
-
-                # logging.warning(f"1: get observation time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
-
-                image_keys = [key for key in observation if "image" in key]
-                # obs_not_image_keys = [key for key in observation if "image" not in key]
-                low_dim_keys = list(observation["low_dim"].keys())
-                low_dim_time_keys = [
-                    key for key in observation["low_dim"] if "time" in key
-                ]
-
-                # save temporal images as jpg files
-                for key in image_keys:
-                    tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
-                    futures += [
-                        executor.submit(
-                            save_image,
-                            observation[key],
-                            frame_index,
-                            tmp_imgs_dir,
-                        )
-                    ]
+                observation: dict = robot.capture_observation()
 
                 # show current images
                 # TODO: use a separate thread to show?
@@ -521,24 +486,11 @@ def record(
 
                 # logging.warning(f"2: save image time + 1: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
 
-                # add low dim observations and actions to the episode dict
-                for key in low_dim_keys:
-                    if key not in ep_dict["low_dim"]:
-                        ep_dict["low_dim"][key] = []
+                # construct episode dict
+                for key, value in observation.items():
+                    if key not in bson_dict["data"]:
                         bson_dict["data"][key] = []
-                    value = observation["low_dim"][key]
-                    ep_dict["low_dim"][key].append(value)
-                    bson_dict["data"][key].append({"t":int(time.time()*1000), "data": {
-                        "pos": value,
-                    }})
-                for key in robot.cameras:
-                    if key not in ep_dict["images_timestamp"]:
-                        ep_dict["images_timestamp"][key] = []
-                    ep_dict["images_timestamp"][key].append(observation["/time/" + key])
-                # for key in action:
-                #     if key not in ep_dict:
-                #         ep_dict["low_dim"][key] = []
-                #     ep_dict["low_dim"][key].append(action[key])
+                    bson_dict["data"][key].append(value)
 
                 frame_index += 1
 
@@ -563,43 +515,9 @@ def record(
 
             timestamp = 0
             start_vencod_t = time.perf_counter()
-            # During env reset we save the data and encode the videos
-            low_dim_timestamps = {}
-            for key in low_dim_time_keys:
-                low_dim_timestamps[key.replace("/time", "")] = ep_dict["low_dim"].pop(
-                    key
-                )
-            if len(low_dim_time_keys) == 1:
-                low_dim_timestamps = low_dim_timestamps.popitem()[1]
-            with open(videos_dir / "low_dim.json", "w") as f:
-                json.dump(ep_dict["low_dim"], f)
-            with open(videos_dir / "timestamps.json", "w") as f:
-                timestamps = {
-                    "low_dim": low_dim_timestamps,
-                    "images": ep_dict["images_timestamp"],
-                }
-                json.dump(timestamps, f)
-            num_frames = frame_index
-            with open(videos_dir / "meta.json", "w") as f:
-                json.dump(
-                    {
-                        "length": num_frames,
-                        "fps": fps,
-                    },
-                    f,
-                )
-            print(f"episode_{episode_index} frame number: {num_frames}")
-            for key in image_keys:
-                tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
-                # fname = f"{key}_episode_{episode_index:06d}.mp4"
-                video_path = get_video_path(episode_index, key)
-                fname = video_path.stem + video_path.suffix
-                if video_path.exists():  # overwrite existing video
-                    video_path.unlink()
-                # Store the reference to the video frame, even tho the videos are not yet encoded
-                ep_dict[key] = []
-                for i in range(num_frames):
-                    ep_dict[key].append({"path": f"{fname}", "timestamp": i / fps})
+            # save the data
+
+
             # save record information
             rec_info = {
                 "last_episode_index": episode_index,
@@ -633,51 +551,6 @@ def record(
 
     if not is_headless():
         cv2.destroyAllWindows()
-
-    num_episodes = episode_index
-
-    if keyer.no_convert:
-        logging.info("Exiting without converting images to videos")
-        return
-
-    # Encode all videos finally
-    if start_episode < num_episodes - 1:
-        logging.info(
-            f"Encoding videos from episode {start_episode} to {num_episodes - 1}"
-        )
-    elif num_episodes == 0:
-        logging.info("No episode recorded.")
-    else:
-        logging.info(f"Encoding video of episode {episode_index - 1}")
-    # say("Encoding videos")
-    # Use ffmpeg to convert frames stored as .png files into mp4 videos
-    for episode_index in tqdm.tqdm(range(num_episodes)):
-        for key in image_keys:
-            tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
-            video_path = get_video_path(episode_index, key)
-            if video_path.exists() and (
-                raw_start_episode >= 0 and episode_index < raw_start_episode
-            ):
-                # Skip if video is already encoded. Could be the case when resuming data recording.
-                logging.warning(
-                    f"Video {video_path} already exists. Skipping encoding. If you want to re-encode, delete the video file before recording."
-                )
-                continue
-            else:
-                if not tmp_imgs_dir.exists():
-                    logging.error(
-                        f"Episode {episode_index} images path {tmp_imgs_dir} not found."
-                    )
-                else:
-                    logging.info(
-                        f"Encoding epidode_{episode_index} video to {video_path}"
-                    )
-                    # note: `encode_video_frames` is a blocking call. Making it asynchronous shouldn't speedup encoding,
-                    # since video encoding with ffmpeg is already using multithreading.
-                    encode_video_frames(
-                        tmp_imgs_dir, video_path, fps, vcodec="libx264", overwrite=False
-                    )
-                    shutil.rmtree(tmp_imgs_dir)
 
     logging.info("Exiting")
 
