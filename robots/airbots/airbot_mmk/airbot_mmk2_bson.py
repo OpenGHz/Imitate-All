@@ -142,7 +142,7 @@ class AIRBOTMMK2(object):
         self, ns: str, comp: str, stamp: Time, pos=None, vel=None, eff=None
     ) -> dict:
         data = {}
-        data[f"{ns}/{comp}/joint_state"] = {
+        data[f"/{ns}/{comp}/joint_state"] = {
             "t": int((stamp.sec + stamp.nanosec / 1e9) * 1e3),
             "data": {
                 "pos": pos,
@@ -154,7 +154,7 @@ class AIRBOTMMK2(object):
 
     def _get_image(self, comp: str, stamp: Time, image: np.ndarray) -> dict:
         data = {}
-        data[f"images/{comp}"] = {
+        data[f"/images/{comp}"] = {
             "t": int((stamp.sec + stamp.nanosec / 1e9) * 1e3),
             "data": image,
         }
@@ -199,7 +199,6 @@ class AIRBOTMMK2(object):
 
     def capture_observation(self):
         """The returned observations do not have a batch dimension."""
-        obs_act_dict = {}
         # Capture images from cameras
         images = {}
         before_camread_t = time.perf_counter()
@@ -214,9 +213,6 @@ class AIRBOTMMK2(object):
             elif kind == ImageTypes.RGBD:
                 images[comp.value + "_color"] = image.color
                 images[comp.value + "_depth"] = image.depth
-            obs_act_dict[f"/time/{comp.value}"] = (
-                image.stamp.sec + image.stamp.nanosec / 1e9
-            )
         name = "cameras"
         # self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
         #     "delta_timestamp_s"
