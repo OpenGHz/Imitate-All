@@ -79,12 +79,12 @@ class AIRBOTMMK2(object):
         )
         if self.config.demonstrate:
             comp_action_topic = {
-                comp: TopicNames.tracking.format(comp.value)
+                comp: TopicNames.tracking.format(component=comp.value)
                 for comp in MMK2ComponentsGroup.ARMS
             }
             comp_action_topic.update(
                 {
-                    comp: TopicNames.forward_position.format(comp.value)
+                    comp: TopicNames.forward_position.format(component=comp.value)
                     for comp in MMK2ComponentsGroup.HEAD_SPINE
                 }
             )
@@ -126,7 +126,7 @@ class AIRBOTMMK2(object):
                     self.robot.set_goal(
                         goal, MoveServoParams(header=self.robot.get_header())
                     )
-                    time.sleep(5 / 5)
+                    time.sleep(0.2)
 
     def send_action(self, action, wait=False):
         goal = {
@@ -142,7 +142,8 @@ class AIRBOTMMK2(object):
         self, ns: str, comp: str, stamp: Time, pos=None, vel=None, eff=None
     ) -> dict:
         data = {}
-        data[f"/{ns}/{comp}/joint_state"] = {
+        handle = "joint_position"  # TODO: use joint_state
+        data[f"/{ns}/{comp}/{handle}"] = {
             "t": int((stamp.sec + stamp.nanosec / 1e9) * 1e3),
             "data": {
                 "pos": pos,
@@ -201,6 +202,7 @@ class AIRBOTMMK2(object):
         """The returned observations do not have a batch dimension."""
         # Capture images from cameras
         images = {}
+        img_stamps = {}
         before_camread_t = time.perf_counter()
         comp_images = self.robot.get_image(self.cameras)
         for comp, image in comp_images.items():
@@ -213,6 +215,7 @@ class AIRBOTMMK2(object):
             elif kind == ImageTypes.RGBD:
                 images[comp.value + "_color"] = image.color
                 images[comp.value + "_depth"] = image.depth
+            img_stamps[comp.value] = image.stamp
         name = "cameras"
         # self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
         #     "delta_timestamp_s"
@@ -222,7 +225,7 @@ class AIRBOTMMK2(object):
         )
         data = self.get_low_dim_data()
         for name, img in images.items():
-            data.update(self._get_image(name, comp_images[name].stamp, img))
+            data.update(self._get_image(name, img_stamps[name], img))
         return data
 
     def _set_mode(self, mode):
