@@ -5,6 +5,7 @@ from mmk2_types.types import (
     ComponentTypes,
     TopicNames,
     MMK2ComponentsGroup,
+    ImageTypes,
 )
 from mmk2_types.grpc_msgs import (
     JointState,
@@ -57,7 +58,7 @@ class AIRBOTMMK2(object):
         all_joint_names = JointNames()
         self.joint_num = 0
         for k, v in self.config.cameras.items():
-            self.cameras[MMK2Components(k)] = v
+            self.cameras[MMK2Components(k)] = ImageTypes(v)
         for comp_str in self.config.components:
             comp = MMK2Components(comp_str)
             # TODO: get the type info from SDK
@@ -158,11 +159,11 @@ class AIRBOTMMK2(object):
         for comp, image in comp_images.items():
             # TODO: now only support for color image
             kind = self.cameras[comp]
-            if kind == "rgb":
+            if kind == ImageTypes.RGB:
                 images[comp.value] = image.color
-            elif kind == "depth":
+            elif kind == ImageTypes.DEPTH:
                 images[comp.value] = image.depth
-            elif kind == "rgb-d":
+            elif kind == ImageTypes.RGBD:
                 images[comp.value + "_color"] = image.color
                 images[comp.value + "_depth"] = image.depth
             obs_act_dict[f"/time/{comp.value}"] = (
