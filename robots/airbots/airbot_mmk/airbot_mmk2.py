@@ -87,35 +87,35 @@ class AIRBOTMMK2(object):
 
     def reset(self, sleep_time=0):
         if self.config.default_action is not None:
-            goal = {
-                MMK2Components.LEFT_ARM: JointState(
-                    position=self.config.default_action[:6]
-                ),
-                MMK2Components.LEFT_EEF: JointState(
-                    position=self.config.default_action[6:7]
-                ),
-                MMK2Components.RIGHT_ARM: JointState(
-                    position=self.config.default_action[7:13]
-                ),
-                MMK2Components.RIGHT_EEF: JointState(
-                    position=self.config.default_action[13:14]
-                ),
-            }
-            self.robot.set_goal(goal, TrajectoryParams())
             # goal = {
             #     MMK2Components.LEFT_ARM: JointState(
-            #         position=self.config.default_action[:7]
+            #         position=self.config.default_action[:6]
+            #     ),
+            #     MMK2Components.LEFT_EEF: JointState(
+            #         position=self.config.default_action[6:7]
             #     ),
             #     MMK2Components.RIGHT_ARM: JointState(
-            #         position=self.config.default_action[7:14]
+            #         position=self.config.default_action[7:13]
+            #     ),
+            #     MMK2Components.RIGHT_EEF: JointState(
+            #         position=self.config.default_action[13:14]
             #     ),
             # }
-            # if sleep_time > 0:
-            #     for _ in range(5):
-            #         self.robot.set_goal(
-            #             goal, MoveServoParams(header=self.robot.get_header())
-            #         )
-            #         time.sleep(5 / 5)
+            # self.robot.set_goal(goal, TrajectoryParams())
+            goal = {
+                MMK2Components.LEFT_ARM: JointState(
+                    position=self.config.default_action[:7]
+                ),
+                MMK2Components.RIGHT_ARM: JointState(
+                    position=self.config.default_action[7:14]
+                ),
+            }
+            if sleep_time > 0:
+                for _ in range(5):
+                    self.robot.set_goal(
+                        goal, MoveServoParams(header=self.robot.get_header())
+                    )
+                    time.sleep(5 / 5)
 
     def send_action(self, action, wait=False):
         goal = {

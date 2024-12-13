@@ -17,6 +17,7 @@ class CommonEnv:
     An environment is a combination of robots, scenes and objects. It should be able to reset and step.
     The environment will return observations based on the state of the robot, the position of the sensors, and the current scene and object conditions. And for RL and data collection, it should also send rewards and done signals.
     """
+
     def __init__(self, *args, **kwargs) -> None:
         raise NotImplementedError
 
@@ -36,6 +37,9 @@ def get_image(ts: dm_env.TimeStep, camera_names, mode=0):
     if mode == 0:  # 输出拼接之后的张量图
         curr_images = []
         for cam_name in camera_names:
+            assert (
+                cam_name in images
+            ), f"Camera {cam_name} not found in images {images.keys()}"
             curr_image = rearrange(images[cam_name], "h w c -> c h w")
             curr_images.append(curr_image)
         curr_image = np.stack(curr_images, axis=0)
