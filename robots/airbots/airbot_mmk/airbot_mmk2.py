@@ -66,6 +66,15 @@ class AIRBOTMMK2(object):
             names = all_joint_names.__dict__[comp_str]
             self.joint_names[comp] = names
             self.joint_num += len(names)
+        self.robot.enable_resources(
+            {
+                comp: {
+                    "rgb_camera.color_profile": "640,480,30",
+                    "enable_depth": "false",
+                }
+                for comp in self.cameras
+            }
+        )
         if self.config.demonstrate:
             comp_action_topic = {
                 comp: TopicNames.tracking.format(comp.value)
@@ -146,7 +155,9 @@ class AIRBOTMMK2(object):
                     # the eef joint is in arms
                     data[f"action/{comp_eef}/joint_position"] = jq[-1:]
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
-                    jq = list(self.robot.get_listened(self._comp_action_topic[comp]).data)
+                    jq = list(
+                        self.robot.get_listened(self._comp_action_topic[comp]).data
+                    )
                     data[f"action/{comp.value}/joint_position"] = jq
         return data
 
