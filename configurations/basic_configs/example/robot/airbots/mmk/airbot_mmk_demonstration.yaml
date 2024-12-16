@@ -1,6 +1,6 @@
-_target_: robots.airbots.airbot_mmk.airbot_mmk2.AIRBOTMMK2
+_target_: robots.airbots.airbot_mmk.airbot_mmk2_bson.AIRBOTMMK2
 
-ip: "192.168.40.182"
+ip: "192.168.11.200"
 
 default_action: null
 

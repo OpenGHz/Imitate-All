@@ -1,4 +1,4 @@
-from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2
+from robots.airbots.airbot_mmk.airbot_mmk2_bson import AIRBOTMMK2
 from robots.common import make_robot_from_yaml
 import time
 import collections

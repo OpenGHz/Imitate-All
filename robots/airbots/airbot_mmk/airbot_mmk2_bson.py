@@ -45,6 +45,7 @@ class AIRBOTMMK2Config(object):
 
 class AIRBOTMMK2(object):
     def __init__(self, config: Optional[AIRBOTMMK2Config] = None, **kwargs) -> None:
+        print("mmk config: ", config)
         if config is None:
             config = AIRBOTMMK2Config()
         self.config = replace(config, **kwargs)
@@ -88,6 +89,7 @@ class AIRBOTMMK2(object):
                     for comp in MMK2ComponentsGroup.HEAD_SPINE
                 }
             )
+            print(comp_action_topic)
             self.robot.listen_to(list(comp_action_topic.values()))
             self._comp_action_topic = comp_action_topic
         self.logs = {}
@@ -164,6 +166,7 @@ class AIRBOTMMK2(object):
     def get_low_dim_data(self):
         data = {}
         all_joints = self.robot.get_robot_state().joint_state
+        print(all_joints)
         for comp in self.components:
             joint_pos = self.robot.get_joint_values_by_names(
                 all_joints, self.joint_names[comp]
@@ -177,7 +180,9 @@ class AIRBOTMMK2(object):
                     arm_jn = JointNames().__dict__[comp.value]
                     comp_eef = comp.value.replace("arm", "eef")
                     eef_jn = JointNames().__dict__[comp_eef]
+                    print(comp)
                     js = self.robot.get_listened(self._comp_action_topic[comp])
+                    print("name: ", js, arm_jn, eef_jn)
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data.update(
                         self._get_joint_state(
