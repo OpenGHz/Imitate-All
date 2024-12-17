@@ -176,7 +176,7 @@ class OpenCVCamera:
 
     To find the camera indices of your cameras, you can run our utility script that will be save a few frames for each camera:
     ```bash
-    python lerobot/common/robot_devices/cameras/opencv.py --images-dir outputs/images_from_opencv_cameras
+    python habitats/common/robot_devices/cameras/opencv.py --images-dir outputs/images_from_opencv_cameras
     ```
 
     When an OpenCVCamera is instantiated, if no specific config is provided, the default fps, width, height and color_mode
