@@ -87,18 +87,19 @@ class FakeRobot(object):
         }
         return low_dim
 
-    def capture_observation(self):
+    def capture_observation(self) -> Dict[str, Union[dict, np.ndarray]]:
         """The returned observations do not have a batch dimension."""
-        # if not self.is_connected:
-        #     raise RobotDeviceNotConnectedError(
-        #         "ManipulatorRobot is not connected. You need to run `robot.connect()`."
-        #     )
         obs_act_dict = {}
         # Capture images from cameras
         images = {}
+        depths = {}
         for name in self.cameras:
             before_camread_t = time.perf_counter()
-            images[name] = self.cameras[name].async_read()
+            cam_data = self.cameras[name].async_read()
+            if len(cam_data) == 2:
+                images[name], depths[name] = cam_data
+            else:
+                images[name] = cam_data
             # images[name] = torch.from_numpy(images[name])
             obs_act_dict[f"/time/{name}"] = time.time()
             self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
@@ -108,12 +109,11 @@ class FakeRobot(object):
                 time.perf_counter() - before_camread_t
             )
 
-        low_dim_data = self.get_low_dim_data()
-
-        # Populate output dictionnaries
-        obs_act_dict["low_dim"] = low_dim_data
-        for name in self.cameras:
+        obs_act_dict["low_dim"] = self.get_low_dim_data()
+        for name in images:
             obs_act_dict[f"observation.images.{name}"] = images[name]
+        for name in depths:
+            obs_act_dict[f"observation.depths.{name}"] = depths[name]
         return obs_act_dict
 
     def init_teleop(self):
