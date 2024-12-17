@@ -51,20 +51,26 @@ airbot_play_demonstration:
       fps: 30
       width: 640
       height: 480
+      color_mode: "rgb"
+      use_depth: true
 
-    cam2:
-      _target_: habitats.common.robot_devices.cameras.intelrealsense.IntelRealSenseCamera
-      camera_index: 4
-      fps: 30
-      width: 640
-      height: 480
+    # cam2:
+    #   _target_: habitats.common.robot_devices.cameras.intelrealsense.IntelRealSenseCamera
+    #   camera_index: 4
+    #   fps: 30
+    #   width: 640
+    #   height: 480
+    #   color_mode: "rgb"
+    #   use_depth: true
 
-    cam3:
-      _target_: habitats.common.robot_devices.cameras.intelrealsense.IntelRealSenseCamera
-      camera_index: 6
-      fps: 30
-      width: 640
-      height: 480
+    # cam3:
+    #   _target_: habitats.common.robot_devices.cameras.intelrealsense.IntelRealSenseCamera
+    #   camera_index: 6
+    #   fps: 30
+    #   width: 640
+    #   height: 480
+    #   color_mode: "rgb"
+    #   use_depth: true
 
 base:
   _target_: robots.airbots.airbot_base.airbot_base.AIRBOTBaseConfig

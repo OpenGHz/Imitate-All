@@ -65,7 +65,9 @@ class AIRBOTPlayDemonstration(object):
                 )
         for leader in self.leaders.values():
             if leader.enter_active_mode():
-                leader.set_joint_position_target(leader.config.default_action, [0.2], True)
+                leader.set_joint_position_target(
+                    leader.config.default_action, [0.2], True
+                )
         self._state_mode = "active"
         self._reseting.set()
 
@@ -117,9 +119,14 @@ class AIRBOTPlayDemonstration(object):
         obs_act_dict = {}
         # Capture images from cameras
         images = {}
+        depths = {}
         for name in self.cameras:
             before_camread_t = time.perf_counter()
-            images[name] = self.cameras[name].async_read()
+            cam_data = self.cameras[name].async_read()
+            if len(cam_data) == 2:
+                images[name], depths[name] = cam_data
+            else:
+                images[name] = cam_data
             # images[name] = torch.from_numpy(images[name])
             obs_act_dict[f"/time/{name}"] = time.time()
             self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
@@ -130,8 +137,10 @@ class AIRBOTPlayDemonstration(object):
             )
 
         obs_act_dict["low_dim"] = self.get_low_dim_data()
-        for name in self.cameras:
+        for name in images:
             obs_act_dict[f"observation.images.{name}"] = images[name]
+        for name in depths:
+            obs_act_dict[f"observation.depths.{name}"] = depths[name]
         return obs_act_dict
 
     def exit(self):

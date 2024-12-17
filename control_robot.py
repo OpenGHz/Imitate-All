@@ -483,13 +483,14 @@ def record(
                 # logging.warning(f"1: get observation time: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
 
                 image_keys = [key for key in observation if "image" in key]
+                depth_keys = [key for key in observation if "depth" in key]
                 # obs_not_image_keys = [key for key in observation if "image" not in key]
                 low_dim_keys = list(observation["low_dim"].keys())
                 low_dim_time_keys = [
                     key for key in observation["low_dim"] if "time" in key
                 ]
 
-                # save temporal images as jpg files
+                # save temporal images as png files
                 for key in image_keys:
                     tmp_imgs_dir = get_tmp_imgs_dir(episode_index, key)
                     futures += [
@@ -498,6 +499,18 @@ def record(
                             observation[key],
                             frame_index,
                             tmp_imgs_dir,
+                        )
+                    ]
+
+                # save depth images as png files
+                for key in depth_keys:
+                    depth_dir = str(get_tmp_imgs_dir(episode_index, key)) + "_depth"
+                    futures += [
+                        executor.submit(
+                            save_image,
+                            observation[key],
+                            frame_index,
+                            depth_dir,
                         )
                     ]
 
