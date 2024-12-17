@@ -45,11 +45,13 @@ class AIRBOTTOK(object):
         for arm_name, arm_cfg in self.arms_cfg.items():
             self.arms[arm_name] = AIRBOTPlay(**arm_cfg)
         logger.info("Connecting the base")
-        if ping_ip(self.config.base.ip):
-            self.base = AIRBOTBase(self.config.base)
-        else:
-            logger.warning("Base IP is not reachable, base will not be connected")
-            self.base = None
+        self.base = None
+        if self.config.base is not None:
+            if ping_ip(self.config.base.ip):
+                self.base = AIRBOTBase(self.config.base)
+            else:
+                logger.warning("Base IP is not reachable, base will not be connected")
+
         self.reset()
 
     def reset(self):
