@@ -1,6 +1,5 @@
 _target_: robots.common.FakeRobot
 
-
 cameras:
   cam1:
     _target_: habitats.common.robot_devices.cameras.opencv.OpenCVCamera
@@ -8,3 +7,12 @@ cameras:
     fps: 30
     width: 640
     height: 480
+# cameras:
+#   cam1:
+#     _target_: habitats.common.robot_devices.cameras.intelrealsense.IntelRealSenseCamera
+#     camera_index: 2
+#     fps: 30
+#     width: 640
+#     height: 480
+#     color_mode: "rgb"
+#     use_depth: true
