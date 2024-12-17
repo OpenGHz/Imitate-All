@@ -61,6 +61,7 @@ data = crd.raw_to_dict(
         "/action/head/color/time",
         "/action/head/joint_position",
         "/action/spine/joint_position",
+        '/action/base/velocity',
         # "/action/head/joint_velocity",
         # "/action/spine/joint_velocity"
     ],
