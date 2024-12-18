@@ -19,6 +19,7 @@ import pyrealsense2 as rs
 from PIL import Image
 
 import sys, os
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../../.."))
 
 from habitats.common.robot_devices.utils import (
@@ -27,12 +28,12 @@ from habitats.common.robot_devices.utils import (
 )
 from habitats.common.utils.utils import capture_timestamp_utc
 from control_robot import busy_wait
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
 SERIAL_NUMBER_INDEX = 1
 
 
-def find_camera_indices(raise_when_empty=True) -> list[int]:
+def find_camera_indices(raise_when_empty=True) -> List[int]:
     """
     Find the serial numbers of the Intel RealSense cameras
     connected to the computer.
@@ -58,7 +59,9 @@ def save_image(img_array, camera_idx, frame_index, images_dir):
         img.save(str(path), quality=100)
         logging.info(f"Saved image: {path}")
     except Exception as e:
-        logging.error(f"Failed to save image for camera {camera_idx} frame {frame_index}: {e}")
+        logging.error(
+            f"Failed to save image for camera {camera_idx} frame {frame_index}: {e}"
+        )
 
 
 def save_images_from_cameras(
@@ -124,7 +127,9 @@ def save_images_from_cameras(
                 if time.perf_counter() - start_time > record_time_s:
                     break
 
-                print(f"Frame: {frame_index:04d}\tLatency (ms): {(time.perf_counter() - now) * 1000:.2f}")
+                print(
+                    f"Frame: {frame_index:04d}\tLatency (ms): {(time.perf_counter() - now) * 1000:.2f}"
+                )
 
                 frame_index += 1
     finally:
@@ -160,7 +165,9 @@ class IntelRealSenseCameraConfig:
                 f"`color_mode` is expected to be 'rgb' or 'bgr', but {self.color_mode} is provided."
             )
 
-        if (self.fps or self.width or self.height) and not (self.fps and self.width and self.height):
+        if (self.fps or self.width or self.height) and not (
+            self.fps and self.width and self.height
+        ):
             raise ValueError(
                 "For `fps`, `width` and `height`, either all of them need to be set, or none of them, "
                 f"but {self.fps=}, {self.width=}, {self.height=} were provided."
@@ -252,13 +259,17 @@ class IntelRealSenseCamera:
 
         if self.fps and self.width and self.height:
             # TODO(rcadene): can we set rgb8 directly?
-            config.enable_stream(rs.stream.color, self.width, self.height, rs.format.rgb8, self.fps)
+            config.enable_stream(
+                rs.stream.color, self.width, self.height, rs.format.rgb8, self.fps
+            )
         else:
             config.enable_stream(rs.stream.color)
 
         if self.use_depth:
             if self.fps and self.width and self.height:
-                config.enable_stream(rs.stream.depth, self.width, self.height, rs.format.z16, self.fps)
+                config.enable_stream(
+                    rs.stream.depth, self.width, self.height, rs.format.z16, self.fps
+                )
             else:
                 config.enable_stream(rs.stream.depth)
 
@@ -285,7 +296,9 @@ class IntelRealSenseCamera:
 
         self.is_connected = True
 
-    def read(self, temporary_color: Optional[str] = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+    def read(
+        self, temporary_color: Optional[str] = None
+    ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """Read a frame from the camera returned in the format height x width x channels (e.g. 480 x 640 x 3)
         of type `np.uint8`, contrarily to the pytorch format which is float channel first.
 
@@ -307,11 +320,15 @@ class IntelRealSenseCamera:
         color_frame = frame.get_color_frame()
 
         if not color_frame:
-            raise OSError(f"Can't capture color image from IntelRealSenseCamera({self.camera_index}).")
+            raise OSError(
+                f"Can't capture color image from IntelRealSenseCamera({self.camera_index})."
+            )
 
         color_image = np.asanyarray(color_frame.get_data())
 
-        requested_color_mode = self.color_mode if temporary_color is None else temporary_color
+        requested_color_mode = (
+            self.color_mode if temporary_color is None else temporary_color
+        )
         if requested_color_mode not in ["rgb", "bgr"]:
             raise ValueError(
                 f"Expected color values are 'rgb' or 'bgr', but {requested_color_mode} is provided."
@@ -336,7 +353,9 @@ class IntelRealSenseCamera:
         if self.use_depth:
             depth_frame = frame.get_depth_frame()
             if not depth_frame:
-                raise OSError(f"Can't capture depth image from IntelRealSenseCamera({self.camera_index}).")
+                raise OSError(
+                    f"Can't capture depth image from IntelRealSenseCamera({self.camera_index})."
+                )
 
             depth_map = np.asanyarray(depth_frame.get_data())
 
@@ -374,7 +393,9 @@ class IntelRealSenseCamera:
         while self.color_image is None:
             num_tries += 1
             time.sleep(1 / self.fps)
-            if num_tries > self.fps and (self.thread.ident is None or not self.thread.is_alive()):
+            if num_tries > self.fps and (
+                self.thread.ident is None or not self.thread.is_alive()
+            ):
                 raise Exception(
                     "The thread responsible for `self.async_read()` took too much time to start. There might be an issue. Verify that `self.thread.start()` has been called."
                 )
