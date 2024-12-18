@@ -24,7 +24,9 @@ def make_environment(env_config):
 
     robot_instances: List[AssembledRobot] = []
     env = None
-    if "airbot_play" in robot_name:
+    if robot_name == "none" or habitat == "mujoco":
+        print("No direct robot is used")
+    elif "airbot_play" in robot_name:
         # set up can
         # from utils import CAN_Tools
         import airbot
@@ -87,8 +89,6 @@ def make_environment(env_config):
 
         for i in range(robot_num):
             robot_instances.append(AssembledMmkRobot())
-    elif robot_name == "none" or habitat == "mujoco":
-        print("No direct robot is used")
     else:
         raise NotImplementedError(f"{robot_name} is not implemented")
 
