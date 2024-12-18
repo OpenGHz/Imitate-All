@@ -510,7 +510,7 @@ def record(
                             save_image,
                             observation[key],
                             frame_index,
-                            depth_dir,
+                            Path(depth_dir),
                         )
                     ]
 
