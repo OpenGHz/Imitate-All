@@ -18,6 +18,9 @@ import numpy as np
 import pyrealsense2 as rs
 from PIL import Image
 
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../../.."))
+
 from habitats.common.robot_devices.utils import (
     RobotDeviceAlreadyConnectedError,
     RobotDeviceNotConnectedError,
