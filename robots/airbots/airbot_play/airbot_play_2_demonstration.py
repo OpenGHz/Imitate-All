@@ -2,6 +2,14 @@ from dataclasses import dataclass, field, replace
 from habitats.common.robot_devices.cameras.utils import Camera
 from typing import Dict, Optional, List, Union
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
+
+try:
+    from robots.airbots.airbot_play.airbot_replay_remote import (
+        AIRBOTReplay,
+        AIRBOTReplayConfig,
+    )
+except Exception as e:
+    print(e)
 from threading import Thread, Event
 import time
 import numpy as np
@@ -9,7 +17,9 @@ import numpy as np
 
 @dataclass
 class AIRBOTPlayDemonstrationConfig(object):
-    groups: Dict[str, Dict[str, AIRBOTPlayConfig]] = field(default_factory=lambda: {})
+    groups: Dict[str, Dict[str, Union[AIRBOTPlayConfig, AIRBOTReplayConfig]]] = field(
+        default_factory=lambda: {}
+    )
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
 
 
@@ -25,13 +35,16 @@ class AIRBOTPlayDemonstration(object):
         self.cameras = self.config.cameras
         self._state_mode = "active"
         self.logs = {}
-        self.leaders: Dict[str, AIRBOTPlay] = {}
+        self.leaders: Dict[str, Union[AIRBOTPlay, AIRBOTReplay]] = {}
         self.followers: Dict[str, List[AIRBOTPlay]] = {}
 
         for g_name, g_value in self.config.groups.items():
-            leader_cfg = g_value["leader"]
+            leader_cfg: dict = g_value["leader"]
             followers_cfg = g_value["followers"]
-            self.leaders[g_name] = AIRBOTPlay(**leader_cfg)
+            if leader_cfg.get("joint_states_topic", None) is None:
+                self.leaders[g_name] = AIRBOTPlay(**leader_cfg)
+            else:
+                self.leaders[g_name] = AIRBOTReplay(**leader_cfg)
             self.followers[g_name] = []
             for f_cfg in followers_cfg:
                 self.followers[g_name].append(AIRBOTPlay(**f_cfg))

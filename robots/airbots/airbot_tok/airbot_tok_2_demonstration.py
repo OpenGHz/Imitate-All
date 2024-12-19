@@ -22,7 +22,8 @@ class AIRBOTTOKDemonstration(object):
         if config is None:
             config = AIRBOTTOKDemonstrationConfig()
         self.config = replace(config, **kwargs)
-        self.airbot_base = AIRBOTBase(self.config.base)
+        if self.config.base is not None:
+            self.airbot_base = AIRBOTBase(self.config.base)
         self.airbot_play_demon = AIRBOTPlayDemonstration(
             self.config.airbot_play_demonstration
         )
@@ -48,9 +49,10 @@ class AIRBOTTOKDemonstration(object):
         """The returned observations do not have a batch dimension."""
         obs_act_dict = self.airbot_play_demon.capture_observation()
 
-        obs_act_dict["low_dim"]["observation/base/velocity"] = list(
-            self.airbot_base.get_current_velocity2D()
-        )
+        if self.config.base is not None:
+            obs_act_dict["low_dim"]["observation/base/velocity"] = list(
+                self.airbot_base.get_current_velocity2D()
+            )
 
         return obs_act_dict
 
