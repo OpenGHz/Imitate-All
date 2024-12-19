@@ -85,6 +85,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     ensemble: dict = config.get("ensemble", None)
     save_dir = save_dir if save_dir != "AUTO" else ckpt_dir
     result_prefix = "result_" + ckpt_name.split(".")[0]
+    debug = config.get("debug", False)
+    if debug:
+        logger.setLevel(logging.DEBUG)
 
     # TODO: remove this
     ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
@@ -140,6 +143,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     eval_done = False
     showing_images = config.get("show_images", False)
     if showing_images:
+
         def show_images():
             while not eval_done:
                 images: dict = ts.observation["images"]
@@ -199,7 +203,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
                     qpos_history[:, t] = qpos
 
-                    logger.debug(f"observation time: {time.time() - start_time}")
+                    logger.debug(f"observe time: {time.time() - start_time}")
                     start_time = time.time()
                     # wrap policy
                     target_t = t % num_queries
@@ -215,7 +219,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     raw_action = raw_action.squeeze(0).cpu().numpy()
                     logger.debug(f"raw action: {raw_action}")
                     action = post_process(raw_action)  # de-normalize action
-                    logger.debug(f"post action: {action}")
+                    # logger.debug(f"post action: {action}")
                     if filter_type is not None:  # filt action
                         for i, filter in enumerate(filters):
                             action[i] = filter(action[i], time.time())
@@ -223,6 +227,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     time.sleep(max(0, 1 / prediction_freq - (time.time() - start_time)))
                     logger.debug(f"prediction time: {time.time() - start_time}")
                     # step the environment
+                    if debug:
+                        dt = 1
                     ts: dm_env.TimeStep = env.step(action, sleep_time=dt)
 
                     # for visualization
@@ -427,6 +433,13 @@ if __name__ == "__main__":
         "--show_images",
         action="store_true",
         help="show_images",
+        required=False,
+    )
+    parser.add_argument(
+        "-dbg",
+        "--debug",
+        action="store_true",
+        help="debug",
         required=False,
     )
 
