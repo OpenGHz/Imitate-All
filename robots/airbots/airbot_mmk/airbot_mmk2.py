@@ -215,6 +215,12 @@ class AIRBOTMMK2(object):
     def _set_mode(self, mode):
         self._state_mode = mode
 
+    def enter_traj_mode(self):
+        logger.info("Enter traj mode")
+
+    def enter_servo_mode(self):
+        logger.info("Enter servo mode")
+
 
 def main():
     robot = AIRBOTMMK2()
