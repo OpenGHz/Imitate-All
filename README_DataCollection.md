@@ -90,6 +90,8 @@ The defualt configurations are in `configurations/basic_configs/example/robot/ai
     start_eef_joint_position: [0.0, 0.0]
     ```
 
+For recording with RealSense cameras, please refer to `configurations/basic_configs/example/robot/airbots/tok/airbot_tok2_2_realsense_demonstration.yaml`.
+
 ### Starting Data Collection / Demonstration
 
 The common usage of parameters for data collection command is as follows:
