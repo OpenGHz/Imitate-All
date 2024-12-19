@@ -207,6 +207,9 @@ class AIRBOTMMK2(object):
             MMK2Components.RIGHT_EEF,
         ):
             action.extend(low_dim[f"action/{comp.value}/joint_position"][step])
+            # old low_dim format
+            # pos, kind = comp.value.split("_")
+            # action.extend(low_dim[f"action/{kind}/{pos}/joint_position"][step])
         return action
 
     def _set_mode(self, mode):
