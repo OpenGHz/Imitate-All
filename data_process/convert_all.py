@@ -427,6 +427,23 @@ except Exception as e:
     print("Warning: no h5py module is found.")
 
 
+def downsample(data: dict, downsampling: int) -> dict:
+    """Downsample the data dict with the downsampling rate.
+    Args:
+        data(dict)          -- the data dict to be downsampled
+        downsampling(int)   -- the downsampling rate
+    """
+    if downsampling > 0:
+        down_data = {}
+        for episode, value in data.items():
+            down_data[episode] = {}
+            for key, v in value.items():
+                down_data[episode][key] = v[::downsampling]
+        return down_data
+    else:
+        return data
+
+
 def pad(value: list, pad_max_len: int) -> list:
     raw_len = len(value)
     size_to_pad = pad_max_len - raw_len
