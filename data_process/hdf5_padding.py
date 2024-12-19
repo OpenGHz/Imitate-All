@@ -49,6 +49,7 @@ print("total episodes: ", total_episodes)
 print("max episode length: ", max_length)
 
 # pad the data
+print(f"Padding data with ratio: {ratio}...")
 random.seed(0)
 cnt = 0
 for i, d in enumerate(in_dirs):

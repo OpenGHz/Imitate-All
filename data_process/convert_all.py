@@ -445,6 +445,10 @@ def downsample(data: dict, downsampling: int) -> dict:
 
 
 def pad(value: list, pad_max_len: int) -> list:
+    """Pad the value list to the pad_max_len."""
+    nd_arr = isinstance(value, np.ndarray)
+    if nd_arr:
+        value = value.tolist()
     raw_len = len(value)
     size_to_pad = pad_max_len - raw_len
     # print(f"raw_len = {raw_len}, size_to_pad = {size_to_pad}")
@@ -457,6 +461,8 @@ def pad(value: list, pad_max_len: int) -> list:
     if size_to_pad > 0:
         value += value[-size_to_pad:]
         # print(f"len(value) = {len(value)}")
+    if nd_arr:
+        value = np.array(value)
     return value
 
 
