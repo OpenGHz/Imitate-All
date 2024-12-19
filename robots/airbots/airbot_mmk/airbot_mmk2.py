@@ -198,6 +198,17 @@ class AIRBOTMMK2(object):
             obs_act_dict[f"observation.images.{name}"] = images[name]
         return obs_act_dict
 
+    def low_dim_to_action(self, low_dim: dict, step: int) -> list:
+        action = []
+        for comp in (
+            MMK2Components.LEFT_ARM,
+            MMK2Components.LEFT_EEF,
+            MMK2Components.RIGHT_ARM,
+            MMK2Components.RIGHT_EEF,
+        ):
+            action.extend(low_dim[f"action/{comp.value}/joint_position"][step])
+        return action
+
     def _set_mode(self, mode):
         self._state_mode = mode
 
