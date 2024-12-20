@@ -5,7 +5,7 @@ from configurations.task_configs.config_tools.basic_configer import (
     replace_timestamp,
     get_stats_path,
 )
-from utils import get_pkl_info, pretty_print_dict
+from utils.utils import get_pkl_info, pretty_print_dict
 
 
 if __name__ == "__main__":

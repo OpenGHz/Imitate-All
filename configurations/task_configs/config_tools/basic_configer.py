@@ -1,6 +1,6 @@
 import os
 import importlib
-from utils import (
+from utils.utils import (
     find_all_hdf5,
     get_init_states,
     replace_timestamp,

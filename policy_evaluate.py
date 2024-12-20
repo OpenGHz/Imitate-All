@@ -3,7 +3,7 @@ import numpy as np
 import os, time, logging, pickle, inspect
 from typing import Dict
 from tqdm import tqdm
-from utils import set_seed, save_eval_results
+from utils.utils import set_seed, save_eval_results
 from configurations.task_configs.config_tools.basic_configer import (
     basic_parser,
     get_all_config,
@@ -78,7 +78,6 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     num_queries = policy_config["num_queries"]  # i.e. chunk_size
     dt = 1 / config["fps"]
     image_mode = config.get("image_mode", 0)
-    arm_velocity = config.get("arm_velocity", 6)
     save_all = config.get("save_all", False)
     save_time_actions = config.get("save_time_actions", False)
     filter_type = config.get("filter", None)
@@ -88,6 +87,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     debug = config.get("debug", False)
     if debug:
         logger.setLevel(logging.DEBUG)
+        from utils.visualization.ros1_logger import LoggerROS1
+
+        ros1_logger = LoggerROS1("eval_debuger")
 
     # TODO: remove this
     ckpt_path = get_ckpt_path(ckpt_dir, ckpt_name, stats_path)
@@ -228,7 +230,11 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     logger.debug(f"prediction time: {time.time() - start_time}")
                     # step the environment
                     if debug:
-                        dt = 1
+                        # dt = 1
+                        ros1_logger.log_1D("joint_position", list(qpos_numpy))
+                        ros1_logger.log_1D("joint_action", list(raw_action))
+                        for name, image in ts.observation["images"].items():
+                            ros1_logger.log_2D("image_" + name, image)
                     ts: dm_env.TimeStep = env.step(action, sleep_time=dt)
 
                     # for visualization
@@ -378,14 +384,6 @@ if __name__ == "__main__":
         type=str,
         help="camera_indices",
         default=("0",),
-    )
-    parser.add_argument(
-        "-av",
-        "--arm_velocity",
-        action="store",
-        type=float,
-        help="arm_velocity",
-        required=False,
     )
     # habitat TODO: remove this
     parser.add_argument(

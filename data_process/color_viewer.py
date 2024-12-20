@@ -20,7 +20,7 @@ from pyorbbecsdk import OBError
 from pyorbbecsdk import OBSensorType, OBFormat
 from pyorbbecsdk import Pipeline, FrameSet
 from pyorbbecsdk import VideoStreamProfile
-from utils import frame_to_bgr_image
+from utils.utils import frame_to_bgr_image
 
 ESC_KEY = 27
 

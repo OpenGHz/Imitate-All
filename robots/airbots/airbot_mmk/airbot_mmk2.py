@@ -139,6 +139,7 @@ class AIRBOTMMK2(object):
     def get_low_dim_data(self):
         data = {}
         all_joints = self.robot.get_robot_state().joint_state
+        # logger.info(f"joint_stamp: {all_joints.header.stamp}")
         for comp in self.components:
             joint_states = self.robot.get_joint_values_by_names(
                 all_joints, self.joint_names[comp]

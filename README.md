@@ -39,7 +39,7 @@ conda config --set auto_activate_base false && conda deactivate
 - ``images`` Images used by README.md
 - ``conda_env.yaml`` Used by conda creating env (now requirements.txt is recommend)
 - ``requirements`` Used for pip install required packages
-- ``utils.py`` Utils such as data loading and helper functions
+- ``utils`` Utils such as data loading and helper functions
 - ``visualize_episodes.py`` Save videos from a .hdf5 dataset
 - ``robot_utils.py`` Useful robot tools to record images and process data
 - ``ros_tools.py`` Tools for ROS
