@@ -232,7 +232,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     if debug:
                         # dt = 1
                         ros1_logger.log_1D("joint_position", list(qpos_numpy))
-                        ros1_logger.log_1D("joint_action", list(raw_action))
+                        ros1_logger.log_1D("joint_action", list(action))
                         for name, image in ts.observation["images"].items():
                             ros1_logger.log_2D("image_" + name, image)
                     ts: dm_env.TimeStep = env.step(action, sleep_time=dt)
