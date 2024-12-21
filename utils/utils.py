@@ -213,7 +213,7 @@ def multi_slices_to_indexes(slices: Union[List[tuple], tuple]):
             postfix = None
         elif len(num_episodes) == 3:
             start, end, postfix = num_episodes
-        num_episodes = list(range(start, end + 1))
+        num_episodes = list(range(start, end))
         if postfix is not None:
             for index, ep in enumerate(num_episodes):
                 num_episodes[index] = f"{ep}_{postfix}"
@@ -224,7 +224,7 @@ def multi_slices_to_indexes(slices: Union[List[tuple], tuple]):
     elif isinstance(slices, list):
         for index, element in enumerate(slices):
             if isinstance(element, int):
-                element = (element, element)
+                element = (element, element + 1)
             slices[index] = process_tuple(element)
         # flatten the list
         flattened = []

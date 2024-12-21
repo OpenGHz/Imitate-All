@@ -143,14 +143,7 @@ COMMON_CONFIG_DEFAULT = {
 }
 
 TRAIN_CONFIG_DEFAULT = {
-    # 0/"ALL" if use all episodes or a number to use the first n episodes
-    # or a tuple of (start, end) to use the episodes from start to end, e.g. (50, 100)
-    # or a tuple of (start, end, postfix) to use the episodes from start to end with the postfix,
-    # e.g. (50, 100, "augmented")
-    # or a list(not tuple!) of multi tuples e.g. [(0, 49), (100, 199)]
-    # TODO: not implemented; support custom name postfix, e.g. "episode_0_augmented"
     "seed": 1,
-    "batch_size": 16,
     "learning_rate": 2e-5,
     "lr_backbone": 1e-5,
     "num_epochs": 7000,
@@ -165,12 +158,17 @@ TRAIN_CONFIG_DEFAULT = {
     # for cotraining (not used for now)
     "sample_weights": [7.5, 2.5],
     "cotrain_dir": "",
-    "sample_weights": None,  # TODO: change to 1 or 0?
     "parallel": None,  # {"mode":str, "device_ids":list}, mode: "DP" or "DDP"; device_ids: e.g. [0, 1] or None for all
     "environments": ENV_TRAIN_CONFIG_DEFAULT,
     # directory containing the hdf5 files
     "load_data": {
         "dataset_dir": DATA_DIR_DEFAULT + f"/{TASK_NAME}",
+        # 0/"ALL" if use all episodes or a number to use the first n episodes
+        # or a tuple of (start, end) to use the episodes from start to end (not included the end), e.g. (50, 100)
+        # or a tuple of (start, end, postfix) to use the episodes from start to end with the postfix,
+        # e.g. (50, 100, "augmented")
+        # or a list(not tuple!) of multi tuples e.g. [(0, 50), (100, 200)]
+        # TODO: not implemented; support custom name postfix, e.g. "episode_0_augmented"
         "num_episodes": "ALL",
         "batch_size_train": 16,
         "batch_size_validate": 16,
