@@ -182,6 +182,8 @@ TRAIN_CONFIG_DEFAULT = {
         "check_episodes": True,  # check the existence of all episodes
         "num_workers_train": 1,
         "num_workers_validate": 1,
+        "observation_slice": None,
+        "action_slice": None,
     },
 }
 

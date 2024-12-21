@@ -8,16 +8,16 @@ import subprocess
 import pickle
 import re
 from datetime import datetime
-from typing import Tuple, List, Dict
 import time
 from threading import Thread, Event
 import logging
 from visualize_episodes import save_videos
 from dataclasses import dataclass
-from typing import Union
+from typing import Tuple, List, Dict, Union, Optional
 
 
 logger = logging.getLogger(__name__)
+np.random.seed(0)
 
 
 class EpisodicDataset(torch.utils.data.Dataset):
@@ -25,19 +25,35 @@ class EpisodicDataset(torch.utils.data.Dataset):
         self,
         episode_ids,
         dataset_dir,
-        camera_names,
-        norm_stats,
-        augmentors: dict = {},
-        other_config: dict = {},
+        norm_stats: dict,
+        augmentors: dict,
+        data_slices: dict,
+        aciton_bias: int = 1,
     ):
         super(EpisodicDataset).__init__()
         self.episode_ids = episode_ids
         self.dataset_dir = dataset_dir
-        self.camera_names = camera_names
-        self.norm_stats = norm_stats
-        self.other_config = other_config
+        self.camera_names = data_slices["camera_names"]
+        self.observation_indexes = data_slices.get("observation_indexes", None)
+        self.action_indexes = data_slices.get("action_indexes", None)
+        self.norm_stats = norm_stats.copy()
         self.augmentors = augmentors
         self.augment_images = augmentors.get("image", None)
+        self.aciton_bias = aciton_bias
+        if self.observation_indexes is not None:
+            self.norm_stats["qpos_mean"] = self.norm_stats["qpos_mean"][
+                self.observation_indexes
+            ]
+            self.norm_stats["qpos_std"] = self.norm_stats["qpos_std"][
+                self.observation_indexes
+            ]
+        if self.action_indexes is not None:
+            self.norm_stats["action_mean"] = self.norm_stats["action_mean"][
+                self.action_indexes
+            ]
+            self.norm_stats["action_std"] = self.norm_stats["action_std"][
+                self.action_indexes
+            ]
         self.__getitem__(0)
 
     def __len__(self):
@@ -57,8 +73,8 @@ class EpisodicDataset(torch.utils.data.Dataset):
                 start_ts = np.random.choice(episode_len)
             # get observation at start_ts only
             qpos = root["/observations/qpos"][start_ts]
-            if "qvel" in self.other_config:
-                qvel = root["/observations/qvel"][start_ts]
+            if self.observation_indexes is not None:
+                qpos = qpos[self.observation_indexes]
             image_dict = dict()
             for cam_name in self.camera_names:
                 image_dict[cam_name] = root[f"/observations/images/{cam_name}"][
@@ -70,11 +86,14 @@ class EpisodicDataset(torch.utils.data.Dataset):
 
                     decompressed_image = cv2.imdecode(image_dict[cam_name], 1)
                     image_dict[cam_name] = np.array(decompressed_image)
+            # TODO: pass the chunk_size as a arg to load only the needed actions
             # get all actions after and including start_ts
-            # TODO: remove this hack or make it configurable
             # hack, to make timesteps more aligned
-            bias = 1
+            bias = self.aciton_bias
             action = root["/action"][max(0, start_ts - bias) :]
+            if self.action_indexes is not None:
+                action = action[:, self.action_indexes]
+                original_action_shape = (episode_len, action.shape[1])
             action_len = episode_len - max(0, start_ts - bias)
         padded_action = np.zeros(original_action_shape, dtype=np.float32)
         padded_action[:action_len] = action
@@ -187,11 +206,7 @@ def get_init_states(dir, episode_idx=None):
     return qpos, action
 
 
-def process_num_episodes(
-    num_episodes: Union[list, tuple, int], dataset_dir: str
-) -> list:
-    """Change num_episodes to list of ids"""
-
+def multi_slices_to_indexes(slices: Union[List[tuple], tuple]):
     def process_tuple(num_episodes: tuple) -> list:
         if len(num_episodes) == 2:
             start, end = num_episodes
@@ -204,19 +219,33 @@ def process_num_episodes(
                 num_episodes[index] = f"{ep}_{postfix}"
         return num_episodes
 
+    if isinstance(slices, tuple):
+        slices = process_tuple(slices)
+    elif isinstance(slices, list):
+        for index, element in enumerate(slices):
+            if isinstance(element, int):
+                element = (element, element)
+            slices[index] = process_tuple(element)
+        # flatten the list
+        flattened = []
+        for sublist in slices:
+            flattened.extend(sublist)
+        slices = flattened
+    else:
+        raise ValueError("slices should be tuple or list of tuples")
+    return slices
+
+
+def process_num_episodes(
+    num_episodes: Union[list, tuple, int], dataset_dir: str
+) -> list:
+    """Change num_episodes to list of ids"""
+
     if num_episodes in ["ALL", "all", "All", 0]:
         num_episodes = len(find_all_hdf5(dataset_dir))
         num_episodes = list(range(num_episodes))
-    elif isinstance(num_episodes, tuple):
-        num_episodes = process_tuple(num_episodes)
-    elif isinstance(num_episodes, list):
-        for index, element in enumerate(num_episodes):
-            num_episodes[index] = process_tuple(element)
-        # flatten the list
-        flattened = []
-        for sublist in num_episodes:
-            flattened.extend(sublist)
-        num_episodes = flattened
+    else:
+        num_episodes = multi_slices_to_indexes(num_episodes)
     return num_episodes
 
 
@@ -229,6 +258,8 @@ class LoadDataConfig(object):
     train_ratio: float
     num_workers_train: int
     num_workers_validate: int
+    observation_slice: Optional[Union[List[tuple], tuple]]
+    action_slice: Optional[Union[List[tuple], tuple]]
     augmentors: dict
     check_episodes: bool
     camera_names: list
@@ -247,6 +278,12 @@ class LoadDataConfig(object):
                 assert os.path.exists(
                     os.path.join(self.dataset_dir, f"episode_{ep}.hdf5")
                 ), f"episode {ep} not found"
+        if self.observation_slice is not None:
+            self.observation_slice = multi_slices_to_indexes(self.observation_slice)
+            print(f"Observation slice: {self.observation_slice}")
+        if self.action_slice is not None:
+            self.action_slice = multi_slices_to_indexes(self.action_slice)
+            print(f"Action slice: {self.action_slice}")
 
 
 def load_data(config: LoadDataConfig):
@@ -266,10 +303,19 @@ def load_data(config: LoadDataConfig):
     # construct dataset
     camera_names = config.camera_names
     augmentors = config.augmentors
-    train_dataset = EpisodicDataset(
-        train_indices, dataset_dir, camera_names, norm_stats, augmentors
-    )
-    val_dataset = EpisodicDataset(val_indices, dataset_dir, camera_names, norm_stats)
+    ep_ds_config = {
+        "dataset_dir": dataset_dir,
+        "norm_stats": norm_stats,
+        "augmentors": augmentors,
+        "data_slices": {
+            "camera_names": camera_names,
+            "observation_indexes": config.observation_slice,
+            "action_indexes": config.action_slice,
+        },
+        "aciton_bias": 1,
+    }
+    train_dataset = EpisodicDataset(train_indices, **ep_ds_config)
+    val_dataset = EpisodicDataset(val_indices, **ep_ds_config)
     # construct dataloader
     batch_size_train = config.batch_size_train
     batch_size_val = config.batch_size_validate
