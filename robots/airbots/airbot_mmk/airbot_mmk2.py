@@ -129,12 +129,27 @@ class AIRBOTMMK2(object):
     def send_action(self, action, wait=False):
         goal = {
             MMK2Components.LEFT_ARM: JointState(position=action[:7]),
-            MMK2Components.RIGHT_ARM: JointState(position=action[7:]),
+            MMK2Components.RIGHT_ARM: JointState(position=action[7:14]),
         }
+        if MMK2Components.SPINE in self.components:
+            goal[MMK2Components.SPINE] = JointState(position=action[14:15])
+
         self.robot.set_goal(
             goal,
             MoveServoParams(header=self.robot.get_header()),
         )
+        # goal = {
+        #     MMK2Components.LEFT_ARM: JointState(position=action[:6]),
+        #     MMK2Components.RIGHT_ARM: JointState(position=action[7:13]),
+        #     MMK2Components.LEFT_EEF: JointState(position=action[6:7]),
+        #     MMK2Components.RIGHT_EEF: JointState(position=action[13:14]),
+        # }
+        # param = {
+        #     MMK2Components.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
+        #     MMK2Components.RIGHT_ARM: MoveServoParams(header=self.robot.get_header()),
+        #     MMK2Components.LEFT_EEF: TrajectoryParams(),
+        #     MMK2Components.RIGHT_EEF: TrajectoryParams(),
+        # }
 
     def get_low_dim_data(self):
         data = {}
@@ -211,6 +226,10 @@ class AIRBOTMMK2(object):
             # old low_dim format
             # pos, kind = comp.value.split("_")
             # action.extend(low_dim[f"action/{kind}/{pos}/joint_position"][step])
+        if MMK2Components.SPINE in self.components:
+            action.extend(
+                low_dim[f"action/{MMK2Components.SPINE.value}/joint_position"][step]
+            )
         return action
 
     def _set_mode(self, mode):

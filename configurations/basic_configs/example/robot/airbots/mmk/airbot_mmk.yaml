@@ -5,6 +5,8 @@ ip: "192.168.40.19"
 default_action:
   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
+components: ["left_arm", "right_arm", "left_eef", "right_eef"]  # spine
+
 cameras:
   # left_camera: "rgb"
   # right_camera: "rgb"
