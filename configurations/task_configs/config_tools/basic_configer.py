@@ -21,12 +21,14 @@ def basic_parser():
 
 def load_task_config(path: str):
     """Load task config from task config python file"""
-    #TODO: support for yaml config file?
+    # TODO: support for yaml config file?
     try:
         module = importlib.import_module(path)
     except Exception as e:
         print(f"Error: {e}")
-        raise ImportError("Is your configuration file name the same as the task name? Or have you added the configuration file to the configurations/task_configs folder?")
+        raise ImportError(
+            "Is your configuration file name the same as the task name? Or have you added the configuration file to the configurations/task_configs folder?"
+        )
 
     TASK_CONFIG = getattr(module, "TASK_CONFIG")
     image_augmentor = getattr(module, "augment_images")
@@ -41,42 +43,9 @@ def load_task_config(path: str):
 def remove_none(args: dict):
     """Remove keys with None values from dict
     This is used to remove None key-values from CLI args,
-    which avoids passing None values to override the actual config from config file. 
+    which avoids passing None values to override the actual config from config file.
     """
     return {k: v for k, v in args.items() if v is not None}
-
-
-def process_num_episodes(
-    num_episodes: Union[list, tuple, int], dataset_dir: str
-) -> list:
-    """Change num_episodes to list of ids"""
-
-    def process_tuple(num_episodes: tuple) -> list:
-        if len(num_episodes) == 2:
-            start, end = num_episodes
-            postfix = None
-        elif len(num_episodes) == 3:
-            start, end, postfix = num_episodes
-        num_episodes = list(range(start, end + 1))
-        if postfix is not None:
-            for index, ep in enumerate(num_episodes):
-                num_episodes[index] = f"{ep}_{postfix}"
-        return num_episodes
-
-    if num_episodes in ["ALL", "all", "All", 0]:
-        num_episodes = len(find_all_hdf5(dataset_dir))
-        num_episodes = list(range(num_episodes))
-    elif isinstance(num_episodes, tuple):
-        num_episodes = process_tuple(num_episodes)
-    elif isinstance(num_episodes, list):
-        for index, element in enumerate(num_episodes):
-            num_episodes[index] = process_tuple(element)
-        # flatten the list
-        flattened = []
-        for sublist in num_episodes:
-            flattened.extend(sublist)
-        num_episodes = flattened
-    return num_episodes
 
 
 def config_policy(args: dict):
@@ -113,7 +82,8 @@ def config_policy(args: dict):
     policy_config["action_dim"] = action_dim
     return policy_config
 
-def get_stats_path(stats_path_config:str, task_name:str):
+
+def get_stats_path(stats_path_config: str, task_name: str):
     dir_level = stats_path_config.count(task_name)
     stats_name = os.path.basename(stats_path_config)
     stats_dir: str = os.path.dirname(stats_path_config)
@@ -133,6 +103,7 @@ def get_stats_path(stats_path_config:str, task_name:str):
             raise FileNotFoundError(f"stats_dir {stats_dir} not found")
     return stats_dir, stats_path
 
+
 def get_all_config(args: dict, stage: str):
     """
     Get all config for train or eval stage from args directly and task config file.
@@ -144,10 +115,14 @@ def get_all_config(args: dict, stage: str):
     # import config script according to task_name
     config_rela_path: str = args.get("config_path", None)
     if config_rela_path is None:
-        config_rela_path = f"configurations.task_configs.{args['task_name'].replace('/','.')}"
+        config_rela_path = (
+            f"configurations.task_configs.{args['task_name'].replace('/','.')}"
+        )
     else:
         # e.g. jimu/dmil or jimu.dmil
-        config_rela_path = "configurations.task_configs." + config_rela_path.replace("/", ".")
+        config_rela_path = "configurations.task_configs." + config_rela_path.replace(
+            "/", "."
+        )
     TASK_CONFIG, task_funcs, config_sys_path = load_task_config(config_rela_path)
     print(f"config_file_sys_path={config_sys_path}")
     # assert os.path.exists(config_sys_path), f"config file {config_sys_path} not found"
@@ -166,26 +141,13 @@ def get_all_config(args: dict, stage: str):
         use_stats = False
     if stage == "train":
         assert use_stats, "now training must use stats"
-        all_config["dataset_dir"] = os.path.abspath(all_config["dataset_dir"])
-        assert os.path.isdir(
-            all_config["dataset_dir"]
-        ), f"dataset_dir {all_config['dataset_dir']} not found"
-        # change num_episodes to list of ids
-        all_config["num_episodes"] = process_num_episodes(
-            all_config["num_episodes"], all_config["dataset_dir"]
-        )
-        if all_config["check_episodes"]:
-            for ep in all_config["num_episodes"]:
-                assert os.path.exists(
-                    os.path.join(all_config["dataset_dir"], f"episode_{ep}.hdf5")
-                ), f"episode {ep} not found"
         # set start joint
         if all_config.get("start_joint", None) is None:
-            init_states = get_init_states(all_config["dataset_dir"], 0)
+            init_states = get_init_states(all_config["load_data"]["dataset_dir"], 0)
             all_config["start_action"] = init_states[0]
             all_config["start_joint"] = init_states[1]
         # set augmentors
-        all_config["image_augmentor"] = task_funcs["image_augmentor"]
+        all_config["load_data"]["augmentors"]["image"] = task_funcs["image_augmentor"]
         all_config["augmentors_flag"] = {
             "image": task_funcs["image_augmentor"].activated
         }
@@ -200,7 +162,9 @@ def get_all_config(args: dict, stage: str):
                 all_config["stats_path"], time_stamp
             )
         # 检查路径（支持task_name/ts/task_name/ts两级嵌套和仅task_name/ts一级两种目录结构）
-        stats_dir, stats_path = get_stats_path(all_config["stats_path"], all_config["task_name"])
+        stats_dir, stats_path = get_stats_path(
+            all_config["stats_path"], all_config["task_name"]
+        )
         all_config["stats_path"] = stats_path
         # 评估时如果start_joint为AUTO，则从统计数据中读取初始动作
         if all_config["start_joint"] == "AUTO":

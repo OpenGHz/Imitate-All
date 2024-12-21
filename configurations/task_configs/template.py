@@ -143,8 +143,6 @@ COMMON_CONFIG_DEFAULT = {
 }
 
 TRAIN_CONFIG_DEFAULT = {
-    "dataset_dir": DATA_DIR_DEFAULT
-    + f"/{TASK_NAME}",  # directory containing the hdf5 files
     # 0/"ALL" if use all episodes or a number to use the first n episodes
     # or a tuple of (start, end) to use the episodes from start to end, e.g. (50, 100)
     # or a tuple of (start, end, postfix) to use the episodes from start to end with the postfix,
@@ -152,8 +150,6 @@ TRAIN_CONFIG_DEFAULT = {
     # or a list(not tuple!) of multi tuples e.g. [(0, 49), (100, 199)]
     # TODO: not implemented; support custom name postfix, e.g. "episode_0_augmented"
     "seed": 1,
-    "num_episodes": "ALL",
-    "check_episodes": True,  # check the existence of all episodes
     "batch_size": 16,
     "learning_rate": 2e-5,
     "lr_backbone": 1e-5,
@@ -168,11 +164,25 @@ TRAIN_CONFIG_DEFAULT = {
     "skip_mirrored_data": False,
     # for cotraining (not used for now)
     "sample_weights": [7.5, 2.5],
-    "train_ratio": 0.8,  # ratio of train data from the first dataset_dir,
     "cotrain_dir": "",
     "sample_weights": None,  # TODO: change to 1 or 0?
     "parallel": None,  # {"mode":str, "device_ids":list}, mode: "DP" or "DDP"; device_ids: e.g. [0, 1] or None for all
     "environments": ENV_TRAIN_CONFIG_DEFAULT,
+    # directory containing the hdf5 files
+    "load_data": {
+        "dataset_dir": DATA_DIR_DEFAULT + f"/{TASK_NAME}",
+        "num_episodes": "ALL",
+        "batch_size_train": 16,
+        "batch_size_validate": 16,
+        # ratio of train data from the first dataset_dir, the rest is validation data
+        "train_ratio": 0.8,
+        "augmentors": {
+            "image": None,  # augment_images,
+        },
+        "check_episodes": True,  # check the existence of all episodes
+        "num_workers_train": 1,
+        "num_workers_validate": 1,
+    },
 }
 
 EVAL_CONFIG_DEFAULT = {
@@ -240,7 +250,9 @@ def replace_task_name(name: str, stats_name="dataset_stats.pkl", time_stamp="now
         ts = time_stamp + "/"
     else:
         ts = ""
-    TRAIN_CONFIG_DEFAULT["dataset_dir"] = DATA_DIR_DEFAULT + f"/{TASK_NAME}"
+    TRAIN_CONFIG_DEFAULT["load_data"]["dataset_dir"] = (
+        DATA_DIR_DEFAULT + f"/{TASK_NAME}"
+    )
     COMMON_CONFIG_DEFAULT["ckpt_dir"] = TRAIN_DIR_DEFAULT + f"/{TASK_NAME}/{ts}ckpt"
     EVAL_CONFIG_DEFAULT["save_dir"] = EVAL_DIR_DEFAULT + f"/{TASK_NAME}/{ts}"
     if stats_name not in ["", None]:
@@ -253,7 +265,7 @@ def set_paths(
     data_dir: str, ckpt_dir: str, stats_path: str = "", save_dir: str = "AUTO"
 ):
     """Replace the default data, ckpt, stats and eval dirs/paths."""
-    TRAIN_CONFIG_DEFAULT["dataset_dir"] = data_dir
+    TRAIN_CONFIG_DEFAULT["load_data"]["dataset_dir"] = data_dir
     COMMON_CONFIG_DEFAULT["ckpt_dir"] = ckpt_dir
     COMMON_CONFIG_DEFAULT["stats_path"] = stats_path
     EVAL_CONFIG_DEFAULT["save_dir"] = save_dir

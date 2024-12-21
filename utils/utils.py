@@ -13,6 +13,9 @@ import time
 from threading import Thread, Event
 import logging
 from visualize_episodes import save_videos
+from dataclasses import dataclass
+from typing import Union
+
 
 logger = logging.getLogger(__name__)
 
@@ -127,15 +130,13 @@ def find_all_hdf5(dataset_dir, skip_mirrored_data=True):
     return hdf5_files
 
 
-def get_norm_stats(dataset_dir, num_episodes, other_config={}):
+def get_norm_stats(dataset_dir, num_episodes):
     all_qpos_data = []
     all_action_data = []
     for episode_idx in num_episodes:
         dataset_path = os.path.join(dataset_dir, f"episode_{episode_idx}.hdf5")
         with h5py.File(dataset_path, "r") as root:
             qpos = root["/observations/qpos"][()]
-            if "qvel" in other_config:
-                qvel = root["/observations/qvel"][()]
             action = root["/action"][()]
         all_qpos_data.append(torch.from_numpy(qpos))
         all_action_data.append(torch.from_numpy(action))
@@ -186,18 +187,73 @@ def get_init_states(dir, episode_idx=None):
     return qpos, action
 
 
-def load_data(
-    dataset_dir,
-    num_episodes,
-    camera_names,
-    batch_size_train,
-    batch_size_val,
-    augmentors=None,
-    other_config={},
-):
+def process_num_episodes(
+    num_episodes: Union[list, tuple, int], dataset_dir: str
+) -> list:
+    """Change num_episodes to list of ids"""
+
+    def process_tuple(num_episodes: tuple) -> list:
+        if len(num_episodes) == 2:
+            start, end = num_episodes
+            postfix = None
+        elif len(num_episodes) == 3:
+            start, end, postfix = num_episodes
+        num_episodes = list(range(start, end + 1))
+        if postfix is not None:
+            for index, ep in enumerate(num_episodes):
+                num_episodes[index] = f"{ep}_{postfix}"
+        return num_episodes
+
+    if num_episodes in ["ALL", "all", "All", 0]:
+        num_episodes = len(find_all_hdf5(dataset_dir))
+        num_episodes = list(range(num_episodes))
+    elif isinstance(num_episodes, tuple):
+        num_episodes = process_tuple(num_episodes)
+    elif isinstance(num_episodes, list):
+        for index, element in enumerate(num_episodes):
+            num_episodes[index] = process_tuple(element)
+        # flatten the list
+        flattened = []
+        for sublist in num_episodes:
+            flattened.extend(sublist)
+        num_episodes = flattened
+    return num_episodes
+
+
+@dataclass
+class LoadDataConfig(object):
+    dataset_dir: str
+    num_episodes: Union[list, tuple, int]
+    batch_size_train: int
+    batch_size_validate: int
+    train_ratio: float
+    num_workers_train: int
+    num_workers_validate: int
+    augmentors: dict
+    check_episodes: bool
+    camera_names: list
+
+    def __post_init__(self):
+        # change dataset_dir to absolute path
+        self.dataset_dir = os.path.abspath(self.dataset_dir)
+        # change num_episodes to list of ids
+        self.num_episodes = process_num_episodes(self.num_episodes, self.dataset_dir)
+        # check if all episodes exist
+        assert os.path.isdir(
+            self.dataset_dir
+        ), f"dataset_dir {self.dataset_dir} not found"
+        if self.check_episodes:
+            for ep in self.num_episodes:
+                assert os.path.exists(
+                    os.path.join(self.dataset_dir, f"episode_{ep}.hdf5")
+                ), f"episode {ep} not found"
+
+
+def load_data(config: LoadDataConfig):
+    dataset_dir = config.dataset_dir
     print(f"\nData from: {dataset_dir}\n")
-    # obtain train test split
-    train_ratio = other_config.get("train_ratio", 0.8)
+    train_ratio = config.train_ratio
+    num_episodes = config.num_episodes
     episodes_num = len(num_episodes)
     shuffled_indices = list(num_episodes)
     np.random.shuffle(shuffled_indices)
@@ -205,18 +261,22 @@ def load_data(
     val_indices = shuffled_indices[int(train_ratio * episodes_num) :]
 
     # obtain normalization stats for qpos and action
-    norm_stats = get_norm_stats(dataset_dir, num_episodes, other_config)
+    norm_stats = get_norm_stats(dataset_dir, num_episodes)
 
     # construct dataset
+    camera_names = config.camera_names
+    augmentors = config.augmentors
     train_dataset = EpisodicDataset(
         train_indices, dataset_dir, camera_names, norm_stats, augmentors
     )
     val_dataset = EpisodicDataset(val_indices, dataset_dir, camera_names, norm_stats)
     # construct dataloader
+    batch_size_train = config.batch_size_train
+    batch_size_val = config.batch_size_validate
     print("batch_size_train:", batch_size_train)
     print("batch_size_val:", batch_size_val)
-    num_workers_train = other_config.get("num_workers_train", 1)
-    num_workers_val = other_config.get("num_workers_val", 1)
+    num_workers_train = config.num_workers_train
+    num_workers_val = config.num_workers_validate
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=batch_size_train,

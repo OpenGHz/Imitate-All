@@ -9,7 +9,7 @@ import shutil
 import time
 import argparse
 
-from utils.utils import load_data, compute_dict_mean, set_seed, detach_dict, GPUer
+from utils.utils import load_data, LoadDataConfig, compute_dict_mean, set_seed, detach_dict, GPUer
 from configurations.task_configs.config_tools.basic_configer import basic_parser, get_all_config
 from policies.common.maker import make_policy
 import logging
@@ -24,13 +24,12 @@ def main(args:dict):
     all_config = get_all_config(args, 'train')
     ckpt_dir = all_config['ckpt_dir']
     stats_path = all_config['stats_path']
-    dataset_dir = all_config['dataset_dir']
-    image_augmentor = all_config['image_augmentor']
     gpu_threshold = all_config.get('gpu_threshold', 10)
-    if image_augmentor.activated:
-        print("Use image augmentor")
+
     # 加载数据及统计信息
-    train_dataloader, val_dataloader, stats = load_data(dataset_dir, all_config["num_episodes"], all_config['camera_names'], all_config['batch_size'], all_config['batch_size'], {'image':image_augmentor}, all_config)
+    train_dataloader, val_dataloader, stats = load_data(
+        LoadDataConfig(**all_config["load_data"], camera_names=all_config["camera_names"])
+    )
     # 创建保存路径
     os.makedirs(ckpt_dir, exist_ok=True)
     stats_dir = os.path.dirname(stats_path)
@@ -48,7 +47,7 @@ def main(args:dict):
     all_config_cp = deepcopy(all_config)
     all_config_cp["policy_config"].pop('policy_maker')
     all_config_cp["environments"].pop('environment_maker')
-    all_config_cp.pop('image_augmentor')
+    all_config_cp["load_data"].pop("augmentors")
     key_info = {
         "init_info": {"init_joint": all_config_cp["start_joint"], "init_action": all_config_cp["start_action"]},
         "all_config": all_config_cp,

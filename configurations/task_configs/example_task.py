@@ -57,9 +57,11 @@ TASK_CONFIG_DEFAULT["common"]["policy_config"]["num_queries"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["kl_weight"] = 10
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["policy_maker"] = policy_maker
 
-TASK_CONFIG_DEFAULT["train"]["num_episodes"] = "ALL"
+
+TASK_CONFIG_DEFAULT["train"]["load_data"]["num_episodes"] = "ALL"
+TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_train"] = 4
+TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
-TASK_CONFIG_DEFAULT["train"]["batch_size"] = 4
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
 TASK_CONFIG_DEFAULT["train"]["pretrain_epoch_base"] = "AUTO"
