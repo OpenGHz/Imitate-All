@@ -60,21 +60,10 @@ class MujocoEnv(object):
     def step(
         self,
         action,
-        base_action=None,
-        get_tracer_vel=False,
         get_obs=True,
         sleep_time=0,
-        arm_vel=0,
     ):
-        all_joints_num = (7, )
-        # print("action", action)
-        for index, jn in enumerate(all_joints_num):
-            one_action = action[jn * index : jn * (index + 1)]
-            # print("one_action", one_action)
-            # print("one_action gripper", one_action[-1])
-            # one_action[-1] = 0
-            raw_obs, pri_obs, rew, ter, info = self.exec_node.step(one_action)
-            # print("obs gripper", raw_obs["jq"][-1])
+        raw_obs, pri_obs, rew, ter, info = self.exec_node.step(action)
         time.sleep(sleep_time)
 
         if get_obs:
