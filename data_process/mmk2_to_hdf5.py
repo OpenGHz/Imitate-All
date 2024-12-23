@@ -1,4 +1,5 @@
 import sys, os
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import data_process.convert_all as crd
@@ -8,10 +9,13 @@ parser = argparse.ArgumentParser(description="Convert mmk2 data to hdf5")
 
 parser.add_argument("--raw_dir", type=str, default="data/raw", help="input directory")
 parser.add_argument("--output", type=str, default="data/hdf5", help="output directory")
-parser.add_argument("-tn", "--task_name", type=str, default="example_task", help="task name")
+parser.add_argument(
+    "-tn", "--task_name", type=str, default="example_task", help="task name"
+)
 parser.add_argument(
     "--cameras", type=str, nargs="+", default=["0"], help="camera names"
 )
+parser.add_argument("-pad", "--padding", action="store_true", help="pad the hdf5 data")
 
 args = parser.parse_args()
 
@@ -61,7 +65,7 @@ data = crd.raw_to_dict(
         "/action/head/color/time",
         "/action/head/joint_position",
         "/action/spine/joint_position",
-        '/action/base/velocity',
+        "/action/base/velocity",
         # "/action/head/joint_velocity",
         # "/action/spine/joint_velocity"
     ],
@@ -92,7 +96,7 @@ for key, low_d in low_dim_data.items():
     # if length < 200:
     #     print(f"{key} has length {length}")
 
-max_pad_length = max(episode_lens)
+max_pad_length = max(episode_lens) if args.padding else None
 
 # save all data
 episode_names = list(low_dim_data.keys())

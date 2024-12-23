@@ -12,11 +12,13 @@ parser.add_argument("-tn", "--task_name", type=str)
 parser.add_argument("-vn", "--video_names", type=str, nargs="+")
 parser.add_argument("-ds", "--downsampling", type=int, default=0)
 parser.add_argument("-md", "--mode", type=str, default="real3")
+parser.add_argument("-pad", "--padding", action="store_true")
 args = parser.parse_args()
 
 task_name = args.task_name
 downsampling = args.downsampling
 mode = args.mode
+padding = args.padding
 
 raw_dir = f"data/raw/{task_name}"
 # raw_dir = os.path.abspath(raw_dir)
@@ -88,7 +90,7 @@ compresser = crd.Compresser("jpg", [int(cv2.IMWRITE_JPEG_QUALITY), 50], True)
 episode_lens = []
 for low_d in low_dim_data.values():
     episode_lens.append(len(list(low_d.values())[0]))
-max_pad_length = max(episode_lens)
+max_pad_length = max(episode_lens) if padding else None
 
 print(f"Episode flatten keys: {list(low_dim_data.values())[0].keys()}")
 episode_names = list(low_dim_data.keys())
