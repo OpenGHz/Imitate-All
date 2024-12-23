@@ -14,6 +14,7 @@ import logging
 from visualize_episodes import save_videos
 from dataclasses import dataclass
 from typing import Tuple, List, Dict, Union, Optional
+from pprint import pprint
 
 
 logger = logging.getLogger(__name__)
@@ -27,15 +28,19 @@ class EpisodicDataset(torch.utils.data.Dataset):
         dataset_dir,
         norm_stats: dict,
         augmentors: dict,
-        data_slices: dict,
+        data_indexes: dict,
+        chunk_sizes: dict = None,
         aciton_bias: int = 1,
     ):
         super(EpisodicDataset).__init__()
         self.episode_ids = episode_ids
         self.dataset_dir = dataset_dir
-        self.camera_names = data_slices["camera_names"]
-        self.observation_indexes = data_slices.get("observation_indexes", None)
-        self.action_indexes = data_slices.get("action_indexes", None)
+        self.camera_names = data_indexes["camera_names"]
+        self.observation_indexes = data_indexes.get("observation", None)
+        self.action_indexes = data_indexes.get("action", None)
+        self.observation_chunk_size = chunk_sizes.get("observation", None)
+        self.action_chunk_size = chunk_sizes.get("action", None)
+        assert self.observation_chunk_size is None, "Not implemented"
         self.norm_stats = norm_stats.copy()
         self.augmentors = augmentors
         self.augment_images = augmentors.get("image", None)
@@ -63,6 +68,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         sample_full_episode = False  # TODO:hardcode
         episode_id = self.episode_ids[index]
         dataset_path = os.path.join(self.dataset_dir, f"episode_{episode_id}.hdf5")
+        action_chunk = self.action_chunk_size
         with h5py.File(dataset_path, "r") as root:
             compressed = root.attrs.get("compress", False)
             original_action_shape = root["/action"].shape
@@ -90,13 +96,18 @@ class EpisodicDataset(torch.utils.data.Dataset):
             # get all actions after and including start_ts
             # hack, to make timesteps more aligned
             bias = self.aciton_bias
-            action = root["/action"][max(0, start_ts - bias) :]
+            action_start = max(0, start_ts - bias)
+            action = root["/action"][action_start : action_start + action_chunk]
             if self.action_indexes is not None:
                 action = action[:, self.action_indexes]
-                original_action_shape = (episode_len, action.shape[1])
-            action_len = episode_len - max(0, start_ts - bias)
-        padded_action = np.zeros(original_action_shape, dtype=np.float32)
+                chunked_action_shape = (action_chunk, action.shape[1])
+            else:
+                chunked_action_shape = (action_chunk, original_action_shape[1])
+            action_len = len(action)
+            print(f"action_shape: {action.shape}")
+        padded_action = np.zeros(chunked_action_shape, dtype=np.float32)
         padded_action[:action_len] = action
+        print(f"padded_action shape: {padded_action.shape}")
         is_pad = np.zeros(episode_len)
         is_pad[action_len:] = 1
 
@@ -263,6 +274,7 @@ class LoadDataConfig(object):
     augmentors: dict
     check_episodes: bool
     camera_names: list
+    chunk_sizes: dict
 
     def __post_init__(self):
         # change dataset_dir to absolute path
@@ -307,11 +319,12 @@ def load_data(config: LoadDataConfig):
         "dataset_dir": dataset_dir,
         "norm_stats": norm_stats,
         "augmentors": augmentors,
-        "data_slices": {
+        "data_indexes": {
             "camera_names": camera_names,
-            "observation_indexes": config.observation_slice,
-            "action_indexes": config.action_slice,
+            "observation": config.observation_slice,
+            "action": config.action_slice,
         },
+        "chunk_sizes": config.chunk_sizes,
         "aciton_bias": 1,
     }
     train_dataset = EpisodicDataset(train_indices, **ep_ds_config)
@@ -444,18 +457,6 @@ def replace_timestamp(input_str, time_stamp):
     return result_str
 
 
-def pretty_print_dict(dictionary, indent=0):
-    for key, value in dictionary.items():
-        # 添加适当数量的缩进
-        print(" " * indent, end="")
-        # 如果值是字典，则递归调用函数
-        if isinstance(value, dict):
-            print(f"{key}:")
-            pretty_print_dict(value, indent + 4)  # 增加缩进
-        else:
-            print(f"{key}: {value}")
-
-
 class CAN_Tools(object):
 
     @staticmethod
@@ -500,7 +501,7 @@ class GPUer(object):
     def __init__(self, interval=1):
         self.interval = interval
         self.gpu_info = self.get_gpu_info()
-        pretty_print_dict(self.gpu_info)
+        pprint(self.gpu_info)
         gpu_num = len(self.gpu_info["name"])
         self.utilization = {
             "current": [None] * gpu_num,

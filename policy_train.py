@@ -28,7 +28,11 @@ def main(args:dict):
 
     # 加载数据及统计信息
     train_dataloader, val_dataloader, stats = load_data(
-        LoadDataConfig(**all_config["load_data"], camera_names=all_config["camera_names"])
+        LoadDataConfig(
+            **all_config["load_data"],
+            camera_names=all_config["camera_names"],
+            chunk_sizes={"action": all_config["policy_config"]["chunk_size"]},
+        )
     )
     # 创建保存路径
     os.makedirs(ckpt_dir, exist_ok=True)

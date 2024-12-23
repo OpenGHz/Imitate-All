@@ -50,8 +50,10 @@ class ACTPolicy(nn.Module):
             mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
         )
         image = normalize(image)
-        if actions is not None:  # training time
+        if actions is not None:  # training
             actions = actions[:, : self.model.num_queries]
+            # (batch_size, num_queries, action_dim)
+            # print(f"actions shape: {actions.shape}")
             assert is_pad is not None, "is_pad should not be None"
             is_pad = is_pad[:, : self.model.num_queries]
 
@@ -66,7 +68,7 @@ class ACTPolicy(nn.Module):
             loss_dict["kl"] = total_kld[0]
             loss_dict["loss"] = loss_dict["l1"] + loss_dict["kl"] * self.kl_weight
             return loss_dict
-        else:  # inference time
+        else:  # inference
             # no action, sample from prior
             a_hat, _, (_, _) = self.model(qpos, image, env_state)
             if self.temporal_ensembler is not None:
