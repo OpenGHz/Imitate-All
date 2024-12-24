@@ -32,7 +32,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         chunk_sizes: dict = None,
         aciton_bias: int = 1,
     ):
-        super(EpisodicDataset).__init__()
+        super().__init__()
         self.episode_ids = episode_ids
         self.dataset_dir = dataset_dir
         self.camera_names = data_indexes["camera_names"]
@@ -108,7 +108,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         padded_action = np.zeros(chunked_action_shape, dtype=np.float32)
         padded_action[:action_len] = action
         # print(f"padded_action shape: {padded_action.shape}")
-        is_pad = np.zeros(episode_len)
+        is_pad = np.zeros(action_chunk)
         is_pad[action_len:] = 1
 
         # new axis for different cameras
@@ -143,7 +143,8 @@ class EpisodicDataset(torch.utils.data.Dataset):
         qpos_data = (qpos_data - self.norm_stats["qpos_mean"]) / self.norm_stats[
             "qpos_std"
         ]
-
+        # print(f"qpos_data_shape: {qpos_data.shape}")
+        # print(f"action_data_shape: {action_data.shape}")
         return image_data, qpos_data, action_data, is_pad
 
 
