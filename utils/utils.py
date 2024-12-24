@@ -104,10 +104,10 @@ class EpisodicDataset(torch.utils.data.Dataset):
             else:
                 chunked_action_shape = (action_chunk, original_action_shape[1])
             action_len = len(action)
-            print(f"action_shape: {action.shape}")
+            # print(f"action_shape: {action.shape}")
         padded_action = np.zeros(chunked_action_shape, dtype=np.float32)
         padded_action[:action_len] = action
-        print(f"padded_action shape: {padded_action.shape}")
+        # print(f"padded_action shape: {padded_action.shape}")
         is_pad = np.zeros(episode_len)
         is_pad[action_len:] = 1
 
@@ -168,30 +168,29 @@ def get_norm_stats(dataset_dir, num_episodes):
         with h5py.File(dataset_path, "r") as root:
             qpos = root["/observations/qpos"][()]
             action = root["/action"][()]
-        all_qpos_data.append(torch.from_numpy(qpos))
-        all_action_data.append(torch.from_numpy(action))
-    all_qpos_data = torch.stack(all_qpos_data)
-    all_action_data = torch.stack(all_action_data)
-    all_action_data = all_action_data
+        all_qpos_data.append(qpos)
+        all_action_data.append(action)
+    all_qpos_data = np.concatenate(all_qpos_data)
+    all_action_data = np.concatenate(all_action_data)
 
     # normalize action data
-    action_mean = all_action_data.mean(dim=[0, 1], keepdim=True)
-    action_std = all_action_data.std(dim=[0, 1], keepdim=True)
-    action_std = torch.clip(action_std, 1e-2, np.inf)  # clipping
+    action_mean = np.mean(all_action_data, 0)
+    action_std = np.std(all_action_data, 0)
+    action_std = np.clip(action_std, 1e-2, np.inf)  # clipping
 
     # normalize qpos data
-    qpos_mean = all_qpos_data.mean(dim=[0, 1], keepdim=True)
-    qpos_std = all_qpos_data.std(dim=[0, 1], keepdim=True)
-    qpos_std = torch.clip(qpos_std, 1e-2, np.inf)  # clipping
+    qpos_mean = np.mean(all_qpos_data, 0)
+    qpos_std = np.std(all_qpos_data, 0)
+    qpos_std = np.clip(qpos_std, 1e-2, np.inf)  # clipping
 
     stats = {
-        "action_mean": action_mean.numpy().squeeze(),
-        "action_std": action_std.numpy().squeeze(),
-        "qpos_mean": qpos_mean.numpy().squeeze(),
-        "qpos_std": qpos_std.numpy().squeeze(),
+        "action_mean": action_mean,
+        "action_std": action_std,
+        "qpos_mean": qpos_mean,
+        "qpos_std": qpos_std,
         "example_qpos": qpos,
     }
-
+    # print("action_mean_shape", stats["action_mean"].shape)
     return stats
 
 
