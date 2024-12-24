@@ -2,14 +2,10 @@ from dataclasses import dataclass, field, replace
 from habitats.common.robot_devices.cameras.utils import Camera
 from typing import Dict, Optional, List, Union
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
-
-try:
-    from robots.airbots.airbot_play.airbot_replay_remote import (
-        AIRBOTReplay,
-        AIRBOTReplayConfig,
-    )
-except Exception as e:
-    print(e)
+from robots.airbots.airbot_play.airbot_replay_remote import (
+    AIRBOTReplay,
+    AIRBOTReplayConfig,
+)
 from threading import Thread, Event
 import time
 import numpy as np
