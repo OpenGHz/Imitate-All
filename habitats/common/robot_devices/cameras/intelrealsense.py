@@ -429,45 +429,46 @@ class IntelRealSenseCamera:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Save a few frames using `IntelRealSenseCamera` for all cameras connected to the computer, or a selected subset."
-    )
-    parser.add_argument(
-        "--camera-ids",
-        type=int,
-        nargs="*",
-        default=None,
-        help="List of camera indices used to instantiate the `IntelRealSenseCamera`. If not provided, find and use all available camera indices.",
-    )
-    parser.add_argument(
-        "--fps",
-        type=int,
-        default=30,
-        help="Set the number of frames recorded per seconds for all cameras. If not provided, use the default fps of each camera.",
-    )
-    parser.add_argument(
-        "--width",
-        type=str,
-        default=640,
-        help="Set the width for all cameras. If not provided, use the default width of each camera.",
-    )
-    parser.add_argument(
-        "--height",
-        type=str,
-        default=480,
-        help="Set the height for all cameras. If not provided, use the default height of each camera.",
-    )
-    parser.add_argument(
-        "--images-dir",
-        type=Path,
-        default="outputs/images_from_intelrealsense_cameras",
-        help="Set directory to save a few frames for each camera.",
-    )
-    parser.add_argument(
-        "--record-time-s",
-        type=float,
-        default=2.0,
-        help="Set the number of seconds used to record the frames. By default, 2 seconds.",
-    )
-    args = parser.parse_args()
-    save_images_from_cameras(**vars(args))
+    # parser = argparse.ArgumentParser(
+    #     description="Save a few frames using `IntelRealSenseCamera` for all cameras connected to the computer, or a selected subset."
+    # )
+    # parser.add_argument(
+    #     "--camera-ids",
+    #     type=int,
+    #     nargs="*",
+    #     default=None,
+    #     help="List of camera indices used to instantiate the `IntelRealSenseCamera`. If not provided, find and use all available camera indices.",
+    # )
+    # parser.add_argument(
+    #     "--fps",
+    #     type=int,
+    #     default=30,
+    #     help="Set the number of frames recorded per seconds for all cameras. If not provided, use the default fps of each camera.",
+    # )
+    # parser.add_argument(
+    #     "--width",
+    #     type=str,
+    #     default=640,
+    #     help="Set the width for all cameras. If not provided, use the default width of each camera.",
+    # )
+    # parser.add_argument(
+    #     "--height",
+    #     type=str,
+    #     default=480,
+    #     help="Set the height for all cameras. If not provided, use the default height of each camera.",
+    # )
+    # parser.add_argument(
+    #     "--images-dir",
+    #     type=Path,
+    #     default="outputs/images_from_intelrealsense_cameras",
+    #     help="Set directory to save a few frames for each camera.",
+    # )
+    # parser.add_argument(
+    #     "--record-time-s",
+    #     type=float,
+    #     default=2.0,
+    #     help="Set the number of seconds used to record the frames. By default, 2 seconds.",
+    # )
+    # args = parser.parse_args()
+    # save_images_from_cameras(**vars(args))
+    find_camera_indices()
