@@ -108,7 +108,7 @@ try:
 
     from robot_tools.datar import get_values_by_names
 except ImportError as e:
-    print(f"Error: {e}")
+    print(f"Warning: {e}")
 
 
 class AssembledRosRobot(object):
