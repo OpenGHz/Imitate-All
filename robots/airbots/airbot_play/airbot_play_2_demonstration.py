@@ -66,17 +66,22 @@ class AIRBOTPlayDemonstration(object):
         self._reseting.clear()
         time.sleep(0.1)
         leaders = list(self.leaders.values())
+        is_replay = []
         for index, followers in enumerate(self.followers.values()):
-            for follower in followers:
-                follower.enter_active_mode()
-                follower.set_joint_position_target(
-                    leaders[index].config.default_action, [0.2], True
-                )
-        for leader in self.leaders.values():
-            if leader.enter_active_mode():
-                leader.set_joint_position_target(
-                    leader.config.default_action, [0.2], True
-                )
+            leader_cfg = leaders[index].config
+            is_replay.append((leader_cfg.forearm_type, leader_cfg.bigarm_type) == ("encoder", "encoder"))
+            if not is_replay[index]:
+                for follower in followers:
+                    follower.enter_active_mode()
+                    follower.set_joint_position_target(
+                        leaders[index].config.default_action, [0.2], True
+                    )
+        for index, leader in enumerate(leaders):
+            if not is_replay[index]:
+                if leader.enter_active_mode():
+                    leader.set_joint_position_target(
+                        leader.config.default_action, [0.2], True
+                    )
         self._state_mode = "active"
         self._reseting.set()
 
@@ -156,8 +161,11 @@ class AIRBOTPlayDemonstration(object):
         for name in self.cameras:
             self.cameras[name].disconnect()
         self._is_running = False
+        print("Waiting for sync thread to finish")
         self.__sync_thread.join()
+        print("deleting leaders")
         del self.leaders
+        print("deleting followers")
         del self.followers
         print("Robot exited")
 
