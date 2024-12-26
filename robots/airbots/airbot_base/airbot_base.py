@@ -1,4 +1,7 @@
-import airbase_py
+try:
+    import airbase_py
+except ImportError as e:
+    print("Warning: airbase_py not found.")
 from typing import Tuple, Optional
 from dataclasses import dataclass
 
