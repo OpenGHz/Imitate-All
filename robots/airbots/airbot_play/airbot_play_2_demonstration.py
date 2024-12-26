@@ -34,13 +34,19 @@ class AIRBOTPlayDemonstration(object):
         self.leaders: Dict[str, Union[AIRBOTPlay, AIRBOTReplay]] = {}
         self.followers: Dict[str, List[AIRBOTPlay]] = {}
 
+        self.is_replay = {}
         for g_name, g_value in self.config.groups.items():
             leader_cfg: dict = g_value["leader"]
             followers_cfg = g_value["followers"]
             if leader_cfg.get("joint_states_topic", None) is None:
                 self.leaders[g_name] = AIRBOTPlay(**leader_cfg)
+                self.is_replay[g_name] = (
+                    leader_cfg["forearm_type"],
+                    leader_cfg["bigarm_type"],
+                ) == ("encoder", "encoder")
             else:
                 self.leaders[g_name] = AIRBOTReplay(**leader_cfg)
+                self.is_replay[g_name] = True
             self.followers[g_name] = []
             for f_cfg in followers_cfg:
                 self.followers[g_name].append(AIRBOTPlay(**f_cfg))
@@ -66,10 +72,8 @@ class AIRBOTPlayDemonstration(object):
         self._reseting.clear()
         time.sleep(0.1)
         leaders = list(self.leaders.values())
-        is_replay = []
+        is_replay = list(self.is_replay.values())
         for index, followers in enumerate(self.followers.values()):
-            leader_cfg = leaders[index].config
-            is_replay.append((leader_cfg.forearm_type, leader_cfg.bigarm_type) == ("encoder", "encoder"))
             if not is_replay[index]:
                 for follower in followers:
                     follower.enter_active_mode()
@@ -164,7 +168,9 @@ class AIRBOTPlayDemonstration(object):
         print("Waiting for sync thread to finish")
         self.__sync_thread.join()
         print("deleting leaders")
-        del self.leaders
+        for g_name, leader in self.leaders.items():
+            if not self.is_replay[g_name]:
+                del leader
         print("deleting followers")
         del self.followers
         print("Robot exited")
