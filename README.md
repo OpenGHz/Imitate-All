@@ -18,37 +18,35 @@ conda config --set auto_activate_base false && conda deactivate
 
 ## Repo Structure
 
-- ``configurations`` Configuration files for demonstration, replay, tasks training and evaluating
-- ``data_process`` Tools to process data
-  - ``raw_to_hdf5.ipynb`` Examples for converting raw airbot_play data to hdf5 data for training
-  - ``test_convert_mmk2.ipynb`` Examples for converting mmk2 raw data to hdf5 data for training
-  - ``test_convert_mujoco.ipynb`` Examples for converting airbot mujoco raw data to hdf5 data for training
-  - ``convert_all.py`` Tools to process raw data for training
+- `configurations` Configuration files for demonstration, replay, policy training and evaluating
+- `data_process` Tools to process data
+  - `raw_to_hdf5.py` Examples for converting raw (airbot) data to hdf5 data for training
+  - `convert_all.py` Tools to process raw data for training
   - ``augment_hdf5_images.py`` Pipline of augmenting images from the hdf5 file
-- ``policy_train.py`` Policy training: ACT and yours
-- ``policy_evaluate`` Policy evaluating/inferencing: ACT and yours
+- `policy_train.py` Policy training: ACT and yours
+- `policy_evaluate` Policy evaluating/inferencing: ACT and yours
 - `policies`
   - `common` Utils for all policies.
+    - `detr` Model definitions modified from policies.common.detr: ACT, CNNMLP
   - `traditional` Traditional policies implementation: cnnmlp
   - `act`&`diffusion` Policy implementation: ACT, Diffusion Policy
   - ``onnx`` Policy by loading a onnx model
     - ``ckpt2onnx`` Example of converting ckpt file to onnx file
     - ``onnx_policy.py`` Load a onnx model as the policy
-- ``detr`` Model definitions modified from policies.common.detr: ACT, CNNMLP
-- ``envs`` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
-- ``images`` Images used by README.md
-- ``conda_env.yaml`` Used by conda creating env (now requirements.txt is recommend)
-- ``requirements`` Used for pip install required packages
-- ``utils`` Utils such as data loading and helper functions
-- ``visualize_episodes.py`` Save videos from a .hdf5 dataset
-- ``robot_utils.py`` Useful robot tools to record images and process data
-- ``ros_tools.py`` Tools for ROS
-- ``robots`` Robots classes used by the envs
-  - ``common_robot.py`` Example and a fake robot
-  - ``ros_robots``
-    - ``ros_robot_config.py`` Used to configure the ros robots
-    - ``ros1_robot.py`` General ROS1 robot class used to control the robots
-    - ``ros2_robot.py`` General ROS2 robot class used to control the robots
+- `envs` Environments for ``policy_evaluate``: common and AIRBOT Play (real, mujoco, mmk)
+- `habitats` Common interfaces, drivers and utils used by robots, envs, etc.
+- `images` Images used by README.md
+- `requirements` Used for pip install required packages
+- `utils` Utils such as data loading and helper functions
+- `robots` Robots classes used by the envs
+  - `common_robot.py` Example and a fake robot
+  - `ros_robots`
+    - `ros_robot_config.py` Used to configure the ros robots
+    - `ros1_robot.py` General ROS1 robot class used to control the robots
+    - `ros2_robot.py` General ROS2 robot class used to control the robots
+- `visualize_episodes.py` Save videos from a .hdf5 dataset
+- `robot_utils.py` Useful robot tools to record images and process data
+- `ros_tools.py` Tools for ROS
 
 ## Installation
 
