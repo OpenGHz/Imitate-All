@@ -56,6 +56,7 @@ class AIRBOTMMK2(object):
         )
         self.joint_names = {}
         self.cameras: Dict[MMK2Components, str] = {}
+        self.images_ts: Dict[str, int] = {}
         self.components: Dict[MMK2Components, ComponentTypes] = {}
         all_joint_names = JointNames()
         self.joint_num = 0
@@ -159,6 +160,9 @@ class AIRBOTMMK2(object):
             "t": int((stamp.sec + stamp.nanosec / 1e9) * 1e3),
             "data": image,
         }
+        if self.images_ts != {} and data[f"/images/{comp}"]["t"] <= self.images_ts[f"/images/{comp}"]:
+            data[f"/images/{comp}"]["t"] = self.images_ts[f"/images/{comp}"]+1
+        self.images_ts[f"/images/{comp}"] = data[f"/images/{comp}"]["t"]
         return data
 
     def get_low_dim_data(self):
