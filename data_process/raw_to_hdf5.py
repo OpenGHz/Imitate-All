@@ -124,3 +124,8 @@ with ThreadPoolExecutor(max_workers=25) as executor:
     for index, ep_name in enumerate(episode_names):
         futures.append(executor.submit(save_one, index, ep_name))
 print(f"All data saved to {target_dir}")
+
+# # save one data
+# index = 0
+# ep_name = episode_names[index]
+# save_one(index, ep_name)

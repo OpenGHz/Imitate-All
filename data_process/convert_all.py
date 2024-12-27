@@ -44,6 +44,29 @@ def flatten_dict(d: dict, parent_key="", sep="/", prefix=""):
     return dict(items)
 
 
+def flatten_dict_by_mode(raw_data: dict, flatten_mode: str = "hdf5") -> dict:
+    """Flatten the dict with the flatten mode.
+    Parameters:
+        raw_data(dict)            -- the dict to be flattened
+        flatten_mode(str)  -- the flatten mode for the dict keys
+    Returns:
+        data_flat(dict)    -- the flattened dict
+    """
+    # flatten the dict
+    mode_to_sep_prefix = {
+        "hdf5": ("/", "/"),
+        "hf": (".", ""),
+    }
+    if flatten_mode is not None:
+        sep_prefix = mode_to_sep_prefix.get(flatten_mode, None)
+        assert sep_prefix is not None, f"Invalid flatten mode {flatten_mode}."
+        data_flat: Dict[str, list] = flatten_dict(raw_data, "", *sep_prefix)
+    else:
+        data_flat = raw_data
+
+    return data_flat
+
+
 def flatten_list(l):
     flattened = []
     for item in l:
@@ -324,6 +347,61 @@ def concatenate_by_key(data: dict, concatenater: dict, remove_ori=True) -> dict:
     return data
 
 
+def filter_keys(data: dict, key_filter: List) -> dict:
+    """Filter the keys in the dict with the key filter.
+    This will change the original dict.
+    """
+    if key_filter is not None:
+        for key in key_filter:
+            if data.pop(key, None) is None:
+                logger.warning(f"Key {key} is not found.")
+            # if raw_data.pop(key, None) is None:
+            #     print(f"Key {key} is not found.")
+
+
+def remove_unused_keys(data: dict) -> list:
+    removed_keys = []
+    for key, value in data.copy().items():
+        if value == 0:
+            data.pop(key)
+            removed_keys.append(key)
+    return removed_keys
+
+
+def process_raw(
+    raw_data: dict,
+    flatten_mode: str = "hdf5",  # "hdf5", "hf"
+    name_converter: Optional[Dict[str, str]] = None,
+    pre_process: Optional[Callable] = None,
+    key_filter: Optional[List] = None,
+    concatenater: Optional[Dict[str, str]] = None,
+) -> dict:
+    ep_dict = {}
+    # flatten the dict
+    data_flat = flatten_dict_by_mode(raw_data, flatten_mode)
+    # filter the keys
+    filter_keys(data_flat, key_filter)
+    # flatten the sub list
+    lengths = flatten_sublist_in_flat_dict(data_flat)
+    # remove not used keys
+    removed_keys = remove_unused_keys(data_flat)
+    for key in removed_keys:
+        lengths.pop(key)
+    # check the length of each value list
+    lengths = tuple(lengths.values())
+    assert np.all(
+        np.array(lengths) == lengths[0]
+    ), "The length of each value list should be the same."
+    # convert keys and pre-process the values
+    for key, value in data_flat.items():
+        name = name_converter.get(key, key)
+        ep_dict[name] = pre_process(value)
+    # concatenate the dict
+    if concatenater is not None:
+        ep_dict = concatenate_by_key(ep_dict, concatenater, remove_ori=True)
+    return ep_dict
+
+
 def raw_to_dict(
     raw_dir: str,
     state_file_names: List[str],
@@ -358,7 +436,6 @@ def raw_to_dict(
         ep_dir = raw_dir / str(ep_name)
 
         # dict for each episode
-        ep_dict = {}
         for state_file in state_file_names:
             with open(ep_dir / state_file, "r") as f:
                 # read the raw data
@@ -368,44 +445,15 @@ def raw_to_dict(
                     raise NotImplementedError(
                         f"File type {state_file} is not supported."
                     )
-                # flatten the dict
-                mode_to_sep_prefix = {
-                    "hdf5": ("/", "/"),
-                    "hf": (".", ""),
-                }
-                if flatten_mode is not None:
-                    sep_prefix = mode_to_sep_prefix.get(flatten_mode, None)
-                    assert (
-                        sep_prefix is not None
-                    ), f"Invalid flatten mode {flatten_mode}."
-                    data_flat: Dict[str, list] = flatten_dict(raw_data, "", *sep_prefix)
-                else:
-                    data_flat = raw_data
-                # filter the keys
-                if key_filter is not None:
-                    for key in key_filter:
-                        if data_flat.pop(key, None) is None:
-                            logger.warning(
-                                f"Key {key} is not found in flattend {state_file}."
-                            )
-                        # if raw_data.pop(key, None) is None:
-                        #     print(f"Key {key} is not found in {state_file}.")
-                # flatten the sub list
-                lengths = flatten_sublist_in_flat_dict(data_flat)
-                for key, value in lengths.copy().items():
-                    if value == 0:
-                        # remove not used keys
-                        # print(f"Remove not used key: {key}")
-                        data_flat.pop(key)
-                        lengths.pop(key)
-                lengths = tuple(lengths.values())
-                assert np.all(
-                    np.array(lengths) == lengths[0]
-                ), "The length of each value list should be the same."
-                for key, value in data_flat.items():
-                    name = name_converter.get(key, key)
-                    ep_dict[name] = pre_process(value)
-
+            # process the raw data
+            ep_dict = process_raw(
+                raw_data,
+                flatten_mode,
+                name_converter,
+                pre_process,
+                key_filter,
+                None,
+            )
         if video_file_names is not None:
             video_type = video_file_names[0].split(".")[-1]
             video_dict = video_to_dict(
@@ -419,6 +467,32 @@ def raw_to_dict(
         ep_dicts[ep_name] = ep_dict
 
     return ep_dicts
+
+
+def raw_bson_to_dict(
+    path: str,
+    flatten_mode: str = "hdf5",  # "hdf5", "hf"
+    name_converter: Optional[Dict[str, str]] = None,
+    pre_process: Optional[Callable] = None,
+    concatenater: Optional[Dict[str, str]] = None,
+    key_filter: Optional[List] = None,
+) -> dict:
+    """Load the raw data to a dictionary."""
+    # from airbot_data.io import load_bson
+
+    # data = load_bson(Path(path))
+    import bson
+
+    with open(path, "rb") as f:
+        data = bson.decode(f.read())
+        return process_raw(
+            data,
+            flatten_mode,
+            name_converter,
+            pre_process,
+            key_filter,
+            concatenater,
+        )
 
 
 try:
