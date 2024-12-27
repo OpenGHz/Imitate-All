@@ -178,24 +178,25 @@ class AIRBOTMMK2(object):
                     comp_eef = comp.value.replace("arm", "eef")
                     eef_jn = JointNames().__dict__[comp_eef]
                     js = self.robot.get_listened(self._comp_action_topic[comp])
-                    jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
-                    data.update(
-                        self._get_joint_state(
-                            "action", comp.value, js.header.stamp, jq[:-1]
+                    if js is not None:
+                        jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
+                        data.update(
+                            self._get_joint_state(
+                                "action", comp.value, js.header.stamp, jq[:-1]
+                            )
                         )
-                    )
-                    data.update(
-                        self._get_joint_state(
-                            "action", comp_eef, js.header.stamp, jq[-1:]
+                        data.update(
+                            self._get_joint_state(
+                                "action", comp_eef, js.header.stamp, jq[-1:]
+                            )
                         )
-                    )
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
-                    jq = list(
-                        self.robot.get_listened(self._comp_action_topic[comp]).data
-                    )
-                    data.update(
-                        self._get_joint_state("action", comp.value, js.header.stamp, jq)
-                    )
+                    result = self.robot.get_listened(self._comp_action_topic[comp])
+                    if result is not None:
+                        jq = list(result.data)
+                        data.update(
+                            self._get_joint_state("action", comp.value, result.stamp, jq)
+                        )
         return data
 
     def capture_observation(self):
