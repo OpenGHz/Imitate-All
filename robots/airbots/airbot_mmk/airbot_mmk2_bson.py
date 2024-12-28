@@ -143,7 +143,7 @@ class AIRBOTMMK2(object):
         self, ns: str, comp: str, stamp: Time, pos=None, vel=None, eff=None
     ) -> dict:
         data = {}
-        handle = "joint_position"  # TODO: use joint_state
+        handle = "joint_state"
         data[f"/{ns}/{comp}/{handle}"] = {
             "t": int((stamp.sec + stamp.nanosec / 1e9) * 1e3),
             "data": {
@@ -170,11 +170,17 @@ class AIRBOTMMK2(object):
         all_joints = self.robot.get_robot_state().joint_state
         for comp in self.components:
             joint_pos = self.robot.get_joint_values_by_names(
-                all_joints, self.joint_names[comp]
+                all_joints, self.joint_names[comp], "position"
+            )
+            joint_vel = self.robot.get_joint_values_by_names(
+                all_joints, self.joint_names[comp], "velocity"
+            )
+            joint_eff = self.robot.get_joint_values_by_names(
+                all_joints, self.joint_names[comp], "effort"
             )
             stamp = all_joints.header.stamp
             data.update(
-                self._get_joint_state("observation", comp.value, stamp, joint_pos)
+                self._get_joint_state("observation", comp.value, stamp, joint_pos, joint_vel, joint_eff)
             )
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:

@@ -4,6 +4,8 @@ ip: "192.168.11.200"
 
 default_action: null
 
+components: ["left_arm", "right_arm", "left_eef", "right_eef", "spine", "head"]
+
 cameras:
   # left_camera: "rgb"
   # right_camera: "rgb"
