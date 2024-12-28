@@ -6,12 +6,34 @@ from pathlib import Path
 from tqdm import tqdm
 from typing import Any, Dict, Optional, List, Callable, Union
 import cv2
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
 import logging
+from io import BytesIO
+
+
+try:
+    import bson
+    import av
+except Exception as e:
+    print(f"Warning: {e}")
+
 
 logging.basicConfig(level=logging.INFO)
-
 logger = logging.getLogger(__name__)
+
+
+def decode_h264(h264_bytes: bytes) -> List[Dict[str, Union[np.ndarray, int]]]:
+    inbuf = BytesIO(h264_bytes)
+    container = av.open(inbuf)
+    ret = [
+        {
+            "t": int(frame.pts * frame.time_base * 1e3),
+            "data": frame.to_ndarray(format="bgr24"),
+        }
+        for frame in container.decode(video=0)
+    ]
+    assert len(ret) > 0, "No frames found in h264"
+    return ret
 
 
 def is_nested(data):
@@ -37,6 +59,7 @@ def flatten_dict(d: dict, parent_key="", sep="/", prefix=""):
     items = []
     for k, v in d.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else f"{prefix}{k}"
+        new_key = new_key.replace("//", "/")
         if isinstance(v, dict):
             items.extend(flatten_dict(v, new_key, sep=sep).items())
         else:
@@ -393,6 +416,10 @@ def process_raw(
         np.array(lengths) == lengths[0]
     ), "The length of each value list should be the same."
     # convert keys and pre-process the values
+    if name_converter is None:
+        name_converter = {}
+    if pre_process is None:
+        pre_process = lambda value: value
     for key, value in data_flat.items():
         name = name_converter.get(key, key)
         ep_dict[name] = pre_process(value)
@@ -471,27 +498,90 @@ def raw_to_dict(
 
 def raw_bson_to_dict(
     path: str,
-    flatten_mode: str = "hdf5",  # "hdf5", "hf"
+    flatten_mode: str = None,
     name_converter: Optional[Dict[str, str]] = None,
-    pre_process: Optional[Callable] = None,
+    pre_process: Optional[Dict[str, Callable]] = None,
     concatenater: Optional[Dict[str, str]] = None,
     key_filter: Optional[List] = None,
+    padding: Optional[Dict[str, Union[str, float]]] = None,
 ) -> dict:
     """Load the raw data to a dictionary."""
     # from airbot_data.io import load_bson
 
     # data = load_bson(Path(path))
-    import bson
+
+    if pre_process is None:
+        pre_process = {}
+    if padding is None:
+        padding = {}
 
     with open(path, "rb") as f:
-        data = bson.decode(f.read())
-        return process_raw(
-            data,
-            flatten_mode,
-            name_converter,
-            pre_process,
-            key_filter,
-            concatenater,
+        bson_data: dict = bson.decode(f.read())["data"]
+        states = {}
+        stamps = {}
+        print("keys:", bson_data.keys())
+
+        filter_keys(bson_data, key_filter)
+
+        def separate_data(key_data, pre_process, padding):
+            state = []
+            stamp = []
+            length = []
+            if pre_process is None:
+                pre_process = lambda v: v
+
+            if isinstance(key_data, bytes):
+                key_data = decode_h264(key_data)
+
+            for i in range(len(key_data)):
+                state_i = pre_process(key_data[i]["data"])
+                state.append(state_i)
+                stamp.append(key_data[i]["t"])
+                length.append(len(state_i))
+
+            if padding is not None:
+                if not isinstance(padding, str):
+                    max_len = max(length)
+                    for i in range(len(state)):
+                        state[i] = pad(state[i], max_len, padding)
+                else:
+                    raise NotImplementedError(
+                        f"Padding mode {padding} is not implemented."
+                    )
+
+            return state, stamp
+
+        # futures = {}
+        # keys_num = len(bson_data)
+        # with ThreadPoolExecutor(max_workers=keys_num) as executor:
+        #     for key, value in bson_data.items():
+        #         futures[key] = executor.submit(
+        #             separate_data,
+        #             value,
+        #             pre_process.get(key, None),
+        #             padding.get(key, False),
+        #         )
+        # for key, future in futures.items():
+        #     states[key], stamps[key] = future.result()
+
+        # for test
+        for key, value in bson_data.items():
+            print(key)
+            # print(value)
+            states[key], stamps[key] = separate_data(
+                value, pre_process.get(key, None), padding.get(key, None)
+            )
+
+        return (
+            process_raw(
+                states,
+                flatten_mode,
+                name_converter,
+                None,
+                None,
+                concatenater,
+            ),
+            stamps,
         )
 
 
@@ -518,7 +608,9 @@ def downsample(data: dict, downsampling: int) -> dict:
         return data
 
 
-def pad(value: list, pad_max_len: int) -> list:
+def pad(
+    value: list, pad_max_len: int, mode: Optional[Union[int, float, str]] = None
+) -> list:
     """Pad the value list to the pad_max_len."""
     nd_arr = isinstance(value, np.ndarray)
     if nd_arr:
@@ -526,15 +618,19 @@ def pad(value: list, pad_max_len: int) -> list:
     raw_len = len(value)
     size_to_pad = pad_max_len - raw_len
     # print(f"raw_len = {raw_len}, size_to_pad = {size_to_pad}")
-    pad_times = size_to_pad // raw_len
-    size_to_pad = size_to_pad % raw_len
-
-    # print(f"size_to_pad = {size_to_pad}, pad_times = {pad_times}")
-    if pad_times > 0:
-        value *= pad_times + 1
-    if size_to_pad > 0:
-        value += value[-size_to_pad:]
-        # print(f"len(value) = {len(value)}")
+    if mode is None:
+        pad_times = size_to_pad // raw_len
+        size_to_pad = size_to_pad % raw_len
+        # print(f"size_to_pad = {size_to_pad}, pad_times = {pad_times}")
+        if pad_times > 0:
+            value *= pad_times + 1
+        if size_to_pad > 0:
+            value += value[-size_to_pad:]
+            # print(f"len(value) = {len(value)}")
+    elif not isinstance(mode, str):
+        value += [mode] * size_to_pad
+    else:
+        raise NotImplementedError(f"Pad mode {mode} is not implemented.")
     if nd_arr:
         value = np.array(value)
     return value

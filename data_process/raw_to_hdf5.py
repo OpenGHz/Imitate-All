@@ -13,12 +13,14 @@ parser.add_argument("-vn", "--video_names", type=str, nargs="+")
 parser.add_argument("-ds", "--downsampling", type=int, default=0)
 parser.add_argument("-md", "--mode", type=str, default="real3")
 parser.add_argument("-pad", "--padding", action="store_true")
+# parser.add_argument("-bson", "--use_bson_style", action="store_true")
 args = parser.parse_args()
 
 task_name = args.task_name
 downsampling = args.downsampling
 mode = args.mode
 padding = args.padding
+# use_bson_style = args.use_bson_style
 
 raw_dir = f"data/raw/{task_name}"
 # raw_dir = os.path.abspath(raw_dir)
