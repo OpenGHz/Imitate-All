@@ -591,53 +591,89 @@ def record(
                     "station_id": "3784D4BA-87AF-47E7-B86D-42CA1904AA77",
                     "task": "example",
                     "topics": {
-                        # "/action/arm/joint_position": {
-                        #     "description": "airbot-play-short",
-                        #     "type": "jointstate",
-                        #     "sn": "PZ25C0240100048X",
-                        #     "firmware_version": "3.1.5",
-                        # },
-                        # "/action/eef/joint_position": {
-                        #     "description": "airbot-play-short",
-                        #     "type": "jointstate",
-                        #     "sn": "PZ25C0240100048X",
-                        #     "firmware_version": "3.1.5",
-                        # },
+                        "/action/head/joint_state": {
+                            "description": "",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/action/spine/joint_state": {
+                            "description": "",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/action/left_arm/joint_state": {
+                            "description": "replay",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/action/left_eef/joint_state": {
+                            "description": "replay",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/action/right_arm/joint_state": {
+                            "description": "replay",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/action/right_eef/joint_state": {
+                            "description": "replay",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
                         # "/action/eef/pose": {
-                        #     "description": "airbot-play-short",
+                        #     "description": "",
                         #     "type": "jointstate",
-                        #     "sn": "PZ25C0240100048X",
-                        #     "firmware_version": "3.1.5",
+                        #     "sn": "",
+                        #     "firmware_version": "0.0.0",
                         # },
-                        "/observation/left_arm/joint_position": {
-                            "description": "airbot-play-short",
+                        "/observation/head/joint_state": {
+                            "description": "",
                             "type": "jointstate",
-                            "sn": "PZ25C0240100048X",
-                            "firmware_version": "3.1.5",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
                         },
-                        "/observation/right_arm/joint_position": {
-                            "description": "airbot-play-short",
+                        "/observation/spine/joint_state": {
+                            "description": "",
                             "type": "jointstate",
-                            "sn": "PZ25C0240100048X",
-                            "firmware_version": "3.1.5",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
                         },
-                        "/observation/left_eef/joint_position": {
+                        "/observation/left_arm/joint_state": {
                             "description": "airbot-play-short",
                             "type": "jointstate",
-                            "sn": "PZ25C0240100048X",
-                            "firmware_version": "3.1.5",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
                         },
-                        "/observation/right_eef/joint_position": {
+                        "/observation/right_arm/joint_state": {
                             "description": "airbot-play-short",
                             "type": "jointstate",
-                            "sn": "PZ25C0240100048X",
-                            "firmware_version": "3.1.5",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/observation/left_eef/joint_state": {
+                            "description": "airbot-play-short",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/observation/right_eef/joint_state": {
+                            "description": "airbot-play-short",
+                            "type": "jointstate",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
                         },
                         # "/observation/eef/pose": {
-                        #     "description": "airbot-play-short",
+                        #     "description": "",
                         #     "type": "jointstate",
-                        #     "sn": "PZ25C0240100048X",
-                        #     "firmware_version": "3.1.5",
+                        #     "sn": "",
+                        #     "firmware_version": "0.0.0",
                         # },
                         "/images/head_camera": {
                             "description": "DSJ-2062-309",
@@ -800,7 +836,7 @@ def replay(
             for i in tqdm.tqdm(range(meta["length"])):
                 start_episode_t = time.perf_counter()
                 action = robot.low_dim_to_action(low_dim, i)
-                # print("current joint:", robot.get_low_dim_data()["observation/arm/joint_position"])
+                # print("current joint:", robot.get_low_dim_data()["observation/arm/joint_state"])
                 # print("target action:", action)
                 robot.send_action(action)
                 dt_s = time.perf_counter() - start_episode_t
