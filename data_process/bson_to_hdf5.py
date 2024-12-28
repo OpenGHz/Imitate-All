@@ -30,16 +30,20 @@ if mode == "play":
     act_keys = ("/action/arm/joint_position", "/action/eef/joint_position")
 elif mode == "mmk2":
     obs_keys_low_dim = (
-        "/observation/left_arm/joint_position",
-        "/observation/left_eef/joint_position",
-        "/observation/right_arm/joint_position",
-        "/observation/right_eef/joint_position",
+        "/observation/left_arm/joint_state",
+        "/observation/right_arm/joint_state",
+        "/observation/left_eef/joint_state",
+        "/observation/right_eef/joint_state",
+        "/observation/spine/joint_state",
+        "/observation/head/joint_state",
     )
     act_keys = (
-        "/action/left_arm/joint_position",
-        "/action/left_eef/joint_position",
-        "/action/right_arm/joint_position",
-        "/action/right_eef/joint_position",
+        "/action/left_arm/joint_state",
+        "/action/left_eef/joint_state",
+        "/action/right_arm/joint_state",
+        "/action/right_eef/joint_state",
+        "/action/spine/joint_state",
+        "/action/head/joint_state",
     )
 else:
     raise ValueError(f"mode {mode} not supported")
