@@ -104,13 +104,13 @@ class AIRBOTMMK2(object):
             goal = self._action_to_goal(self.config.default_action)
             # logger.info(f"Reset to default action: {self.config.default_action}")
             # logger.info(f"Reset to default goal: {goal}")
-            # hard code for spine&head control
-            goal.update(
-                {
-                    MMK2Components.HEAD: JointState(position=[0, -1.0]),
-                    MMK2Components.SPINE: JointState(position=[0.15]),
-                }
-            )
+            # TODO: hard code for spine&head control
+            # goal.update(
+            #     {
+            #         MMK2Components.HEAD: JointState(position=[0, -1.0]),
+            #         MMK2Components.SPINE: JointState(position=[0.15]),
+            #     }
+            # )
             self.robot.set_goal(goal, TrajectoryParams())
         else:
             logger.warning("No default action is set.")
