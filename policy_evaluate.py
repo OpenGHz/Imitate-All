@@ -149,7 +149,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     def show_images(ts):
         images: dict = ts.observation["images"]
         for name, value in images.items():
+            # logger.info(f"Showing {name}: {value}...")
             cv2.imshow(name, value)
+            # cv2.imwrite(f"{name}.png", value)
         cv2.waitKey(1)
 
     # evaluation loop
@@ -177,7 +179,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             logger.info("Reset environment...")
             ts = env.reset(sleep_time=1)
             if showing_images:
-                show_images(ts)
+                # must show enough times to clear the black screen
+                for _ in range(10):
+                    show_images(ts)
             logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
             v = input(f"Press Enter to start evaluation or z and Enter to exit...")
             if v == "z":

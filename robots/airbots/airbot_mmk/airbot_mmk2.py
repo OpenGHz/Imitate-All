@@ -94,6 +94,10 @@ class AIRBOTMMK2(object):
         self.enter_passive_mode = lambda: self._set_mode("passive")
         self.get_state_mode = lambda: self._state_mode
         self.exit = lambda: None
+        # logger.info("Warm up the robot")
+        # for _ in range(5):
+        #     self._capture_images()
+        # logger.info("AIRBOTMMK2 is ready")
 
     def reset(self, sleep_time=0):
         if self.config.default_action is not None:
