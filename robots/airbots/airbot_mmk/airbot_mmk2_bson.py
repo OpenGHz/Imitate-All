@@ -76,27 +76,27 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     comp_eef = comp.value.replace("arm", "eef")
                     eef_jn = JointNames().__dict__[comp_eef]
                     js = self.robot.get_listened(self._comp_action_topic[comp])
-                    if js is not None:
-                        jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
-                        data.update(
-                            self._get_joint_state(
-                                "action", comp.value, js.header.stamp, jq[:-1]
-                            )
+                    assert js is not None
+                    jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
+                    data.update(
+                        self._get_joint_state(
+                            "action", comp.value, js.header.stamp, jq[:-1]
                         )
-                        data.update(
-                            self._get_joint_state(
-                                "action", comp_eef, js.header.stamp, jq[-1:]
-                            )
+                    )
+                    data.update(
+                        self._get_joint_state(
+                            "action", comp_eef, js.header.stamp, jq[-1:]
                         )
+                    )
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
                     result = self.robot.get_listened(self._comp_action_topic[comp])
-                    if result is not None:
-                        jq = list(result.data)
-                        data.update(
-                            self._get_joint_state(
-                                "action", comp.value, result.stamp, jq
-                            )
+                    assert result is not None
+                    jq = list(result.data)
+                    data.update(
+                        self._get_joint_state(
+                            "action", comp.value, result.stamp, jq
                         )
+                    )
         return data
 
     def capture_observation(self):
