@@ -5,6 +5,9 @@ Useful to record a dataset, replay a recorded episode, run the policy on your ro
 and record an evaluation dataset, and to recalibrate your robot if needed.
 """
 
+from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
+prepare_cv2_imshow()
+
 import argparse
 import concurrent.futures
 import json
@@ -36,115 +39,115 @@ from airbot_data.io import save_bson
 # Utilities
 ########################################################################################
 
-import pygame
+# import pygame
 
 
-class RealTimeDisplay(object):
-    window_names = set()
-    displayers: Dict[str, "RealTimeDisplay"] = {}
+# class RealTimeDisplay(object):
+#     window_names = set()
+#     displayers: Dict[str, "RealTimeDisplay"] = {}
 
-    def __init__(self, width, height, title="Real-time Display"):
-        # 初始化 Pygame
-        pygame.init()
+#     def __init__(self, width, height, title="Real-time Display"):
+#         # 初始化 Pygame
+#         pygame.init()
 
-        # 设置窗口大小和标题
-        self.width = width
-        self.height = height
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        pygame.display.set_caption(title)
+#         # 设置窗口大小和标题
+#         self.width = width
+#         self.height = height
+#         self.screen = pygame.display.set_mode((self.width, self.height))
+#         pygame.display.set_caption(title)
 
-        # 时钟控制帧率
-        self.clock = pygame.time.Clock()
-        self.running = False
+#         # 时钟控制帧率
+#         self.clock = pygame.time.Clock()
+#         self.running = False
 
-        # 如果视频文件或摄像头地址未指定，初始化为空
-        self.capture = None
+#         # 如果视频文件或摄像头地址未指定，初始化为空
+#         self.capture = None
 
-    def open_camera(self, camera_index=0):
-        """打开摄像头"""
-        self.capture = cv2.VideoCapture(camera_index)
-        if not self.capture.isOpened():
-            raise ValueError("Error: Cannot open camera.")
-        self.running = True
+#     def open_camera(self, camera_index=0):
+#         """打开摄像头"""
+#         self.capture = cv2.VideoCapture(camera_index)
+#         if not self.capture.isOpened():
+#             raise ValueError("Error: Cannot open camera.")
+#         self.running = True
 
-    def open_video(self, video_path):
-        """打开视频文件"""
-        self.capture = cv2.VideoCapture(video_path)
-        if not self.capture.isOpened():
-            raise ValueError(f"Error: Cannot open video file {video_path}.")
-        self.running = True
+#     def open_video(self, video_path):
+#         """打开视频文件"""
+#         self.capture = cv2.VideoCapture(video_path)
+#         if not self.capture.isOpened():
+#             raise ValueError(f"Error: Cannot open video file {video_path}.")
+#         self.running = True
 
-    def generate_frame(self):
-        """模拟生成实时图像数据（可以用来生成随机图像或替换成其他图像生成方法）"""
-        return np.random.randint(0, 255, (self.height, self.width, 3), dtype=np.uint8)
+#     def generate_frame(self):
+#         """模拟生成实时图像数据（可以用来生成随机图像或替换成其他图像生成方法）"""
+#         return np.random.randint(0, 255, (self.height, self.width, 3), dtype=np.uint8)
 
-    def show_frame(self, frame):
-        """显示一帧图像"""
-        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_surface = pygame.surfarray.make_surface(frame)
-        frame_surface = pygame.transform.rotate(frame_surface, -90)
-        frame_surface = pygame.transform.scale(frame_surface, (self.width, self.height))
-        self.screen.blit(frame_surface, (0, 0))
-        pygame.display.flip()
+#     def show_frame(self, frame):
+#         """显示一帧图像"""
+#         # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         frame_surface = pygame.surfarray.make_surface(frame)
+#         frame_surface = pygame.transform.rotate(frame_surface, -90)
+#         frame_surface = pygame.transform.scale(frame_surface, (self.width, self.height))
+#         self.screen.blit(frame_surface, (0, 0))
+#         pygame.display.flip()
 
-    def capture_frame(self):
-        """从视频源或摄像头捕获一帧"""
-        ret, frame = self.capture.read()
-        if not ret:
-            raise ValueError("Failed to capture frame.")
-        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 转换为 RGB 格式
+#     def capture_frame(self):
+#         """从视频源或摄像头捕获一帧"""
+#         ret, frame = self.capture.read()
+#         if not ret:
+#             raise ValueError("Failed to capture frame.")
+#         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 转换为 RGB 格式
 
-    def close(self):
-        """关闭摄像头或视频文件并退出 Pygame"""
-        if self.capture:
-            self.capture.release()
-        pygame.quit()
+#     def close(self):
+#         """关闭摄像头或视频文件并退出 Pygame"""
+#         if self.capture:
+#             self.capture.release()
+#         pygame.quit()
 
-    def run(self):
-        """启动实时显示"""
-        if not self.running:
-            raise ValueError("No video source opened.")
+#     def run(self):
+#         """启动实时显示"""
+#         if not self.running:
+#             raise ValueError("No video source opened.")
 
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                    break
+#         while True:
+#             for event in pygame.event.get():
+#                 if event.type == pygame.QUIT:
+#                     self.running = False
+#                     break
 
-            if self.running:
-                # 从摄像头/视频源捕获一帧图像
-                try:
-                    frame = self.capture_frame()  # 如果是摄像头或视频流
-                    self.show_frame(frame)  # 显示图像
-                except ValueError:
-                    break
+#             if self.running:
+#                 # 从摄像头/视频源捕获一帧图像
+#                 try:
+#                     frame = self.capture_frame()  # 如果是摄像头或视频流
+#                     self.show_frame(frame)  # 显示图像
+#                 except ValueError:
+#                     break
 
-                self.clock.tick(30)  # 控制帧率，30 FPS
+#                 self.clock.tick(30)  # 控制帧率，30 FPS
 
-            if not self.running:
-                break
+#             if not self.running:
+#                 break
 
-        self.close()  # 关闭资源
+#         self.close()  # 关闭资源
 
-    @classmethod
-    def imshow(cls, name: str, image):
-        cls.namedWindow(name)
-        cls.displayers[name].show_frame(image)
+#     @classmethod
+#     def imshow(cls, name: str, image):
+#         cls.namedWindow(name)
+#         cls.displayers[name].show_frame(image)
 
-    @classmethod
-    def namedWindow(cls, name: str, width=None, height=None):
-        if name not in cls.window_names:
-            width = 640 if width is None else width
-            height = 480 if height is None else height
-            cls.window_names.add(name)
-            displayer = RealTimeDisplay(width, height, name)
-            displayer.running = True
-            cls.displayers[name] = displayer
+#     @classmethod
+#     def namedWindow(cls, name: str, width=None, height=None):
+#         if name not in cls.window_names:
+#             width = 640 if width is None else width
+#             height = 480 if height is None else height
+#             cls.window_names.add(name)
+#             displayer = RealTimeDisplay(width, height, name)
+#             displayer.running = True
+#             cls.displayers[name] = displayer
 
-    @classmethod
-    def waitKey(cls, delay=1):
-        for displayer in cls.displayers.values():
-            displayer.clock.tick(int(1000 / delay))
+#     @classmethod
+#     def waitKey(cls, delay=1):
+#         for displayer in cls.displayers.values():
+#             displayer.clock.tick(int(1000 / delay))
 
 
 # displayer = RealTimeDisplay(640, 480, "Real-time Display")
@@ -270,8 +273,8 @@ def show_info_on_image(episode, fps, steps):
     )
 
     # 显示图像
-    # cv2.imshow("Demonstration Information", image)
-    RealTimeDisplay.imshow("Demonstration Information", image)
+    cv2.imshow("Demonstration Information", image)
+    # RealTimeDisplay.imshow("Demonstration Information", image)
 
 
 ########################################################################################
@@ -376,12 +379,13 @@ def record(
         for key in image_keys:
             image = observation[key]["data"]
             # print(key, image.shape)
-            # cv2.imshow(key.split("/")[-1], image)
+            cv2.imshow(key.split("/")[-1], image)
             #     displayer.show_frame(image[:, :, ::-1])
             #     displayer.clock.tick(30)
             # print("show_cameras time:", time.time() - start)
-            RealTimeDisplay.imshow(key, image[:, :, ::-1])
-        RealTimeDisplay.waitKey(1)
+        cv2.waitKey(1)
+        #     RealTimeDisplay.imshow(key, image[:, :, ::-1])
+        # RealTimeDisplay.waitKey(1)
 
     # Allow to exit early while recording an episode or resetting the environment,
     # by tapping the right arrow key '->'. This might require a sudo permission
@@ -715,11 +719,11 @@ def record(
                     image_keys = [key for key in observation if "image" in key]
                     for key in image_keys:
                         image = observation[key]["data"]
-                        # cv2.imshow(key.split("/")[-1], image)
-                        RealTimeDisplay.imshow(key, image[:, :, ::-1])
-                    # show_info_on_image(episode_index, fps, frame_index + 1)
-                    # cv2.waitKey(1)
-                    RealTimeDisplay.waitKey(1)
+                        cv2.imshow(key.split("/")[-1], image)
+                        # RealTimeDisplay.imshow(key, image[:, :, ::-1])
+                    show_info_on_image(episode_index, fps, frame_index + 1)
+                    cv2.waitKey(1)
+                    # RealTimeDisplay.waitKey(1)
 
                 # logging.warning(f"2: save image time + 1: {((time.perf_counter() - start_loop_t) * 1000):.2f} ms")
 
