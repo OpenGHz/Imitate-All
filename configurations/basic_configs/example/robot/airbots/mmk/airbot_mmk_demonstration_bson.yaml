@@ -12,4 +12,4 @@ cameras:
   # left_camera: "rgb"
   # right_camera: "rgb"
 
-demonstrate: false
+demonstrate: true
