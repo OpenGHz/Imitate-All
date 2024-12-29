@@ -147,6 +147,7 @@ configurations/task_configs/*
 !configurations/task_configs/loader.py
 !configurations/task_configs/config_augmentation/
 !configurations/task_configs/config_tools/
+!configurations/task_configs/airbots/
 test.*
 test/
 demonstrations/

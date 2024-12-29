@@ -52,3 +52,11 @@ class AIRBOTTOKEnv(object):
         time.sleep(sleep_time)
         obs = self._get_obs() if get_obs else None
         return obs
+
+
+def make_env(config):
+
+    env = AIRBOTTOKEnv(config["env_config_path"])
+    env.set_reset_position(config["start_joint"])
+
+    return env
