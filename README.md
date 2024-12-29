@@ -53,7 +53,7 @@ conda config --set auto_activate_base false && conda deactivate
 It is recommended to use a conda python environment. If you do not have one, create and activate it by using the following commands:
 
 ```bash
-conda create -n imitall python=3.8.10 && conda activate imitall
+conda create -n imitall python=3.12.8 && conda activate imitall
 ```
 
 Clone the reposity:

@@ -25,7 +25,7 @@ cd Imitate-All
 
 Install the required python packages:
 ```bash
-conda create -n imitall python=3.8.10 && conda activate imitall
+conda create -n imitall python=3.12.8 && conda activate imitall
 pip install -r requirements/data_collection.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 sudo apt install ffmpeg
 ```
