@@ -4,7 +4,7 @@ ip: "192.168.11.200"
 
 default_action: null
 
-components: ["left_arm", "left_eef", "right_arm", "right_eef", "spine", "head"]
+components: ["left_arm", "left_eef", "right_arm", "right_eef", "head", "spine"]
 # components: ["left_arm", "left_eef", "right_arm", "right_eef"]
 
 cameras:
