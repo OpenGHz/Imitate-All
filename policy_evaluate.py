@@ -1,3 +1,6 @@
+from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
+prepare_cv2_imshow()
+
 import torch
 import numpy as np
 import os, time, logging, pickle, inspect
@@ -12,7 +15,6 @@ from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 import dm_env
 import cv2
-from threading import Thread
 
 
 logging.basicConfig(level=logging.INFO)
@@ -142,19 +144,13 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         pre_process = lambda s_qpos: s_qpos
         post_process = lambda a: a
 
-    eval_done = False
     showing_images = config.get("show_images", False)
-    if showing_images:
 
-        def show_images():
-            while not eval_done:
-                images: dict = ts.observation["images"]
-                for name, value in images.items():
-                    cv2.imshow(name, value)
-                cv2.waitKey(1)
-            cv2.destroyAllWindows()
-
-        show_image_thread = Thread(target=show_images)
+    def show_images(ts):
+        images: dict = ts.observation["images"]
+        for name, value in images.items():
+            cv2.imshow(name, value)
+        cv2.waitKey(1)
 
     # evaluation loop
     if hasattr(policy, "eval"):
@@ -181,8 +177,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             logger.info("Reset environment...")
             ts = env.reset(sleep_time=1)
             if showing_images:
-                if not show_image_thread.is_alive():
-                    show_image_thread.start()
+                show_images(ts)
             logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
             v = input(f"Press Enter to start evaluation or z and Enter to exit...")
             if v == "z":
@@ -194,7 +189,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
                     image_list.append(ts.observation["images"])
-
+                    if showing_images:
+                        show_images(ts)
                     # pre-process current observations
                     curr_image = get_image(ts, camera_names, image_mode)
                     qpos_numpy = np.array(ts.observation["qpos"])
@@ -302,9 +298,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     else:
         success_rate = 0
         avg_return = 0
-    eval_done = True
     if showing_images:
-        show_image_thread.join()
+        cv2.destroyAllWindows()
     return success_rate, avg_return
 
 

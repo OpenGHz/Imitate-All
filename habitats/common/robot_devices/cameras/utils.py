@@ -33,7 +33,9 @@ def save_depth_image(depth, path, write_shape=False):
     path.parent.mkdir(parents=True, exist_ok=True)
 
     # Apply colormap on depth image (image must be converted to 8-bit per pixel first)
-    depth_image = cv2.applyColorMap(cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET)
+    depth_image = cv2.applyColorMap(
+        cv2.convertScaleAbs(depth, alpha=0.03), cv2.COLORMAP_JET
+    )
 
     if write_shape:
         write_shape_on_image_inplace(depth_image)
@@ -56,3 +58,20 @@ class Camera(Protocol):
     def read(self, temporary_color: Optional[str] = None) -> np.ndarray: ...
     def async_read(self) -> np.ndarray: ...
     def disconnect(self): ...
+
+
+def prepare_cv2_imshow():
+    print("Preparing cv2.imshow")
+    image = np.zeros((480, 640, 3), np.uint8)
+
+    def show_image(name):
+        print(f"Showing {name}")
+        for _ in range(1):
+            cv2.imshow(name, image)
+            cv2.waitKey(1)
+        print(f"{name} is ready")
+        cv2.destroyAllWindows()
+
+    show_image("Main image")
+
+    print("cv2.imshow is ready")

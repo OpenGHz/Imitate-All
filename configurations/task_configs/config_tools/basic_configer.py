@@ -82,6 +82,7 @@ def config_policy(args: dict):
 
 
 def get_stats_path(stats_path_config: str, task_name: str):
+    # task_name = task_name.split("/")[-1]
     dir_level = stats_path_config.count(task_name)
     stats_name = os.path.basename(stats_path_config)
     stats_dir: str = os.path.dirname(stats_path_config)
@@ -94,7 +95,7 @@ def get_stats_path(stats_path_config: str, task_name: str):
             stats_dir = stats_dir[:index]
             print(f"Warning: stats_dir {stats_dir} not found, try {stats_dir}")
             if not os.path.exists(stats_dir):
-                raise FileNotFoundError(f"stats_dir also {stats_dir} not found")
+                raise FileNotFoundError(f"stats_dir {stats_dir} also not found")
             else:
                 stats_path = os.path.join(stats_dir, stats_name)
         else:
@@ -129,6 +130,8 @@ def get_all_config(args: dict, stage: str):
     all_config.update(TASK_CONFIG["common"])
     all_config.update(TASK_CONFIG[stage])
     all_config.update(remove_none(args))  # args优先级最高
+    all_config["task_name"] = all_config["task_name"].split("/")[-1]
+    print(f"task_name={all_config['task_name']}")
     # common path
     all_config["ckpt_dir"] = os.path.abspath(all_config["ckpt_dir"])
     # stats_path可以为""，表示不使用统计数据

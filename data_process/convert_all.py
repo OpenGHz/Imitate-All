@@ -11,18 +11,18 @@ import logging
 from io import BytesIO
 
 
+
 try:
     import bson
-    import av
 except Exception as e:
     print(f"Warning: {e}")
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 def decode_h264(h264_bytes: bytes) -> List[Dict[str, Union[np.ndarray, int]]]:
+    import av
     inbuf = BytesIO(h264_bytes)
     container = av.open(inbuf)
     ret = [
