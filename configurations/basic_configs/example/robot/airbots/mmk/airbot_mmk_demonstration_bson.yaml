@@ -4,11 +4,12 @@ ip: "192.168.11.200"
 
 default_action: null
 
-components: ["left_arm", "right_arm", "left_eef", "right_eef", "spine", "head"]
+components: ["left_arm", "left_eef", "right_arm", "right_eef", "spine", "head"]
+# components: ["left_arm", "left_eef", "right_arm", "right_eef"]
 
 cameras:
+  head_camera: "rgb"
   # left_camera: "rgb"
   # right_camera: "rgb"
-  head_camera: "rgb"
 
-demonstrate: true
+demonstrate: false

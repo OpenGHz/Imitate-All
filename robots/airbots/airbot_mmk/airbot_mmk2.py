@@ -8,11 +8,12 @@ from mmk2_types.types import (
     ImageTypes,
 )
 from mmk2_types.grpc_msgs import (
+    Time,
     JointState,
     TrajectoryParams,
     MoveServoParams,
 )
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 from dataclasses import dataclass, replace, field
 import time
 import logging
@@ -150,11 +151,9 @@ class AIRBOTMMK2(object):
                     data[f"action/{comp.value}/joint_position"] = jq
         return data
 
-    def capture_observation(self):
-        """The returned observations do not have a batch dimension."""
-        obs_act_dict = {}
-        # Capture images from cameras
+    def _capture_images(self) -> Tuple[Dict[str, bytes], Dict[str, Time]]:
         images = {}
+        img_stamps: Dict[MMK2Components, Time] = {}
         before_camread_t = time.perf_counter()
         comp_images = self.robot.get_image(self.cameras)
         for comp, image in comp_images.items():
@@ -167,9 +166,7 @@ class AIRBOTMMK2(object):
             elif kind == ImageTypes.RGBD:
                 images[comp.value + "_color"] = image.color
                 images[comp.value + "_depth"] = image.depth
-            obs_act_dict[f"/time/{comp.value}"] = (
-                image.stamp.sec + image.stamp.nanosec / 1e9
-            )
+            img_stamps[comp.value] = image.stamp
 
         name = "cameras"
         # self.logs[f"read_camera_{name}_dt_s"] = self.cameras[name].logs[
@@ -178,9 +175,17 @@ class AIRBOTMMK2(object):
         self.logs[f"async_read_camera_{name}_dt_s"] = (
             time.perf_counter() - before_camread_t
         )
+        return images, img_stamps
 
+    def capture_observation(self):
+        """The returned observations do not have a batch dimension."""
+        # Capture images from cameras
+        images, img_stamps = self._capture_images()
         low_dim_data = self.get_low_dim_data()
 
+        obs_act_dict = {}
+        for comp, stamp in img_stamps.items():
+            obs_act_dict[f"/time/{comp}"] = stamp.sec + stamp.nanosec * 1e-9
         # Populate output dictionnaries and format to pytorch
         obs_act_dict["low_dim"] = low_dim_data
         for name in images:
