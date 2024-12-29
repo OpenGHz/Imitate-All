@@ -33,8 +33,8 @@ class AIRBOTMMK2Config(object):
     components: List[str] = field(
         default_factory=lambda: [
             MMK2Components.LEFT_ARM.value,
-            MMK2Components.RIGHT_ARM.value,
             MMK2Components.LEFT_EEF.value,
+            MMK2Components.RIGHT_ARM.value,
             MMK2Components.RIGHT_EEF.value,
         ]
     )
@@ -96,60 +96,33 @@ class AIRBOTMMK2(object):
 
     def reset(self, sleep_time=0):
         if self.config.default_action is not None:
-            # goal = {
-            #     MMK2Components.LEFT_ARM: JointState(
-            #         position=self.config.default_action[:6]
-            #     ),
-            #     MMK2Components.LEFT_EEF: JointState(
-            #         position=self.config.default_action[6:7]
-            #     ),
-            #     MMK2Components.RIGHT_ARM: JointState(
-            #         position=self.config.default_action[7:13]
-            #     ),
-            #     MMK2Components.RIGHT_EEF: JointState(
-            #         position=self.config.default_action[13:14]
-            #     ),
-            # }
-            # self.robot.set_goal(goal, TrajectoryParams())
-            goal = {
-                MMK2Components.LEFT_ARM: JointState(
-                    position=self.config.default_action[:7]
-                ),
-                MMK2Components.RIGHT_ARM: JointState(
-                    position=self.config.default_action[7:14]
-                ),
-            }
-            if sleep_time > 0:
-                for _ in range(5):
-                    self.robot.set_goal(
-                        goal, MoveServoParams(header=self.robot.get_header())
-                    )
-                    time.sleep(5 / 5)
+            goal = self._action_to_goal(self.config.default_action)
+            # logger.info(f"Reset to default action: {self.config.default_action}")
+            # logger.info(f"Reset to default goal: {goal}")
+            # hard code for spine&head control
+            goal.update(
+                {
+                    MMK2Components.HEAD: JointState(position=[0, -1.0]),
+                    MMK2Components.SPINE: JointState(position=[0.15]),
+                }
+            )
+            self.robot.set_goal(goal, TrajectoryParams())
+        else:
+            logger.warning("No default action is set.")
+        time.sleep(sleep_time)
 
     def send_action(self, action, wait=False):
-        goal = {
-            MMK2Components.LEFT_ARM: JointState(position=action[:7]),
-            MMK2Components.RIGHT_ARM: JointState(position=action[7:14]),
-        }
-        if MMK2Components.SPINE in self.components:
-            goal[MMK2Components.SPINE] = JointState(position=action[14:15])
-
-        self.robot.set_goal(
-            goal,
-            MoveServoParams(header=self.robot.get_header()),
-        )
-        # goal = {
-        #     MMK2Components.LEFT_ARM: JointState(position=action[:6]),
-        #     MMK2Components.RIGHT_ARM: JointState(position=action[7:13]),
-        #     MMK2Components.LEFT_EEF: JointState(position=action[6:7]),
-        #     MMK2Components.RIGHT_EEF: JointState(position=action[13:14]),
-        # }
+        goal = self._action_to_goal(action)
+        # logger.info(f"Send action: {action}")
+        # logger.info(f"Send goal: {goal}")
         # param = {
         #     MMK2Components.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
         #     MMK2Components.RIGHT_ARM: MoveServoParams(header=self.robot.get_header()),
         #     MMK2Components.LEFT_EEF: TrajectoryParams(),
         #     MMK2Components.RIGHT_EEF: TrajectoryParams(),
         # }
+        param = MoveServoParams(header=self.robot.get_header())
+        self.robot.set_goal(goal, param)
 
     def get_low_dim_data(self):
         data = {}
@@ -216,24 +189,21 @@ class AIRBOTMMK2(object):
 
     def low_dim_to_action(self, low_dim: dict, step: int) -> list:
         action = []
-        for comp in (
-            MMK2Components.LEFT_ARM,
-            MMK2Components.LEFT_EEF,
-            MMK2Components.RIGHT_ARM,
-            MMK2Components.RIGHT_EEF,
-        ):
+        for comp in self.components:
             action.extend(low_dim[f"action/{comp.value}/joint_position"][step])
-            # old low_dim format
-            # pos, kind = comp.value.split("_")
-            # action.extend(low_dim[f"action/{kind}/{pos}/joint_position"][step])
-        if MMK2Components.SPINE in self.components:
-            action.extend(
-                low_dim[f"action/{MMK2Components.SPINE.value}/joint_position"][step]
-            )
         return action
 
     def _set_mode(self, mode):
         self._state_mode = mode
+
+    def _action_to_goal(self, action) -> Dict[MMK2Components, JointState]:
+        goal = {}
+        j_cnt = 0
+        for comp in self.components:
+            end = j_cnt + len(self.joint_names[comp])
+            goal[comp] = JointState(position=action[j_cnt:end])
+            j_cnt = end
+        return goal
 
     def enter_traj_mode(self):
         logger.info("Enter traj mode")
