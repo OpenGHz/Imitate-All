@@ -12,6 +12,7 @@ from mmk2_types.grpc_msgs import (
     JointState,
     TrajectoryParams,
     MoveServoParams,
+    ForwardPositionParams,
 )
 from typing import Optional, Dict, List, Tuple
 from dataclasses import dataclass, replace, field
@@ -78,12 +79,12 @@ class AIRBOTMMK2(object):
         )
         if self.config.demonstrate:
             comp_action_topic = {
-                comp: TopicNames.tracking.format(comp.value)
+                comp: TopicNames.tracking.format(component=comp.value)
                 for comp in MMK2ComponentsGroup.ARMS
             }
             comp_action_topic.update(
                 {
-                    comp: TopicNames.forward_position.format(comp.value)
+                    comp: TopicNames.forward_position.format(component=comp.value)
                     for comp in MMK2ComponentsGroup.HEAD_SPINE
                 }
             )
@@ -98,6 +99,7 @@ class AIRBOTMMK2(object):
         # for _ in range(5):
         #     self._capture_images()
         # logger.info("AIRBOTMMK2 is ready")
+        self.reset()
 
     def reset(self, sleep_time=0):
         if self.config.default_action is not None:
@@ -111,7 +113,13 @@ class AIRBOTMMK2(object):
             #         MMK2Components.SPINE: JointState(position=[0.15]),
             #     }
             # )
-            self.robot.set_goal(goal, TrajectoryParams())
+            if self.config.demonstrate:
+                # TODO: since the arms and eefs are controlled by the teleop bag
+                for comp in MMK2ComponentsGroup.ARMS_EEFS:
+                    goal.pop(comp)
+            if goal:
+                self.robot.set_goal(goal, TrajectoryParams())
+                self.robot.set_goal(goal, ForwardPositionParams())
         else:
             logger.warning("No default action is set.")
         time.sleep(sleep_time)

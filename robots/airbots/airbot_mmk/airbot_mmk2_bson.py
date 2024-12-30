@@ -76,7 +76,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     comp_eef = comp.value.replace("arm", "eef")
                     eef_jn = JointNames().__dict__[comp_eef]
                     js = self.robot.get_listened(self._comp_action_topic[comp])
-                    assert js is not None
+                    assert js is not None, "The AIRBOT MMK2 should be in bag teleopration sync mode."
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data.update(
                         self._get_joint_state(
@@ -90,7 +90,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     )
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
                     result = self.robot.get_listened(self._comp_action_topic[comp])
-                    assert result is not None
+                    assert result is not None, "The AIRBOT MMK2 should be in bag teleopration sync mode."
                     jq = list(result.data)
                     data.update(
                         self._get_joint_state(

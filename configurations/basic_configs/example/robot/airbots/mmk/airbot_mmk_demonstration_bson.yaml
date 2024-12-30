@@ -2,8 +2,6 @@ _target_: robots.airbots.airbot_mmk.airbot_mmk2_bson.AIRBOTMMK2
 
 ip: "192.168.11.200"
 
-default_action: null
-
 components: ["left_arm", "left_eef", "right_arm", "right_eef", "head", "spine"]
 # components: ["left_arm", "left_eef", "right_arm", "right_eef"]
 
@@ -13,3 +11,24 @@ cameras:
   # right_camera: "rgb"
 
 demonstrate: true
+
+default_action:
+  [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.15,
+  ]

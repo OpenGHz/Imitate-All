@@ -545,22 +545,6 @@ def record(
         max_workers=num_image_writers
     ) as executor:
 
-        def before_exit():
-            logging.info("Done recording")
-            # say("Done recording", blocking=True)
-            if not is_headless():
-                listener.stop()
-
-            logging.info(
-                "Waiting for threads writing the images on disk to terminate..."
-            )
-            for _ in tqdm.tqdm(
-                concurrent.futures.as_completed(futures),
-                total=len(futures),
-                desc="Writting images",
-            ):
-                pass
-
         # Show the instructions to the user
         keyer.show_instruction()
         # Start recording all episodes
@@ -573,7 +557,7 @@ def record(
             else:
                 re_record, stop_record = keyer.wait_and_show_camera(robot)
             if stop_record:
-                before_exit()
+                # before_exit()
                 # episode_index = max(1, episode_index)
                 break
             elif re_record:
@@ -748,12 +732,6 @@ def record(
                 elif frame_index >= num_frames_per_episode:
                     break
 
-            if not keyer.stop_recording:
-                # Start resetting env while the executor are finishing
-                logging.info("Reset the environment")
-                # say("Reset the environment")
-                robot.reset()
-
             timestamp = 0
             start_vencod_t = time.perf_counter()
             # save the data
@@ -765,6 +743,12 @@ def record(
             }
             with open(rec_info_path, "w") as f:
                 json.dump(rec_info, f)
+
+            if not keyer.stop_recording:
+                # Start resetting env while the executor are finishing
+                logging.info("Reset the environment")
+                # say("Reset the environment")
+                robot.reset()
 
             # check if current episode is the last one
             is_last_episode = keyer.stop_recording or (
@@ -787,7 +771,7 @@ def record(
             else:
                 episode_index += 1
                 if is_last_episode:
-                    before_exit()
+                    # before_exit()
                     break
 
     # if not is_headless():
