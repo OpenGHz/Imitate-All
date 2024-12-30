@@ -31,13 +31,19 @@ start = 0
 end = start + 2
 
 action = data_flat["/action"][start:end]
-obs = data_flat["/observations/qpos"][start + 1 : end + 1]
+obs = data_flat["/observations/qpos"][start:end]
+print("action")
 print(action)
+print("obs")
 print(obs)
+print("diff")
 print((obs - action))
 
+print("action 1")
 print(action[1])
+print("obs 1")
 print(obs[1])
+print("diff 1 in degree")
 print((obs[1] - action[1]) * 180 / 3.1415926)
 
 

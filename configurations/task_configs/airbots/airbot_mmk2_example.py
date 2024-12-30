@@ -44,7 +44,7 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # STATS_PATH = f"./my_ckpt/{TASK_NAME}/dataset_stats.pkl"
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
-chunk_size = 66
+chunk_size = 25
 joint_num = 14
 TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["head_camera"]
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num
@@ -58,8 +58,8 @@ TASK_CONFIG_DEFAULT["common"]["policy_config"]["policy_maker"] = policy_maker
 TASK_CONFIG_DEFAULT["train"]["load_data"]["num_episodes"] = "ALL"
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_train"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
-TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = None
-TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = None
+TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = (0, 14)
+TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = (0, 14)
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
