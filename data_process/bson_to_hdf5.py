@@ -12,6 +12,7 @@ parser.add_argument("-tn", "--task_name", type=str)
 parser.add_argument("-cn", "--camera_names", type=str, nargs="+")
 parser.add_argument("-ds", "--downsampling", type=int, default=0)
 parser.add_argument("-md", "--mode", type=str, default="play")
+parser.add_argument("-dir", "--raw_dir", type=str, default="data/raw")
 # parser.add_argument("-pad", "--padding", action="store_true")
 args = parser.parse_args()
 
@@ -19,9 +20,12 @@ task_name = args.task_name
 camera_names = args.camera_names
 downsampling = args.downsampling
 mode = args.mode
+raw_dir = args.raw_dir
 # padding = args.padding
 
-raw_dir = f"data/raw/{task_name}"
+task_dir = os.path.abspath(f"{raw_dir}/{task_name}")
+assert os.path.exists(task_dir), f"task_dir {task_dir} not exists"
+
 if mode == "play":
     obs_keys_low_dim = (
         "/observation/arm/joint_position",
@@ -93,13 +97,13 @@ target_namer = lambda i: f"episode_{i}.hdf5"
 # create target dir
 os.makedirs(target_dir, exist_ok=True)
 
-episode_names = crd.get_files_name_by_suffix(raw_dir, ".bson")
+episode_names = crd.get_files_name_by_suffix(task_dir, ".bson")
 print(f"episode_names: {episode_names}")
 
 
 def save_one(index, ep_name):
     bson_dict, stamps = crd.raw_bson_to_dict(
-        f"{raw_dir}/{ep_name}",
+        f"{task_dir}/{ep_name}",
         None,
         name_converter,
         pre_process,
