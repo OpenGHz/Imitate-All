@@ -262,7 +262,9 @@ def plot_history(train_history, validation_history, num_epochs, stats_dir, seed)
         plt.savefig(plot_path)
     print(f'Saved plots to {stats_dir}')
 
-def parser_add_train(parser:argparse.ArgumentParser):
+def parser_train(parser:argparse.ArgumentParser = None):
+    if parser is None:
+        parser = basic_parser()
     parser.add_argument('-bs', '--batch_size', action='store', type=int, help='batch_size', required=False)
     parser.add_argument('-lr', '--learning_rate', action='store', type=float, help='learning_rate', required=False)
     parser.add_argument('-ne', '--num_epochs', action='store', type=int, help='num_epochs', required=False)
@@ -287,5 +289,5 @@ if __name__ == '__main__':
     参数优先级：命令行 > config文件
     """
     parser = basic_parser()
-    parser_add_train(parser)
+    parser_train(parser)
     main(vars(parser.parse_args()))

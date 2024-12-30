@@ -1,4 +1,5 @@
 from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
+
 prepare_cv2_imshow()
 
 import torch
@@ -15,6 +16,7 @@ from policies.common.maker import make_policy
 from envs.common_env import get_image, CommonEnv
 import dm_env
 import cv2
+import argparse
 
 
 logging.basicConfig(level=logging.INFO)
@@ -307,10 +309,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     return success_rate, avg_return
 
 
-if __name__ == "__main__":
-
-    parser = basic_parser()
-
+def eval_parser(parser: argparse.ArgumentParser = None):
+    if parser is None:
+        parser = basic_parser()
     # change roll out num
     parser.add_argument(
         "-nr",
@@ -406,7 +407,12 @@ if __name__ == "__main__":
     )
     # save
     parser.add_argument(
-        "-sd", "--save_dir", action="store", type=str, help="save_dir", required=False
+        "-sd",
+        "--save_dir",
+        action="store",
+        type=str,
+        help="save_dir",
+        required=False,
     )
     parser.add_argument("-sa", "--save_all", action="store_true", help="save_all")
     parser.add_argument(
@@ -414,7 +420,12 @@ if __name__ == "__main__":
     )
     # action filter type TODO: move to post process; and will use obs filter?
     parser.add_argument(
-        "-ft", "--filter", action="store", type=str, help="filter_type", required=False
+        "-ft",
+        "--filter",
+        action="store",
+        type=str,
+        help="filter_type",
+        required=False,
     )
     # yaml config path
     parser.add_argument(
@@ -439,6 +450,12 @@ if __name__ == "__main__":
         help="debug",
         required=False,
     )
+
+
+if __name__ == "__main__":
+
+    parser = basic_parser()
+    eval_parser(parser)
 
     args = parser.parse_args()
     args_dict = vars(args)
