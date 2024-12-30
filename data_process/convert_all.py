@@ -519,7 +519,7 @@ def raw_bson_to_dict(
         bson_data: dict = bson.decode(f.read())["data"]
         states = {}
         stamps = {}
-        print("keys:", bson_data.keys())
+        # print("keys:", bson_data.keys())
 
         filter_keys(bson_data, key_filter)
 
@@ -566,7 +566,7 @@ def raw_bson_to_dict(
 
         # for test
         for key, value in bson_data.items():
-            print(key)
+            # print(key)
             # print(value)
             states[key], stamps[key] = separate_data(
                 value, pre_process.get(key, None), padding.get(key, None)
