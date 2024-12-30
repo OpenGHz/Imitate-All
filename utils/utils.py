@@ -166,6 +166,7 @@ def get_norm_stats(dataset_dir, num_episodes):
     all_action_data = []
     for episode_idx in num_episodes:
         dataset_path = os.path.join(dataset_dir, f"episode_{episode_idx}.hdf5")
+        dataset_path = os.path.abspath(dataset_path)
         with h5py.File(dataset_path, "r") as root:
             qpos = root["/observations/qpos"][()]
             action = root["/action"][()]
@@ -204,6 +205,7 @@ def get_pkl_info(path):
 def get_init_states(dir, episode_idx=None):
     if isinstance(episode_idx, int):
         dataset_path = os.path.join(dir, f"episode_{episode_idx}.hdf5")
+        dataset_path = os.path.abspath(dataset_path)
         with h5py.File(dataset_path, "r") as root:
             qpos = root["/observations/qpos"][0]
             action = root["/action"][0]
