@@ -13,6 +13,7 @@ parser.add_argument("-vn", "--video_names", type=str, nargs="+")
 parser.add_argument("-ds", "--downsampling", type=int, default=0)
 parser.add_argument("-md", "--mode", type=str, default="real3")
 parser.add_argument("-pad", "--padding", action="store_true")
+parser.add_argument("-dir", "--raw_dir", type=str, default="data/raw")
 # parser.add_argument("-bson", "--use_bson_style", action="store_true")
 args = parser.parse_args()
 
@@ -20,9 +21,11 @@ task_name = args.task_name
 downsampling = args.downsampling
 mode = args.mode
 padding = args.padding
+raw_dir = args.raw_dir
 # use_bson_style = args.use_bson_style
 
-raw_dir = f"data/raw/{task_name}"
+task_dir = os.path.abspath(f"{raw_dir}/{task_name}")
+assert os.path.exists(task_dir), f"task_dir {task_dir} not exists"
 # raw_dir = os.path.abspath(raw_dir)
 # assert os.path.exists(raw_dir)
 
@@ -71,9 +74,9 @@ def load_raw_mujoco_data(raw_dir, downsampling=0):
 
 # load raw low dim data
 if mode == "real3":
-    low_dim_data = load_raw_real_data(raw_dir, downsampling)
+    low_dim_data = load_raw_real_data(task_dir, downsampling)
 elif mode == "mujoco":
-    low_dim_data = load_raw_mujoco_data(raw_dir, downsampling)
+    low_dim_data = load_raw_mujoco_data(task_dir, downsampling)
 else:
     raise ValueError(f"mode {mode} is not supported")
 
@@ -107,7 +110,7 @@ os.makedirs(target_dir, exist_ok=True)
 def save_one(index, ep_name):
     crd.merge_video_and_save(
         low_dim_data[ep_name],
-        f"{raw_dir}/{ep_name}",
+        f"{task_dir}/{ep_name}",
         video_names,
         crd.save_dict_to_hdf5,
         name_converter,
