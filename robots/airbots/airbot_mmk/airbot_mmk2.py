@@ -134,7 +134,8 @@ class AIRBOTMMK2(object):
         #     MMK2Components.LEFT_EEF: TrajectoryParams(),
         #     MMK2Components.RIGHT_EEF: TrajectoryParams(),
         # }
-        param = MoveServoParams(header=self.robot.get_header())
+        # param = MoveServoParams(header=self.robot.get_header())
+        param = ForwardPositionParams()
         self.robot.set_goal(goal, param)
 
     def get_low_dim_data(self):
