@@ -80,6 +80,7 @@ class AIRBOTTOK(object):
 
     def send_action(self, action, wait=False):
         assert self._state_mode == "active", "Robot is not in active mode"
+        action = list(action)
         if self.base is not None:
             velocity = action[-2:]
             # logger.info(f"Sending action {action}")

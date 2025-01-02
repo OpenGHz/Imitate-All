@@ -12,6 +12,7 @@ class AIRBOTTOKEnv(object):
         self._all_joints_num = 14
 
     def set_reset_position(self, reset_position):
+        reset_position = list(reset_position)
         assert (
             len(reset_position) == self._all_joints_num
         ), f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
