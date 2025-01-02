@@ -31,6 +31,7 @@ from data_process.convert_all import concatenate_by_key, replace_keys
 from robots.common import Robot, make_robot_from_yaml
 from pprint import pprint
 import numpy as np
+import os
 
 
 ########################################################################################
@@ -573,6 +574,8 @@ def record(
                 )
             if len(low_dim_time_keys) == 1:
                 low_dim_timestamps = low_dim_timestamps.popitem()[1]
+
+            os.makedirs(videos_dir, exist_ok=True)
             with open(videos_dir / "low_dim.json", "w") as f:
                 json.dump(ep_dict["low_dim"], f)
             with open(videos_dir / "timestamps.json", "w") as f:
