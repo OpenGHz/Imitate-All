@@ -31,12 +31,17 @@ class AIRBOTTOKEnv(object):
 
     def _get_obs(self):
         obs = collections.OrderedDict()
-        obs["qpos"] = []
         obs["images"] = {}
         raw_obs = self.robot.capture_observation()
         low_dim = raw_obs["low_dim"]
-        for arm_name in self.robot.arms:
-            obs["qpos"].extend(low_dim[f"observation/{arm_name}/joint_position"])
+        qpos = [0] * self._all_joints_num
+        for index, arm_name in enumerate(self.robot.arms.keys()):
+            arm_eef = low_dim[f"observation/{arm_name}/joint_position"]
+            index[index * 7 : index * 7 + 6] = arm_eef[:6]
+            index[index * 7 + 6] = arm_eef[6]
+        obs["qpos"] = qpos
+        # for arm_name in self.robot.arms:
+        #     obs["qpos"].extend(low_dim[f"observation/{arm_name}/joint_position"])
         for name in self.robot.cameras:
             assert name not in obs["images"], f"Duplicate camera name: {name}"
             obs["images"][name] = raw_obs[f"observation.images.{name}"]
