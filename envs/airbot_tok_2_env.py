@@ -37,8 +37,8 @@ class AIRBOTTOKEnv(object):
         qpos = [0] * self._all_joints_num
         for index, arm_name in enumerate(self.robot.arms.keys()):
             arm_eef = low_dim[f"observation/{arm_name}/joint_position"]
-            index[index * 7 : index * 7 + 6] = arm_eef[:6]
-            index[index * 7 + 6] = arm_eef[6]
+            qpos[index * 6 : (index + 1) * 6] = arm_eef[:6]
+            qpos[(index + 1) * 7 - 1] = arm_eef[6]
         obs["qpos"] = qpos
         # for arm_name in self.robot.arms:
         #     obs["qpos"].extend(low_dim[f"observation/{arm_name}/joint_position"])
