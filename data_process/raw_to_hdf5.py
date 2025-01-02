@@ -44,6 +44,7 @@ def load_raw_real_data(raw_dir, downsampling=0):
             "/action": (
                 "action/arm/joint_position",
                 "action/eef/joint_position",
+                # "observation/base/velocity",
             ),
         },
         key_filter=[

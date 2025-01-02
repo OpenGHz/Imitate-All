@@ -17,6 +17,7 @@ class AIRBOTTOKConfig(object):
     arms_cfg: Dict[str, AIRBOTPlayConfig] = field(default_factory=lambda: {})
     cameras: Dict[str, Camera] = field(default_factory=lambda: {})
     base: AIRBOTBaseConfig = field(default_factory=AIRBOTBaseConfig)
+    data_style: float = 2.0
 
 
 class AIRBOTTOK(object):
@@ -85,19 +86,15 @@ class AIRBOTTOK(object):
             velocity = action[-2:]
             # logger.info(f"Sending action {action}")
             self.base.move_at_velocity2D(velocity)
-        arm_targets = (
-            action[:6] + action[12:13],
-            action[6:12] + action[13:14],
-        )
-        # i = 0
+        if self.config.data_style == 3.0:
+            arm_targets = (
+                action[:6] + action[12:13],
+                action[6:12] + action[13:14],
+            )
+        else:
+            arm_targets = (action[:7], action[7:14])
         for index, arm in enumerate(self.arms.values()):
-            # if isinstance(arm.config.default_action, (float, int)):
-            #     joint_num = 1
-            # else:
-            #     joint_num = len(arm.config.default_action)
-
             arm.set_joint_position_target(arm_targets[index], blocking=wait)
-            # i += joint_num
         return action
 
     def get_low_dim_data(self):
@@ -150,6 +147,7 @@ class AIRBOTTOK(object):
         return self._state_mode
 
     def low_dim_to_action(self, low_dim: dict, step: int) -> list:
+        assert self.config.data_style == 3.0, "Expected data style 3.0"
         action = []
         arm_action: list = low_dim[f"action/arm/joint_position"][step]
         eef_action: list = low_dim[f"action/eef/joint_position"][step]

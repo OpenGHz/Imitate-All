@@ -16,11 +16,13 @@ class AIRBOTTOKEnv(object):
         assert (
             len(reset_position) == self._all_joints_num
         ), f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
-        arm_targets = (
-            reset_position[:6] + reset_position[12:13],
-            reset_position[6:12] + reset_position[13:14],
-        )
-        # arm_targets = (reset_position[:7], reset_position[7:14])
+        if self.robot.config.data_style == 3.0:
+            arm_targets = (
+                reset_position[:6] + reset_position[12:13],
+                reset_position[6:12] + reset_position[13:14],
+            )
+        else:
+            arm_targets = (reset_position[:7], reset_position[7:14])
         for i, arm in enumerate(self.robot.arms.values()):
             arm.config.default_action = arm_targets[i]
 
@@ -34,15 +36,19 @@ class AIRBOTTOKEnv(object):
         obs["images"] = {}
         raw_obs = self.robot.capture_observation()
         low_dim = raw_obs["low_dim"]
-        qpos = [0] * self._all_joints_num
-        arm_joint_num = len(self.robot.arms) * 6
-        for index, arm_name in enumerate(self.robot.arms.keys()):
-            arm_eef = low_dim[f"observation/{arm_name}/joint_position"]
-            qpos[index * 6 : (index + 1) * 6] = arm_eef[:6]
-            qpos[arm_joint_num + index] = arm_eef[6]
-        obs["qpos"] = qpos
-        # for arm_name in self.robot.arms:
-        #     obs["qpos"].extend(low_dim[f"observation/{arm_name}/joint_position"])
+        if self.robot.config.data_style == 3.0:
+            qpos = [0] * self._all_joints_num
+            arm_joint_num = len(self.robot.arms) * 6
+            for index, arm_name in enumerate(self.robot.arms.keys()):
+                arm_eef = low_dim[f"observation/{arm_name}/joint_position"]
+                qpos[index * 6 : (index + 1) * 6] = arm_eef[:6]
+                qpos[arm_joint_num + index] = arm_eef[6]
+            obs["qpos"] = qpos
+        else:
+            obs["qpos"] = []
+            for arm_name in self.robot.arms:
+                obs["qpos"].extend(low_dim[f"observation/{arm_name}/joint_position"])
+
         for name in self.robot.cameras:
             assert name not in obs["images"], f"Duplicate camera name: {name}"
             obs["images"][name] = raw_obs[f"observation.images.{name}"]

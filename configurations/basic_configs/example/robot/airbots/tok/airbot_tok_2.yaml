@@ -21,3 +21,5 @@ cameras:
     width: 640
     height: 480
     color_mode: "bgr"
+
+data_style: 2.0
