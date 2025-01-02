@@ -4,6 +4,8 @@ Utilities to control a robot.
 Useful to record a dataset, replay a recorded episode, run the policy on your robot
 and record an evaluation dataset, and to recalibrate your robot if needed.
 """
+from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
+prepare_cv2_imshow()
 
 import argparse
 import concurrent.futures

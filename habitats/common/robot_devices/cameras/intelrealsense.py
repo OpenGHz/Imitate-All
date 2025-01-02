@@ -471,4 +471,4 @@ if __name__ == "__main__":
     # )
     # args = parser.parse_args()
     # save_images_from_cameras(**vars(args))
-    find_camera_indices()
+    print("find realsense ids:", find_camera_indices())

@@ -7,10 +7,11 @@ cameras:
     fps: 30
     width: 640
     height: 480
+
 # cameras:
 #   cam1:
 #     _target_: habitats.common.robot_devices.cameras.intelrealsense.IntelRealSenseCamera
-#     camera_index: 2
+#     camera_index: 327122077893
 #     fps: 30
 #     width: 640
 #     height: 480
