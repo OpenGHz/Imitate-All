@@ -90,7 +90,7 @@ The defualt configurations are in `configurations/basic_configs/example/robot/ai
     start_eef_joint_position: [0.0, 0.0]
     ```
 
-For recording with RealSense cameras, please refer to `configurations/basic_configs/example/robot/airbots/tok/airbot_tok2_2_realsense_demonstration.yaml`.
+For recording with RealSense cameras, please refer to `configurations/basic_configs/example/robot/airbots/tok/airbot_tok2_2_no_base_realsense_demonstration.yaml` and run `pip install -r requirements/realsense.txt -i https://pypi.mirrors.ustc.edu.cn/simple/` to install pyrealsense2.
 
 ### Starting Data Collection / Demonstration
 
