@@ -22,4 +22,4 @@ cameras:
     height: 480
     color_mode: "bgr"
 
-data_style: 2.0
+data_style: 2.0  # 2.0 for data converted by convert_episodes.py
