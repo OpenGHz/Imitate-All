@@ -105,7 +105,8 @@ class EpisodicDataset(torch.utils.data.Dataset):
                 chunked_action_shape = (action_chunk, original_action_shape[1])
             action_len = len(action)
             # print(f"action_shape: {action.shape}")
-        padded_action = np.zeros(chunked_action_shape, dtype=np.float32)
+        # padded_action = np.zeros(chunked_action_shape, dtype=np.float32)
+        padded_action = np.tile(action[-1], (action_chunk, 1))
         padded_action[:action_len] = action
         # print(f"padded_action shape: {padded_action.shape}")
         is_pad = np.zeros(action_chunk)
