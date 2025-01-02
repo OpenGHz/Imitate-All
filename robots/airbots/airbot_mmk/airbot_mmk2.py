@@ -68,6 +68,8 @@ class AIRBOTMMK2(object):
             names = all_joint_names.__dict__[comp_str]
             self.joint_names[comp] = names
             self.joint_num += len(names)
+        logger.info(f"Components: {self.components}")
+        logger.info(f"Joint numbers: {self.joint_num}")
         self.robot.enable_resources(
             {
                 comp: {
@@ -216,7 +218,13 @@ class AIRBOTMMK2(object):
     def _set_mode(self, mode):
         self._state_mode = mode
 
+    def _action_check(self, action):
+        assert (
+            len(action) == self.joint_num
+        ), f"Invalid action {action} with length: {len(action)}"
+
     def _action_to_goal(self, action) -> Dict[MMK2Components, JointState]:
+        self._action_check(action)
         goal = {}
         j_cnt = 0
         for comp in self.components:
