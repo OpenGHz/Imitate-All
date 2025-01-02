@@ -84,14 +84,19 @@ class AIRBOTTOK(object):
             velocity = action[-2:]
             # logger.info(f"Sending action {action}")
             self.base.move_at_velocity2D(velocity)
-        i = 0
-        for arm in self.arms.values():
-            if isinstance(arm.config.default_action, (float, int)):
-                joint_num = 1
-            else:
-                joint_num = len(arm.config.default_action)
-            arm.set_joint_position_target(action[i : i + joint_num], blocking=wait)
-            i += joint_num
+        arm_targets = (
+            action[:6] + action[12:13],
+            action[6:12] + action[13:14],
+        )
+        # i = 0
+        for index, arm in enumerate(self.arms.values()):
+            # if isinstance(arm.config.default_action, (float, int)):
+            #     joint_num = 1
+            # else:
+            #     joint_num = len(arm.config.default_action)
+
+            arm.set_joint_position_target(arm_targets[index], blocking=wait)
+            # i += joint_num
         return action
 
     def get_low_dim_data(self):

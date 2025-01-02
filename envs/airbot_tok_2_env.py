@@ -15,8 +15,13 @@ class AIRBOTTOKEnv(object):
         assert (
             len(reset_position) == self._all_joints_num
         ), f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
+        arm_targets = (
+            reset_position[:6] + reset_position[12:13],
+            reset_position[6:12] + reset_position[13:14],
+        )
+        # arm_targets = (reset_position[:7], reset_position[7:14])
         for i, arm in enumerate(self.robot.arms.values()):
-            arm.config.default_action = reset_position[i * 7 : (i + 1) * 7]
+            arm.config.default_action = arm_targets[i]
 
     def reset(self, sleep_time=0):
         self.robot.reset()
