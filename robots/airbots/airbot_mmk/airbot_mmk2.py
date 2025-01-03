@@ -80,7 +80,7 @@ class AIRBOTMMK2(object):
             }
         )
         # use stream to get images
-        self.robot.enable_stream(self.robot.get_image, self.cameras)
+        # self.robot.enable_stream(self.robot.get_image, self.cameras)
         if self.config.demonstrate:
             comp_action_topic = {
                 comp: TopicNames.tracking.format(component=comp.value)
