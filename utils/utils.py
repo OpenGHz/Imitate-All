@@ -59,15 +59,29 @@ class EpisodicDataset(torch.utils.data.Dataset):
             self.norm_stats["action_std"] = self.norm_stats["action_std"][
                 self.action_indexes
             ]
+        with h5py.File(self._get_dataset_path(0), "r") as root:
+            # logger.info(f"Keys in the dataset: {list(root.keys())}")
+            cam_names = set(root["/observations/images"].keys())
+            wrong_cam_names = set(self.camera_names) - cam_names
+            if len(wrong_cam_names) > 0:
+                raise ValueError(
+                    f"Wrong camera names: {wrong_cam_names}, "
+                    f"available names: {cam_names}. "
+                    "Please modify the camera names in the configuration file."
+                )
         self.__getitem__(0)
 
     def __len__(self):
         return len(self.episode_ids)
 
-    def __getitem__(self, index):
-        sample_full_episode = False  # TODO:hardcode
+    def _get_dataset_path(self, index) -> str:
         episode_id = self.episode_ids[index]
         dataset_path = os.path.join(self.dataset_dir, f"episode_{episode_id}.hdf5")
+        return dataset_path
+
+    def __getitem__(self, index):
+        sample_full_episode = False  # TODO:hardcode
+        dataset_path = self._get_dataset_path(index)
         action_chunk = self.action_chunk_size
         with h5py.File(dataset_path, "r") as root:
             compressed = root.attrs.get("compress", False)
@@ -100,9 +114,9 @@ class EpisodicDataset(torch.utils.data.Dataset):
             action = root["/action"][action_start : action_start + action_chunk]
             if self.action_indexes is not None:
                 action = action[:, self.action_indexes]
-                chunked_action_shape = (action_chunk, action.shape[1])
-            else:
-                chunked_action_shape = (action_chunk, original_action_shape[1])
+                # chunked_action_shape = (action_chunk, action.shape[1])
+            # else:
+            # chunked_action_shape = (action_chunk, original_action_shape[1])
             action_len = len(action)
             # print(f"action_shape: {action.shape}")
         # padded_action = np.zeros(chunked_action_shape, dtype=np.float32)
