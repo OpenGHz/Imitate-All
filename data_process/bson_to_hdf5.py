@@ -54,7 +54,8 @@ else:
 image_keys = [f"/images/{name}" for name in args.camera_names]
 
 name_converter = {
-    f"/images/{raw_name}": f"/observations/images/{i}" for i, raw_name in enumerate(camera_names)
+    f"/images/{raw_name}": f"/observations/images/{i}"
+    for i, raw_name in enumerate(camera_names)
 }
 print(f"name_converter: {name_converter}")
 
@@ -114,6 +115,12 @@ def save_one(index, ep_name):
     return crd.save_dict_to_hdf5(bson_dict, target_dir + target_namer(index), None)
 
 
+# save one first to print logs
+print("Try saving one data to check if everything is ok...")
+index = 0
+ep_name = episode_names[index]
+save_one(index, ep_name)
+
 # save all data
 print(f"Start saving all data to {target_dir}...")
 futures = []
@@ -121,8 +128,3 @@ with ThreadPoolExecutor(max_workers=25) as executor:
     for index, ep_name in enumerate(episode_names):
         futures.append(executor.submit(save_one, index, ep_name))
 print(f"All data saved to {target_dir}")
-
-# # save one data
-# index = 0
-# ep_name = episode_names[index]
-# save_one(index, ep_name)
