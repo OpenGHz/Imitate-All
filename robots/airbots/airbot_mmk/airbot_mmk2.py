@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 class AIRBOTMMK2Config(object):
     name: str = "mmk2"
     domain_id: int = -1
-    ip: str = "localhost"
+    ip: str = "192.168.11.200"
     port: int = 50055
-    default_action: List[float] = field(default_factory=lambda: [0] * 14)
+    default_action: List[float] = field(default_factory=lambda: [])
     cameras: Dict[str, str] = field(default_factory=lambda: {})
     components: List[str] = field(
         default_factory=lambda: [
@@ -106,12 +106,12 @@ class AIRBOTMMK2(object):
         self.reset()
 
     def _move_by_traj(self, goal: dict):
-        goal.update(
-            {
-                MMK2Components.HEAD: JointState(position=[0, -1.0]),
-                MMK2Components.SPINE: JointState(position=[0.15]),
-            }
-        )
+        # goal.update(
+        #     {
+        #         MMK2Components.HEAD: JointState(position=[0, -1.0]),
+        #         MMK2Components.SPINE: JointState(position=[0.15]),
+        #     }
+        # )
         if self.config.demonstrate:
             # TODO: since the arms and eefs are controlled by the teleop bag
             for comp in MMK2ComponentsGroup.ARMS_EEFS:
@@ -148,8 +148,8 @@ class AIRBOTMMK2(object):
         if self.traj_mode:
             self._move_by_traj(goal)
         else:
-            # param = ForwardPositionParams()
-            param = MoveServoParams(header=self.robot.get_header())
+            param = ForwardPositionParams()
+            # param = MoveServoParams(header=self.robot.get_header())
             self.robot.set_goal(goal, param)
 
     def get_low_dim_data(self):
@@ -253,11 +253,9 @@ class AIRBOTMMK2(object):
 
     def enter_traj_mode(self):
         self.traj_mode = True
-        logger.info("Enter traj mode")
 
     def enter_servo_mode(self):
         self.traj_mode = False
-        logger.info("Enter servo mode")
 
 
 def main():

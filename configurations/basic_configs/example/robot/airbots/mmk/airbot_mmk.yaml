@@ -5,7 +5,8 @@ ip: "192.168.11.200"
 default_action:
   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-components: ["left_arm", "left_eef", "right_arm", "right_eef"]  # head, spine
+# The order is important
+components: ["left_arm", "left_eef", "right_arm", "right_eef", "head", "spine"]
 
 cameras:
   # left_camera: "rgb"
