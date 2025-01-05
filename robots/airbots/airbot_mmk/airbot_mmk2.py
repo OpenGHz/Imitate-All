@@ -35,9 +35,9 @@ class AIRBOTMMK2Config(object):
     components: List[str] = field(
         default_factory=lambda: [
             MMK2Components.LEFT_ARM.value,
-            MMK2Components.LEFT_EEF.value,
+            MMK2Components.LEFT_ARM_EEF.value,
             MMK2Components.RIGHT_ARM.value,
-            MMK2Components.RIGHT_EEF.value,
+            MMK2Components.RIGHT_ARM_EEF.value,
         ]
     )
     demonstrate: bool = False
@@ -138,18 +138,21 @@ class AIRBOTMMK2(object):
         goal = self._action_to_goal(action)
         # logger.info(f"Send action: {action}")
         # logger.info(f"Send goal: {goal}")
-        # param = {
-        #     MMK2Components.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
-        #     MMK2Components.RIGHT_ARM: MoveServoParams(header=self.robot.get_header()),
-        #     MMK2Components.LEFT_EEF: TrajectoryParams(),
-        #     MMK2Components.RIGHT_EEF: TrajectoryParams(),
-        # }
+
         # param = MoveServoParams(header=self.robot.get_header())
         if self.traj_mode:
             self._move_by_traj(goal)
         else:
             param = ForwardPositionParams()
             # param = MoveServoParams(header=self.robot.get_header())
+            # param = {
+            #     MMK2Components.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
+            #     MMK2Components.RIGHT_ARM: MoveServoParams(header=self.robot.get_header()),
+            #     MMK2Components.LEFT_ARM_EEF: TrajectoryParams(),
+            #     MMK2Components.RIGHT_ARM_EEF: TrajectoryParams(),
+            #     MMK2Components.HEAD: ForwardPositionParams(),
+            #     MMK2Components.SPINE: ForwardPositionParams(),
+            # }
             self.robot.set_goal(goal, param)
 
     def get_low_dim_data(self):
