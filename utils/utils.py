@@ -67,7 +67,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
                 raise ValueError(
                     f"Wrong camera names: {wrong_cam_names}, "
                     f"available names: {cam_names}. "
-                    "Please modify the camera names in the configuration file."
+                    "Please modify the camera names in the task configuration file."
                 )
         self.__getitem__(0)
 
@@ -176,41 +176,6 @@ def find_all_hdf5(dataset_dir, skip_mirrored_data=True):
     return hdf5_files
 
 
-def get_norm_stats(dataset_dir, num_episodes):
-    all_qpos_data = []
-    all_action_data = []
-    for episode_idx in num_episodes:
-        dataset_path = os.path.join(dataset_dir, f"episode_{episode_idx}.hdf5")
-        dataset_path = os.path.abspath(dataset_path)
-        with h5py.File(dataset_path, "r") as root:
-            qpos = root["/observations/qpos"][()]
-            action = root["/action"][()]
-        all_qpos_data.append(qpos)
-        all_action_data.append(action)
-    all_qpos_data = np.concatenate(all_qpos_data)
-    all_action_data = np.concatenate(all_action_data)
-
-    # normalize action data
-    action_mean = np.mean(all_action_data, 0)
-    action_std = np.std(all_action_data, 0)
-    action_std = np.clip(action_std, 1e-2, np.inf)  # clipping
-
-    # normalize qpos data
-    qpos_mean = np.mean(all_qpos_data, 0)
-    qpos_std = np.std(all_qpos_data, 0)
-    qpos_std = np.clip(qpos_std, 1e-2, np.inf)  # clipping
-
-    stats = {
-        "action_mean": action_mean,
-        "action_std": action_std,
-        "qpos_mean": qpos_mean,
-        "qpos_std": qpos_std,
-        "example_qpos": qpos,
-    }
-    # print("action_mean_shape", stats["action_mean"].shape)
-    return stats
-
-
 def get_pkl_info(path):
     with open(path, "rb") as f:
         key_info = pickle.load(f)
@@ -315,6 +280,41 @@ class LoadDataConfig(object):
             print(f"Action slice: {self.action_slice}")
 
 
+def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):
+    all_qpos_data = []
+    all_action_data = []
+    for episode_idx in num_episodes:
+        dataset_path = os.path.join(dataset_dir, f"episode_{episode_idx}.hdf5")
+        dataset_path = os.path.abspath(dataset_path)
+        with h5py.File(dataset_path, "r") as root:
+            qpos = root["/observations/qpos"][()]
+            action = root["/action"][()]
+        all_qpos_data.append(qpos)
+        all_action_data.append(action)
+    all_qpos_data = np.concatenate(all_qpos_data)[:, config.observation_slice]
+    all_action_data = np.concatenate(all_action_data)[:, config.action_slice]
+
+    # normalize action data
+    action_mean = np.mean(all_action_data, 0)
+    action_std = np.std(all_action_data, 0)
+    action_std = np.clip(action_std, 1e-2, np.inf)  # clipping
+
+    # normalize qpos data
+    qpos_mean = np.mean(all_qpos_data, 0)
+    qpos_std = np.std(all_qpos_data, 0)
+    qpos_std = np.clip(qpos_std, 1e-2, np.inf)  # clipping
+
+    stats = {
+        "action_mean": action_mean,
+        "action_std": action_std,
+        "qpos_mean": qpos_mean,
+        "qpos_std": qpos_std,
+        "example_qpos": qpos,
+    }
+    # print("action_mean_shape", stats["action_mean"].shape)
+    return stats
+
+
 def load_data(config: LoadDataConfig):
     dataset_dir = config.dataset_dir
     print(f"\nData from: {dataset_dir}\n")
@@ -327,7 +327,7 @@ def load_data(config: LoadDataConfig):
     val_indices = shuffled_indices[int(train_ratio * episodes_num) :]
 
     # obtain normalization stats for qpos and action
-    norm_stats = get_norm_stats(dataset_dir, num_episodes)
+    norm_stats = get_norm_stats(dataset_dir, num_episodes, config)
 
     # construct dataset
     camera_names = config.camera_names
