@@ -2,7 +2,8 @@ import time
 import collections
 import dm_env
 import importlib
-from dlabsim.envs.airbot_play_base import AirbotPlayCfg, AirbotPlayBase
+from dlabsim.envs.airbot_play_base import AirbotPlayCfg
+from dlabsim.task_base import AirbotPlayTaskBase
 
 
 class MujocoEnv(object):
@@ -16,7 +17,7 @@ class MujocoEnv(object):
         node_cls = getattr(module, "SimNode")
         cfg: AirbotPlayCfg = getattr(module, "cfg")
         cfg.headless = False
-        self.exec_node: AirbotPlayBase = node_cls(cfg)
+        self.exec_node: AirbotPlayTaskBase = node_cls(cfg)
         # self.exec_node.cam_id = self.exec_node.config.obs_camera_id
         self.reset_position = None
         print("MujocoEnv initialized")
@@ -29,6 +30,7 @@ class MujocoEnv(object):
         return 0
 
     def reset(self, fake=False, sleep_time=0):
+        self.exec_node.domain_randomization()
         raw_obs = self.exec_node.reset()
         # if self.reset_position is not None:
         #     # self.reset_position[-1] = 0.96
