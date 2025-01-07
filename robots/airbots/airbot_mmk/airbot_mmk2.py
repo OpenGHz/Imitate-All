@@ -6,6 +6,7 @@ from mmk2_types.types import (
     TopicNames,
     MMK2ComponentsGroup,
     ImageTypes,
+    ControllerTypes,
 )
 from mmk2_types.grpc_msgs import (
     Time,
@@ -88,7 +89,10 @@ class AIRBOTMMK2(object):
             }
             comp_action_topic.update(
                 {
-                    comp: TopicNames.forward_position.format(component=comp.value)
+                    comp: TopicNames.controller_command.format(
+                        component=comp.value,
+                        controller=ControllerTypes.FORWARD_POSITION.value,
+                    )
                     for comp in MMK2ComponentsGroup.HEAD_SPINE
                 }
             )
@@ -119,7 +123,7 @@ class AIRBOTMMK2(object):
         if goal:
             self.robot.set_goal(goal, TrajectoryParams())
             self.robot.set_goal(goal, ForwardPositionParams())
-        
+
         return goal
 
     def reset(self, sleep_time=0):
