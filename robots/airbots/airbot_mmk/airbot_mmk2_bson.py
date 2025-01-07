@@ -73,7 +73,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:
                     arm_jn = JointNames().__dict__[comp.value]
-                    comp_eef = comp.value.replace("arm", "eef")
+                    comp_eef = comp.value + "_eef"
                     eef_jn = JointNames().__dict__[comp_eef]
                     js = self.robot.get_listened(self._comp_action_topic[comp])
                     assert js is not None, "The AIRBOT MMK2 should be in bag teleopration sync mode."
