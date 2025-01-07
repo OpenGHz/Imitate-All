@@ -2,9 +2,7 @@ from mmk2_types.types import (
     JointNames,
     MMK2ComponentsGroup,
 )
-from mmk2_types.grpc_msgs import (
-    Time,
-)
+from mmk2_types.grpc_msgs import Time
 from typing import Optional, Dict
 import logging
 import numpy as np
