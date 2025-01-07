@@ -200,7 +200,7 @@ if __name__ == "__main__":
         "-sj",
         "--save_joints",
         action="store_true",
-        help="Save joint states and acitons.",
+        help="Save joint states and actions.",
     )
     parser.add_argument(
         "-od",

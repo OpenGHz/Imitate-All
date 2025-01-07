@@ -30,7 +30,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         augmentors: dict,
         data_indexes: dict,
         chunk_sizes: dict = None,
-        aciton_bias: int = 1,
+        action_bias: int = 1,
     ):
         super().__init__()
         self.episode_ids = episode_ids
@@ -44,7 +44,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         self.norm_stats = norm_stats.copy()
         self.augmentors = augmentors
         self.augment_images = augmentors.get("image", None)
-        self.aciton_bias = aciton_bias
+        self.action_bias = action_bias
         if self.observation_indexes is not None:
             self.norm_stats["qpos_mean"] = self.norm_stats["qpos_mean"][
                 self.observation_indexes
@@ -109,7 +109,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
             # TODO: pass the chunk_size as a arg to load only the needed actions
             # get all actions after and including start_ts
             # hack, to make timesteps more aligned
-            bias = self.aciton_bias
+            bias = self.action_bias
             action_start = max(0, start_ts - bias)
             action = root["/action"][action_start : action_start + action_chunk]
             if self.action_indexes is not None:
@@ -342,7 +342,7 @@ def load_data(config: LoadDataConfig):
             "action": config.action_slice,
         },
         "chunk_sizes": config.chunk_sizes,
-        "aciton_bias": 1,
+        "action_bias": 1,
     }
     train_dataset = EpisodicDataset(train_indices, **ep_ds_config)
     val_dataset = EpisodicDataset(val_indices, **ep_ds_config)
