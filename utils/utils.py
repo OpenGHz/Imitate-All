@@ -291,8 +291,13 @@ def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):
             action = root["/action"][()]
         all_qpos_data.append(qpos)
         all_action_data.append(action)
-    all_qpos_data = np.concatenate(all_qpos_data)[:, config.observation_slice]
-    all_action_data = np.concatenate(all_action_data)[:, config.action_slice]
+
+    all_qpos_data = np.concatenate(all_qpos_data)
+    all_action_data = np.concatenate(all_action_data)
+    if config.observation_slice is not None:
+        all_qpos_data = all_qpos_data[:, config.observation_slice]
+    if config.action_slice is not None:
+        all_action_data = all_action_data[:, config.action_slice]
 
     # normalize action data
     action_mean = np.mean(all_action_data, 0)
