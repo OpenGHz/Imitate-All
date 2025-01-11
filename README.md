@@ -21,8 +21,9 @@ conda config --set auto_activate_base false && conda deactivate
 - `configurations` Configuration files for demonstration, replay, policy training and evaluating
 - `data_process` Tools to process data
   - `raw_to_hdf5.py` Examples for converting raw (airbot) data to hdf5 data for training
+  - `bson_to_hdf5.py` Examples for converting raw (airbot bson) data to hdf5 data for training
   - `convert_all.py` Tools to process raw data for training
-  - ``augment_hdf5_images.py`` Pipline of augmenting images from the hdf5 file
+  - `augment_hdf5_images.py` Pipline of augmenting images from the hdf5 file
 - `policy_train.py` Policy training: ACT and yours
 - `policy_evaluate` Policy evaluating/inferencing: ACT and yours
 - `policies`
@@ -137,7 +138,7 @@ For ease of use in the future, it's recommended to **store the core folder in th
 
 ### Check Task Configurations
 
-Policy inference requires the same configuration file as used for training, and the parameters of the inference part need to be adjusted. This mainly includes modify the `environment_maker` funtion and the `TASK_CONFIG_DEFAULT["eval"]` dictionary. Mainly used parameters are explained as follows
+Policy inference requires the same configuration file as used for training, and the parameters of the inference part need to be adjusted. This mainly includes modify the `environment_maker` funtion and the `TASK_CONFIG_DEFAULT["eval"]` dictionary. Mainly used parameters are explained as follows:
 
 - `robot_num`: The number of the robot, 1 for single Play, TOK and MMK, 2 for dual Plays.
 - `joint_num`: The number of the joint for each PlayV2.x robot.
