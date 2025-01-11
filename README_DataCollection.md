@@ -69,7 +69,10 @@ Data collection typically requires multiple cameras, and the connection order ca
 > Note: Your computer may not be able to activate too many cameras at the same time.
 
 ### Modify Default Configurations
-The defualt configurations are in `configurations/basic_configs/example/robot/airbots/play/airbot_play_demonstration.yaml` which is used for one long airbot_play with a E2B encoder to teleoprate one long airbot_play with a G2 gripper and one USB camera. You can modify these according to your usage, for example:
+
+For AIRBOT Play 2.0, the defualt configurations are in `configurations/basic_configs/example/robot/airbots/play/airbot_play_2_demonstration.yaml`, which is used for one airbot_play with a E2B encoder to teleoprate another one airbot_play with a G2 gripper and one USB camera.
+
+For AIRBOT Play 3.0, the defualt configurations are in `configurations/basic_configs/example/robot/airbots/play/airbot_play_demonstration.yaml`. You can modify these according to your usage, for example:
 
 - One short Play teacher with one short follower:
     ```
