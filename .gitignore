@@ -141,7 +141,7 @@ dmypy.json
 
 my_ckpt/
 eval_results/
-configurations/task_configs/*
+#configurations/task_configs/*
 !configurations/task_configs/template.py
 !configurations/task_configs/example_task.py
 !configurations/task_configs/loader.py
