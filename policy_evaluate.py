@@ -1,6 +1,6 @@
 from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
 
-prepare_cv2_imshow()
+#prepare_cv2_imshow()
 
 import torch
 import numpy as np

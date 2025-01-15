@@ -46,7 +46,7 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # STATS_PATH = f"./my_ckpt/{TASK_NAME}/dataset_stats.pkl"
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
-chunk_size = 25
+chunk_size = 50
 joint_num = 19
 TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num
@@ -67,6 +67,7 @@ TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
 TASK_CONFIG_DEFAULT["train"]["pretrain_epoch_base"] = "AUTO"
+TASK_CONFIG_DEFAULT["train"]["validate_every"]=100
 
 TASK_CONFIG_DEFAULT["eval"]["robot_num"] = 1
 TASK_CONFIG_DEFAULT["eval"]["joint_num"] = joint_num
