@@ -1,7 +1,7 @@
 import airbot
 from robots.common_robot import Configer
 from typing import Optional, List
-from dataclasses import dataclass, replace, field
+from dataclasses import dataclass, replace
 
 
 @dataclass
@@ -15,7 +15,7 @@ class AIRBOTPlayConfig(object):
     forearm_type: str = "DM"
     # other
     joint_vel: float = 6.0
-    default_action: List[float] = field(default_factory=lambda: [0] * 7)
+    default_action: Optional[List[float]] = None
 
 
 class AIRBOTPlay(object):
