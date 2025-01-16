@@ -2,8 +2,8 @@ import time
 import collections
 import dm_env
 import importlib
-from dlabsim.envs.airbot_play_base import AirbotPlayCfg
-from dlabsim.task_base import AirbotPlayTaskBase
+from discoverse.envs.airbot_play_base import AirbotPlayCfg
+from discoverse.task_base import AirbotPlayTaskBase
 
 
 class MujocoEnv(object):
