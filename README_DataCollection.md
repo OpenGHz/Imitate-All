@@ -105,12 +105,9 @@ python3 control_robot.py record \
   --root data \
   --repo-id raw/example \
   --fps 20 \
-  --warmup-time-s 1 \
   --num-frames-per-episode 500 \
-  --reset-time-s 1 \
   --num-episodes 10000 \
   --start-episode 0 \
-  --num-image-writers-per-camera 1
 ```
 
 #### Explanation of Parameters
@@ -120,11 +117,8 @@ python3 control_robot.py record \
   - `--repo-id`: dataset identifier, defaulting to `raw/example`
   - `--fps`: frames per second
   - `--num-episodes`: number of episodes to record
-  - `--start-episode`: index of the first episode to record
-  - `--warmup-time-s`: number of seconds before starting data collection
   - `--num-frames-per-episode`: number of frames for data recording for each episode
-  - `--reset-time-s`: number of seconds for resetting the environment after each episode
-  - `--num-image-writers-per-camera`: number of threads writing the frames as png images on disk, per camera
+  - `--start-episode`: index of the first episode to record
 
 #### Key Descriptions
 

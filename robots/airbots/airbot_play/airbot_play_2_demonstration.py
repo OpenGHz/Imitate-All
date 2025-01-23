@@ -74,18 +74,16 @@ class AIRBOTPlayDemonstration(object):
         leaders = list(self.leaders.values())
         is_replay = list(self.is_replay.values())
         for index, followers in enumerate(self.followers.values()):
-            if not is_replay[index]:
+            default_action = leaders[index].config.default_action
+            if (default_action is not None) and not is_replay[index]:
                 for follower in followers:
                     follower.enter_active_mode()
-                    follower.set_joint_position_target(
-                        leaders[index].config.default_action, [0.2], True
-                    )
+                    follower.set_joint_position_target(default_action, [0.2], True)
         for index, leader in enumerate(leaders):
-            if not is_replay[index]:
+            default_action = leader.config.default_action
+            if (default_action is not None) and not is_replay[index]:
                 if leader.enter_active_mode():
-                    leader.set_joint_position_target(
-                        leader.config.default_action, [0.2], True
-                    )
+                    leader.set_joint_position_target(default_action, [0.2], True)
         self._state_mode = "active"
         self._reseting.set()
 

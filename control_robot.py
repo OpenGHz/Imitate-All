@@ -795,7 +795,7 @@ if __name__ == "__main__":
     parser_record.add_argument(
         "--warmup-time-s",
         type=int,
-        default=10,
+        default=1,
         help="Number of seconds before starting data collection. It allows the robot devices to warmup and synchronize.",
     )
     parser_record_length = parser_record.add_mutually_exclusive_group(required=True)
