@@ -227,6 +227,9 @@ def train_bc(train_dataloader, val_dataloader, config):
             torch.save(policy.state_dict(), ckpt_path)
             plot_history(train_history, validation_history, epoch, stats_dir, seed)
 
+    assert (
+        best_ckpt_info is not None
+    ), "No best ckpt found, make sure validate_every <= num_epochs"
     # training finished
     # save last and best ckpts
     ckpt_path = os.path.join(stats_dir, f'policy_last.ckpt')
