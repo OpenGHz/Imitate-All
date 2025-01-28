@@ -675,7 +675,19 @@ def record(
                             "fov": 120.0,
                             "start_time": 1733377253041,
                         },
-                        # "/images/cam2": {
+                        # "/images/left_camera": {
+                        #     "description": "DSJ-2062-309",
+                        #     "type": "image",
+                        #     "width": 640,
+                        #     "height": 480,
+                        #     "encoding": "H264",
+                        #     "distortion_model": None,
+                        #     "distortion_params": None,
+                        #     "intrinsics": None,
+                        #     "fov": 120.0,
+                        #     "start_time": 1733377253041,
+                        # },
+                        # "/images/right_camera": {
                         #     "description": "DSJ-2062-309",
                         #     "type": "image",
                         #     "width": 640,
