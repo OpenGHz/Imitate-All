@@ -157,7 +157,7 @@ Evaluation command and parameters:
 - AIRBOT PlayV2.x and TOKv2.x without base
 
   ```bash
-  python3 policy_evaluate.py -tn example_task -ci 0 -ts 20240322-194244
+  python3 policy_evaluate.py -tn example_task -ci 0 -ts 20240322-194244 -show
   ```
 
   - `-ts`: Timestamp corresponding to the task (check the path where policy training results are saved, e.g., ```./my_ckpt/example_task/20240325-153007```).
