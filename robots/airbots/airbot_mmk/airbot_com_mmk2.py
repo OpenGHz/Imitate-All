@@ -13,6 +13,7 @@ from mmk2_types.grpc_msgs import (
     JointState,
     TrajectoryParams,
     MoveServoParams,
+    TrackingParams,
     ForwardPositionParams,
 )
 from typing import Optional, Dict, List, Tuple
@@ -71,15 +72,15 @@ class AIRBOTMMK2(object):
             self.joint_num += len(names)
         logger.info(f"Components: {self.components}")
         logger.info(f"Joint numbers: {self.joint_num}")
-        # self.robot.enable_resources(
-        #     {
-        #         comp: {
-        #             "rgb_camera.color_profile": "640,480,30",
-        #             "enable_depth": "false",
-        #         }
-        #         for comp in self.cameras
-        #     }
-        # )
+        self.robot.enable_resources(
+            {
+                comp: {
+                    "rgb_camera.color_profile": "640,480,30",
+                    "enable_depth": "false",
+                }
+                for comp in self.cameras
+            }
+        )
         # use stream to get images
         # self.robot.enable_stream(self.robot.get_image, self.cameras)
         if self.config.demonstrate:
@@ -121,7 +122,10 @@ class AIRBOTMMK2(object):
             for comp in MMK2ComponentsGroup.ARMS_EEFS:
                 goal.pop(comp)
         if goal:
+            # start = time.time()
+            # logger.info(f"Move by trajectory")
             self.robot.set_goal(goal, TrajectoryParams())
+            # logger.info(f"Move by trajectory time: {time.time() - start}")
             self.robot.set_goal(goal, ForwardPositionParams())
 
         return goal
@@ -129,7 +133,7 @@ class AIRBOTMMK2(object):
     def reset(self, sleep_time=0):
         if self.config.default_action is not None:
             goal = self._action_to_goal(self.config.default_action)
-            # logger.info(f"Reset to default action: {self.config.default_action}")
+            logger.info(f"Reset to default action: {self.config.default_action}")
             # logger.info(f"Reset to default goal: {goal}")
             # TODO: hard code for spine&head control
             self._move_by_traj(goal)
@@ -147,7 +151,8 @@ class AIRBOTMMK2(object):
         if self.traj_mode:
             self._move_by_traj(goal)
         else:
-            param = ForwardPositionParams()
+            # param = ForwardPositionParams()
+            param = TrackingParams()
             # param = MoveServoParams(header=self.robot.get_header())
             # param = {
             #     MMK2Components.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
