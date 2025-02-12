@@ -76,7 +76,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     js = self.robot.get_listened(self._comp_action_topic[comp])
                     assert (
                         js is not None
-                    ), "The AIRBOT MMK2 should be in bag teleopration sync mode."
+                    ), "The AIRBOT MMK2 should be in bag teleopration mode."
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data.update(
                         self._get_joint_state(
