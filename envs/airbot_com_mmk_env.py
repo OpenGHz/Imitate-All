@@ -3,6 +3,7 @@ from robots.common import make_robot_from_yaml
 import time
 import collections
 import dm_env
+import numpy as np
 
 
 class AIRBOTMMK2Env(object):
@@ -30,9 +31,7 @@ class AIRBOTMMK2Env(object):
         for comp in self.robot.components:
             obs["qpos"].extend(low_dim[f"observation/{comp.value}/joint_position"])
         for camera in self.robot.cameras:
-            assert (
-                camera not in obs["images"]
-            ), f"Duplicate camera name: {camera}"
+            assert camera not in obs["images"], f"Duplicate camera name: {camera}"
             obs["images"][camera.value] = raw_obs[f"observation.images.{camera.value}"]
 
         return dm_env.TimeStep(
@@ -48,6 +47,22 @@ class AIRBOTMMK2Env(object):
         sleep_time=0,
         get_obs=True,
     ):
+        joint_limits = (
+            (-3.09, 2.04),
+            (-2.92, 0.12),
+            (-0.04, 3.09),
+            (-3.1, 3.1),  # (-2.95, 2.95),
+            (-1.9, 1.9),  # (-1.08, 1.08),
+            (-3.0, 3.0),  # (-2.90, 2.90),
+            (0, 1),
+        )
+
+        jn = len(joint_limits)
+        for i in range(2):
+            for j in range(jn):
+                index = j + jn * i
+                action[index] = np.clip(action[index], *joint_limits[j])
+
         self.robot.send_action(action)
         time.sleep(sleep_time)
         obs = self._get_obs() if get_obs else None
