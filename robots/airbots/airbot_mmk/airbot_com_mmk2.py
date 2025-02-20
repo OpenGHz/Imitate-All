@@ -33,6 +33,7 @@ class AIRBOTMMK2Config(object):
     ip: str = "192.168.11.200"
     port: int = 50055
     default_action: Optional[List[float]] = None
+    # TODO: add more camera configs: camera_type, etc.
     cameras: Dict[str, str] = field(default_factory=lambda: {})
     components: List[str] = field(
         default_factory=lambda: [
