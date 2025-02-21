@@ -152,8 +152,8 @@ class AIRBOTMMK2(object):
         if self.traj_mode:
             self._move_by_traj(goal)
         else:
-            # param = ForwardPositionParams()
-            param = TrackingParams()
+            param = ForwardPositionParams()
+            # param = TrackingParams()
             # param = MoveServoParams(header=self.robot.get_header())
             # param = {
             #     MMK2Components.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
