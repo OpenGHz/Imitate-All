@@ -167,13 +167,30 @@ class AIRBOTMMK2(object):
 
     def get_low_dim_data(self):
         data = {}
-        all_joints = self.robot.get_robot_state().joint_state
+        robot_state = self.robot.get_robot_state()
+        all_joints = robot_state.joint_state
         # logger.info(f"joint_stamp: {all_joints.header.stamp}")
         for comp in self.components:
             joint_states = self.robot.get_joint_values_by_names(
                 all_joints, self.joint_names[comp]
             )
             data[f"observation/{comp.value}/joint_position"] = joint_states
+            if comp == MMK2Components.BASE:
+                base_pose = robot_state.base_state.pose
+                base_vel = robot_state.base_state.velocity
+                data_pose = [
+                    base_pose.x,
+                    base_pose.y,
+                    base_pose.theta,
+                ]
+                data[f"action/{comp.value}/pose"] = data_pose
+                data_vel = [
+                    base_vel.x,
+                    base_vel.y,
+                    base_vel.omega,
+                ]
+                data[f"action/{comp.value}/velocity"] = data_vel
+                data[f"action/{comp.value}/joint_position"] = data_vel + data_pose
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:
                     arm_jn = JointNames().__dict__[comp.value]

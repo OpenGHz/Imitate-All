@@ -663,6 +663,12 @@ def record(
                         #     "sn": "",
                         #     "firmware_version": "0.0.0",
                         # },
+                        # "/observation/base/joint_state": {
+                        #     "description": "slamtec-athena",
+                        #     "type": "jointstate",
+                        #     "sn": "",
+                        #     "firmware_version": "0.0.0",
+                        # },
                         "/images/head_camera": {
                             "description": "DSJ-2062-309",
                             "type": "image",

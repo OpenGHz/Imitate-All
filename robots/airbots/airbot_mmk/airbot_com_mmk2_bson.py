@@ -1,5 +1,6 @@
 from mmk2_types.types import (
     JointNames,
+    MMK2Components,
     MMK2ComponentsGroup,
 )
 from mmk2_types.grpc_msgs import Time
@@ -51,17 +52,26 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
 
     def get_low_dim_data(self):
         data = {}
-        all_joints = self.robot.get_robot_state().joint_state
+        robot_state = self.robot.get_robot_state()
+        all_joints = robot_state.joint_state
         for comp in self.components:
-            joint_pos = self.robot.get_joint_values_by_names(
-                all_joints, self.joint_names[comp], "position"
-            )
-            joint_vel = self.robot.get_joint_values_by_names(
-                all_joints, self.joint_names[comp], "velocity"
-            )
-            joint_eff = self.robot.get_joint_values_by_names(
-                all_joints, self.joint_names[comp], "effort"
-            )
+            if comp != MMK2Components.BASE:
+                joint_pos = self.robot.get_joint_values_by_names(
+                    all_joints, self.joint_names[comp], "position"
+                )
+                joint_vel = self.robot.get_joint_values_by_names(
+                    all_joints, self.joint_names[comp], "velocity"
+                )
+                joint_eff = self.robot.get_joint_values_by_names(
+                    all_joints, self.joint_names[comp], "effort"
+                )
+            else:
+                base_pose = robot_state.base_state.pose
+                base_vel = robot_state.base_state.velocity
+                # TODO: set used states in joint_pos
+                joint_pos = [base_pose.x, base_pose.y, base_pose.theta]
+                joint_vel = [base_vel.x, base_vel.y, base_vel.omega]
+                joint_eff = [0.0, 0.0, 0.0]
             stamp = all_joints.header.stamp
             data.update(
                 self._get_joint_state(
