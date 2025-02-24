@@ -93,6 +93,8 @@ For AIRBOT Play 3.0, the defualt configurations are in `configurations/basic_con
     start_eef_joint_position: [0.0, 0.0]
     ```
 
+For recording with TOK2/4, please refer to `airbot_tok2_2_demonstration.yaml`/`airbot_tok4_2_demonstration.yaml` in `configurations/basic_configs/example/robot/airbots/tok` folder.
+
 For recording with RealSense cameras, please refer to `configurations/basic_configs/example/robot/airbots/tok/airbot_tok2_2_no_base_realsense_demonstration.yaml` and run `pip install -r requirements/realsense.txt -i https://pypi.mirrors.ustc.edu.cn/simple/` to install pyrealsense2.
 
 ### Starting Data Collection / Demonstration
@@ -162,7 +164,7 @@ After excuting the command above, you can use the keyboard of your computer to c
 
 ### Modify Default Configurations
 
-The defualt configurations are in `play/airbot_play_with_usbcams.yaml` and `tok/airbot_tok.yaml` in `configurations/basic_configs/example/robot/airbots/` folder. The former is used for one long airbot_plays with a G2 gripper while the latter is used for two long airbot_plays with G2 grippers. You can modify them according to your usage.
+The defualt configurations are `play/airbot_play_with_usbcams.yaml` and `tok/airbot_tok.yaml` in `configurations/basic_configs/example/robot/airbots/` folder. The former is used for one long airbot_plays with a G2 gripper while the latter is used for two long airbot_plays with G2 grippers. You can modify them according to your usage.
 
 ### Starting Data Replay
 
