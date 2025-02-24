@@ -55,6 +55,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
         robot_state = self.robot.get_robot_state()
         all_joints = robot_state.joint_state
         for comp in self.components:
+            stamp = all_joints.header.stamp
             if comp != MMK2Components.BASE:
                 joint_pos = self.robot.get_joint_values_by_names(
                     all_joints, self.joint_names[comp], "position"
@@ -72,7 +73,11 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                 joint_pos = [base_pose.x, base_pose.y, base_pose.theta]
                 joint_vel = [base_vel.x, base_vel.y, base_vel.omega]
                 joint_eff = [0.0, 0.0, 0.0]
-            stamp = all_joints.header.stamp
+                data.update(
+                    self._get_joint_state(
+                        "action", comp.value, stamp, joint_pos, joint_vel, joint_eff
+                    )
+                )
             data.update(
                 self._get_joint_state(
                     "observation", comp.value, stamp, joint_pos, joint_vel, joint_eff
