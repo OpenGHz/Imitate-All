@@ -33,8 +33,7 @@ class AIRBOTMMK2Config(object):
     ip: str = "192.168.11.200"
     port: int = 50055
     default_action: Optional[List[float]] = None
-    # TODO: add more camera configs: camera_type, etc.
-    cameras: Dict[str, str] = field(default_factory=lambda: {})
+    cameras: Dict[str, List[str]] = field(default_factory=lambda: {})
     components: List[str] = field(
         default_factory=lambda: [
             MMK2Components.LEFT_ARM.value,
@@ -62,8 +61,8 @@ class AIRBOTMMK2(object):
         self.components: Dict[MMK2Components, ComponentTypes] = {}
         all_joint_names = JointNames()
         self.joint_num = 0
-        for k, v in self.config.cameras.items():
-            self.cameras[MMK2Components(k)] = ImageTypes(v)
+        for k, types in self.config.cameras.items():
+            self.cameras[MMK2Components(k)] = [ImageTypes(v) for v in types]
         for comp_str in self.config.components:
             comp = MMK2Components(comp_str)
             # TODO: get the type info from SDK

@@ -5,8 +5,8 @@ ip: "192.168.11.200"
 default_action: null
 
 cameras:
-  # left_camera: "color"
-  # right_camera: "color"
-  head_camera: "color"
+  head_camera: ["color"]
+  # left_camera: ["color"]
+  # right_camera: ["color"]
 
 demonstrate: true
