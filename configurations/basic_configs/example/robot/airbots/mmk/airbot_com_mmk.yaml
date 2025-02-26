@@ -8,6 +8,6 @@ default_action: null
 components: ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef", "head", "spine"]
 
 cameras:
-  # left_camera: "rgb"
-  # right_camera: "rgb"
-  head_camera: "rgb"
+  # left_camera: "color"
+  # right_camera: "color"
+  head_camera: "color"

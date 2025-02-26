@@ -69,15 +69,22 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
         for comp in self.components:
             stamp = all_joints.header.stamp
             if comp != MMK2Components.BASE:
-                joint_pos = self.robot.get_joint_values_by_names(
-                    all_joints, self.joint_names[comp], "position"
-                )
-                joint_vel = self.robot.get_joint_values_by_names(
-                    all_joints, self.joint_names[comp], "velocity"
-                )
-                joint_eff = self.robot.get_joint_values_by_names(
-                    all_joints, self.joint_names[comp], "effort"
-                )
+                # TODO: hand has no joint states
+                names = self.joint_names[comp]
+                if set(names) - set(all_joints.name):
+                    joint_pos = [0.0] * len(names)
+                    joint_vel = [0.0] * len(names)
+                    joint_eff = [0.0] * len(names)
+                else:
+                    joint_pos = self.robot.get_joint_values_by_names(
+                        all_joints, names, "position"
+                    )
+                    joint_vel = self.robot.get_joint_values_by_names(
+                        all_joints, names, "velocity"
+                    )
+                    joint_eff = self.robot.get_joint_values_by_names(
+                        all_joints, names, "effort"
+                    )
                 # TODO: configure has-pose components
                 if comp in MMK2ComponentsGroup.ARMS:
                     poses = robot_state.robot_pose.robot_pose[comp.value]
