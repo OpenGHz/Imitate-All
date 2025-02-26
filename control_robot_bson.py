@@ -666,14 +666,10 @@ def record(
                         "/observation/left_arm/pose": {
                             "description": "",
                             "type": "pose",
-                            "sn": "",
-                            "firmware_version": "0.0.0",
                         },
                         "/observation/right_arm/pose": {
                             "description": "",
                             "type": "pose",
-                            "sn": "",
-                            "firmware_version": "0.0.0",
                         },
                         # "/observation/base/joint_state": {
                         #     "description": "slamtec-athena",
