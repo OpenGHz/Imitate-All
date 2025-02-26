@@ -36,6 +36,18 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
         }
         return data
 
+    def _get_pose(self, ns: str, comp: str, stamp: Time, t: list, r: list) -> dict:
+        data = {}
+        handle = "pose"
+        data[f"/{ns}/{comp}/{handle}"] = {
+            "t": int((stamp.sec + stamp.nanosec / 1e9) * 1e3),
+            "data": {
+                "t": t,
+                "r": r,
+            },
+        }
+        return data
+
     def _get_image(self, comp: str, stamp: Time, image: np.ndarray) -> dict:
         data = {}
         data[f"/images/{comp}"] = {
@@ -66,6 +78,17 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                 joint_eff = self.robot.get_joint_values_by_names(
                     all_joints, self.joint_names[comp], "effort"
                 )
+                # TODO: configure has-pose components
+                if comp in MMK2ComponentsGroup.ARMS:
+                    poses = robot_state.robot_pose.robot_pose[comp.value]
+                    t = poses.position.x, poses.position.y, poses.position.z
+                    r = (
+                        poses.orientation.x,
+                        poses.orientation.y,
+                        poses.orientation.z,
+                        poses.orientation.w,
+                    )
+                    data.update(self._get_pose("observation", comp.value, stamp, t, r))
             else:
                 base_pose = robot_state.base_state.pose
                 base_vel = robot_state.base_state.velocity

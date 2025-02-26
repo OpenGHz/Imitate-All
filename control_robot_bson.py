@@ -663,12 +663,18 @@ def record(
                             "sn": "",
                             "firmware_version": "0.0.0",
                         },
-                        # "/observation/eef/pose": {
-                        #     "description": "",
-                        #     "type": "jointstate",
-                        #     "sn": "",
-                        #     "firmware_version": "0.0.0",
-                        # },
+                        "/observation/left_arm/pose": {
+                            "description": "",
+                            "type": "pose",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
+                        "/observation/right_arm/pose": {
+                            "description": "",
+                            "type": "pose",
+                            "sn": "",
+                            "firmware_version": "0.0.0",
+                        },
                         # "/observation/base/joint_state": {
                         #     "description": "slamtec-athena",
                         #     "type": "jointstate",
