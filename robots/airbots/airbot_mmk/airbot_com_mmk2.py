@@ -214,14 +214,7 @@ class AIRBOTMMK2(object):
         comp_images = self.robot.get_image(self.cameras)
         for comp, image in comp_images.items():
             # TODO: now only support for color image
-            kind = self.cameras[comp]
-            if kind == ImageTypes.RGB:
-                images[comp.value] = image.color
-            elif kind == ImageTypes.DEPTH:
-                images[comp.value] = image.depth
-            elif kind == ImageTypes.RGBD:
-                images[comp.value + "_color"] = image.color
-                images[comp.value + "_depth"] = image.depth
+            images[comp.value] = image.data[ImageTypes.COLOR]
             img_stamps[comp.value] = image.stamp
 
         name = "cameras"
