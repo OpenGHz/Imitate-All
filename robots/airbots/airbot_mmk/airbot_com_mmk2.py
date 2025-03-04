@@ -59,7 +59,6 @@ class AIRBOTMMK2(object):
         self.joint_names = {}
         self.cameras: Dict[MMK2Components, str] = {}
         self.components: Dict[MMK2Components, ComponentTypes] = {}
-        all_joint_names = JointNames()
         self.joint_num = 0
         for k, types in self.config.cameras.items():
             self.cameras[MMK2Components(k)] = [ImageTypes(v) for v in types]
@@ -67,7 +66,7 @@ class AIRBOTMMK2(object):
             comp = MMK2Components(comp_str)
             # TODO: get the type info from SDK
             self.components[comp] = ComponentTypes.UNKNOWN
-            names = all_joint_names.__dict__[comp_str]
+            names = JointNames[MMK2Components(comp_str).name].value
             self.joint_names[comp] = names
             self.joint_num += len(names)
         logger.info(f"Components: {self.components}")
