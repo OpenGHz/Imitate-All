@@ -58,7 +58,6 @@ class AIRBOTMMK2(object):
         self.joint_names = {}
         self.cameras: Dict[MMK2Components, str] = {}
         self.components: Dict[MMK2Components, ComponentTypes] = {}
-        all_joint_names = JointNames()
         self.joint_num = 0
         for k, v in self.config.cameras.items():
             self.cameras[MMK2Components(k)] = ImageTypes(v)
@@ -66,7 +65,7 @@ class AIRBOTMMK2(object):
             comp = MMK2Components(comp_str)
             # TODO: get the type info from SDK
             self.components[comp] = ComponentTypes.UNKNOWN
-            names = all_joint_names.__dict__[comp_str]
+            names = JointNames[MMK2Components(comp_str).name].value
             self.joint_names[comp] = names
             self.joint_num += len(names)
         logger.info(f"Components: {self.components}")
@@ -170,9 +169,9 @@ class AIRBOTMMK2(object):
             data[f"observation/{comp.value}/joint_position"] = joint_states
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:
-                    arm_jn = JointNames().__dict__[comp.value]
-                    comp_eef = comp.value + "_eef"
-                    eef_jn = JointNames().__dict__[comp_eef]
+                    arm_jn = JointNames[comp.name].value
+                    comp_eef = comp.name + "_EEF"
+                    eef_jn = JointNames[comp_eef]
                     js = self.robot.get_listened(self._comp_action_topic[comp])
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data[f"action/{comp.value}/joint_position"] = jq[:-1]

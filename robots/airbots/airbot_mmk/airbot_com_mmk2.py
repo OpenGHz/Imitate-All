@@ -192,9 +192,9 @@ class AIRBOTMMK2(object):
                 data[f"action/{comp.value}/joint_position"] = data_vel + data_pose
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:
-                    arm_jn = JointNames().__dict__[comp.value]
-                    comp_eef = comp.value + "_eef"
-                    eef_jn = JointNames().__dict__[comp_eef]
+                    arm_jn = JointNames[comp.name].value
+                    comp_eef = comp.name + "_EEF"
+                    eef_jn = JointNames[comp_eef].value
                     js = self.robot.get_listened(self._comp_action_topic[comp])
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data[f"action/{comp.value}/joint_position"] = jq[:-1]
