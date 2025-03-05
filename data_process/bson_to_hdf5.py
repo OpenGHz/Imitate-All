@@ -82,14 +82,15 @@ concatenater = {
     "/observations/qpos": obs_keys_low_dim,
     "/action": act_keys,
 }
-# key_filter = (
-#     [
-#         "observation/eef/pose",
-#         "action/eef/pose",
-#         # "/time",
-#     ]
-# )
-key_filter = None
+key_filter = (
+    [
+        "/observation/left_arm/pose",
+        "/observation/right_arm/pose",
+        # "action/eef/pose",
+        # "/time",
+    ]
+)
+# key_filter = None
 
 padding = {key: 0 for key in image_keys}
 
@@ -117,6 +118,7 @@ def save_one(index, ep_name):
         key_filter,
         padding,
     )
+    print(bson_dict.keys())
     return crd.save_dict_to_hdf5(bson_dict, target_dir + target_namer(index), None)
 
 
