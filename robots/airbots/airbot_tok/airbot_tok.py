@@ -8,8 +8,8 @@ import time
 
 @dataclass
 class AIRBOTTOKConfig(object):
-    arms_cfg: Dict[str, AIRBOTPlayConfig] = field(default_factory=lambda: {})
-    cameras: Dict[str, Camera] = field(default_factory=lambda: {})
+    arms_cfg: Dict[str, AIRBOTPlayConfig] = field(default_factory=dict)
+    cameras: Dict[str, Camera] = field(default_factory=dict)
 
 
 class AIRBOTTOK(object):

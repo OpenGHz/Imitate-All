@@ -1,22 +1,27 @@
 from dataclasses import dataclass, field, replace
 from habitats.common.robot_devices.cameras.utils import Camera
 from typing import Dict, Optional, List, Union
-from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
-from robots.airbots.airbot_play.airbot_replay_remote import (
+from robots.airbots.airbot_play.airbot_play_4 import AIRBOTPlay, AIRBOTPlayConfig
+from robots.airbots.airbot_play.airbot_replay_remote2 import (
     AIRBOTReplay,
     AIRBOTReplayConfig,
 )
-from threading import Thread, Lock
 import time
 import numpy as np
+import logging
+from collections import defaultdict
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class AIRBOTPlayDemonstrationConfig(object):
     groups: Dict[str, Dict[str, Union[AIRBOTPlayConfig, AIRBOTReplayConfig]]] = field(
-        default_factory=lambda: {}
+        default_factory=dict
     )
-    cameras: Dict[str, Camera] = field(default_factory=lambda: {})
+    cameras: Dict[str, Camera] = field(default_factory=dict)
 
 
 class AIRBOTPlayDemonstration(object):
@@ -27,10 +32,9 @@ class AIRBOTPlayDemonstration(object):
             config = AIRBOTPlayDemonstrationConfig()
         # Overwrite config arguments using kwargs (used for yaml config)
         self.config = replace(config, **kwargs)
-        # TODO: add cameras for each robot?
         self.cameras = self.config.cameras
-        self._state_mode = "active"
         self.logs = {}
+        self._exited = False
         self.leaders: Dict[str, Union[AIRBOTPlay, AIRBOTReplay]] = {}
         self.followers: Dict[str, List[AIRBOTPlay]] = {}
 
@@ -39,14 +43,12 @@ class AIRBOTPlayDemonstration(object):
             leader_cfg: dict = g_value["leader"]
             followers_cfg = g_value["followers"]
             if leader_cfg.get("joint_states_topic", None) is None:
-                # use local robot
-                self.leaders[g_name] = AIRBOTPlay(**leader_cfg)
-                self.is_replay[g_name] = (
-                    leader_cfg["forearm_type"],
-                    leader_cfg["bigarm_type"],
-                ) == ("encoder", "encoder")
+                logger.info("Using local robot")
+                leader = AIRBOTPlay(**leader_cfg)
+                self.is_replay[g_name] = leader.robot.arm_type == "replay"
+                self.leaders[g_name] = leader
             else:
-                # use remote robot
+                logger.info("Using remote robot")
                 self.leaders[g_name] = AIRBOTReplay(**leader_cfg)
                 self.is_replay[g_name] = True
             self.followers[g_name] = []
@@ -54,44 +56,30 @@ class AIRBOTPlayDemonstration(object):
                 self.followers[g_name].append(AIRBOTPlay(**f_cfg))
         for name in self.cameras:
             self.cameras[name].connect()
-        self._is_running = True
-        self._reset_lock = Lock()
-        self.__sync_thread = Thread(target=self.__sync, daemon=True)
-        self.__sync_thread.start()
         self.reset()
 
-    def __sync(self):
-        duration = 0.001
-        while self._is_running:
-            self._reset_lock.acquire()
-            for g_name in self.config.groups.keys():
-                l_pos = self.leaders[g_name].get_current_joint_positions()
-                for follower in self.followers[g_name]:
-                    follower.set_joint_position_target(l_pos, [6.0])
-            self._reset_lock.release()
-            time.sleep(duration)
-
     def reset(self):
-        self._reset_lock.acquire()
         leaders = list(self.leaders.values())
-        is_replay = list(self.is_replay.values())
-        for index, followers in enumerate(self.followers.values()):
-            default_action = leaders[index].config.default_action
-            if (default_action is not None) and not is_replay[index]:
-                for follower in followers:
-                    follower.enter_active_mode()
-                    follower.set_joint_position_target(default_action, [0.2], True)
+        # move leaders to default action
+        # the followers will be automatically moved
         for index, leader in enumerate(leaders):
             default_action = leader.config.default_action
-            if (default_action is not None) and not is_replay[index]:
-                if leader.enter_active_mode():
-                    leader.set_joint_position_target(default_action, [0.2], True)
+            if default_action:
+                # if leader.enter_active_mode():
+                leader.send_action(default_action, True)
+        # is_replay = list(self.is_replay.values())
+        # for index, followers in enumerate(self.followers.values()):
+        #     default_action = leaders[index].config.default_action
+        #     # do not reset the follower when the leader is a replay robot
+        #     if (default_action is not None) and not is_replay[index]:
+        #         for follower in followers:
+        #             # follower.enter_active_mode()
+        #             follower.send_action(default_action, True)
         self._state_mode = "active"
-        self._reset_lock.release()
 
     def enter_active_mode(self):
-        for leader in self.leaders.values():
-            leader.enter_active_mode()
+        # for leader in self.leaders.values():
+        #     leader.enter_active_mode()
         self._state_mode = "active"
 
     def enter_passive_mode(self):
@@ -100,36 +88,19 @@ class AIRBOTPlayDemonstration(object):
         self._state_mode = "passive"
 
     def get_low_dim_data(self) -> Dict[str, list]:
-        data = {}
+        data = defaultdict(list)
         data["/time"] = time.time()
-
-        action_arm_jq = []
-        action_eef_jq = []
-        action_eef_pose = []
         for leader in self.leaders.values():
-            jq = leader.get_current_joint_positions()
-            action_arm_jq.extend(jq[:6])
-            action_eef_jq.append(jq[6])
-            pose = leader.get_current_pose()
-            action_eef_pose.extend(pose[0] + pose[1])  # xyz + quat(xyzw)
-        data["action/arm/joint_position"] = action_arm_jq
-        data["action/eef/joint_position"] = action_eef_jq
-        data["action/eef/pose"] = action_eef_pose
-
-        obs_arm_jq = []
-        obs_eef_jq = []
-        obs_eef_pose = []
+            low_dim = leader.get_low_dim_data()
+            low_dim.pop("/time")
+            for key, value in low_dim.items():
+                data[key.replace("observation", "action")].extend(value)
         for followers in self.followers.values():
             for follower in followers:
-                jq = follower.get_current_joint_positions()
-                obs_arm_jq.extend(jq[:6])
-                obs_eef_jq.append(jq[6])
-                pose = follower.get_current_pose()
-                obs_eef_pose.extend(pose[0] + pose[1])  # xyz + quat(xyzw)
-        data["observation/arm/joint_position"] = obs_arm_jq
-        data["observation/eef/joint_position"] = obs_eef_jq
-        data["observation/eef/pose"] = obs_eef_pose
-
+                low_dim = follower.get_low_dim_data()
+                low_dim.pop("/time")
+                for key, value in low_dim.items():
+                    data[key].extend(value)
         return data
 
     def capture_observation(self) -> Dict[str, Union[dict, np.ndarray]]:
@@ -162,17 +133,10 @@ class AIRBOTPlayDemonstration(object):
         return obs_act_dict
 
     def exit(self):
+        assert not self._exited, "Robot already exited"
         for name in self.cameras:
             self.cameras[name].disconnect()
-        self._is_running = False
-        print("Waiting for sync thread to finish")
-        self.__sync_thread.join()
-        print("deleting leaders")
-        for g_name, leader in self.leaders.items():
-            if not self.is_replay[g_name]:
-                del leader
-        print("deleting followers")
-        del self.followers
+        self._exited = True
         print("Robot exited")
 
     def get_state_mode(self):
