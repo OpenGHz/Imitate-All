@@ -85,10 +85,21 @@ class AIRBOTMMK2(object):
         # use stream to get images
         # self.robot.enable_stream(self.robot.get_image, self.cameras)
         if self.config.demonstrate:
-            comp_action_topic = {
-                comp: TopicNames.tracking.format(component=comp.value)
-                for comp in MMK2ComponentsGroup.ARMS
-            }
+            if self.config.teleop_mode is not "vr":
+                comp_action_topic = {
+                    comp: TopicNames.tracking.format(component=comp.value)
+                    for comp in MMK2ComponentsGroup.ARMS
+                }
+            else:
+                comp_action_topic = (
+                {
+                    comp: TopicNames.controller_command.format(
+                        component=comp.value,
+                        controller=ControllerTypes.FORWARD_POSITION.value,
+                    )
+                    for comp in MMK2ComponentsGroup.ARMS
+                }
+            )
             comp_action_topic.update(
                 {
                     comp: TopicNames.controller_command.format(
@@ -193,14 +204,20 @@ class AIRBOTMMK2(object):
                 data[f"action/{comp.value}/joint_position"] = data_vel + data_pose
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:
-                    arm_jn = JointNames().__dict__[comp.value]
-                    comp_eef = comp.value + "_eef"
-                    eef_jn = JointNames().__dict__[comp_eef]
-                    js = self.robot.get_listened(self._comp_action_topic[comp])
-                    jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
-                    data[f"action/{comp.value}/joint_position"] = jq[:-1]
-                    # the eef joint is in arms
-                    data[f"action/{comp_eef}/joint_position"] = jq[-1:]
+                    if self.config.teleop_mode is not "vr":
+                        arm_jn = JointNames().__dict__[comp.value]
+                        comp_eef = comp.value + "_eef"
+                        eef_jn = JointNames().__dict__[comp_eef]
+                        js = self.robot.get_listened(self._comp_action_topic[comp])
+                        jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
+                        data[f"action/{comp.value}/joint_position"] = jq[:-1]
+                        # the eef joint is in arms
+                        data[f"action/{comp_eef}/joint_position"] = jq[-1:]
+                    else:
+                        jq = list(
+                        self.robot.get_listened(self._comp_action_topic[comp]).data
+                        )
+                        data[f"action/{comp.value}/joint_position"] = jq
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
                     jq = list(
                         self.robot.get_listened(self._comp_action_topic[comp]).data

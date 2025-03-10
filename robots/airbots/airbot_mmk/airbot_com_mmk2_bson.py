@@ -85,29 +85,39 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
             )
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:
-                    arm_jn = JointNames().__dict__[comp.value]
-                    comp_eef = comp.value + "_eef"
-                    eef_jn = JointNames().__dict__[comp_eef]
-                    js = self.robot.get_listened(self._comp_action_topic[comp])
-                    assert (
-                        js is not None
-                    ), "The AIRBOT MMK2 should be in bag teleopration mode."
-                    jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
-                    data.update(
-                        self._get_joint_state(
-                            "action", comp.value, js.header.stamp, jq[:-1]
+                    if self.config.teleop_mode is not "vr":
+                        arm_jn = JointNames().__dict__[comp.value]
+                        comp_eef = comp.value + "_eef"
+                        eef_jn = JointNames().__dict__[comp_eef]
+                        js = self.robot.get_listened(self._comp_action_topic[comp])
+                        assert (
+                            js is not None
+                        ), "The AIRBOT MMK2 should be in sync mode."
+                        jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
+                        data.update(
+                            self._get_joint_state(
+                                "action", comp.value, js.header.stamp, jq[:-1]
+                            )
                         )
-                    )
-                    data.update(
-                        self._get_joint_state(
-                            "action", comp_eef, js.header.stamp, jq[-1:]
+                        data.update(
+                            self._get_joint_state(
+                                "action", comp_eef, js.header.stamp, jq[-1:]
+                            )
                         )
-                    )
+                    else:
+                        result = self.robot.get_listened(self._comp_action_topic[comp])
+                        assert (
+                            result is not None
+                        ), "The AIRBOT MMK2 should be in sync mode."
+                        jq = list(result.data)
+                        data.update(
+                            self._get_joint_state("action", comp.value, result.stamp, jq)
+                        )
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
                     result = self.robot.get_listened(self._comp_action_topic[comp])
                     assert (
                         result is not None
-                    ), "The AIRBOT MMK2 should be in bag teleopration sync mode."
+                    ), "The AIRBOT MMK2 should be in sync mode."
                     jq = list(result.data)
                     data.update(
                         self._get_joint_state("action", comp.value, result.stamp, jq)

@@ -12,6 +12,9 @@ cameras:
 
 demonstrate: true
 
+teleop_mode: "teachbag"
+# teleop_mode: "vr"
+
 default_action:
   [
     0.0,
