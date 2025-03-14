@@ -123,7 +123,7 @@ After training, by default, you can find two folders in `./my_ckpt/<task_name>/<
   <img src="images/train_output_structure.png" />
 </p>
 
-For ease of use in the future, it's recommended to **store the core folder in the specified disk's IMITALL/my_ckpt folder**.
+For ease of use in the future, it's recommended to **store the core folder in the specified disk's Imitate-All/my_ckpt folder**.
 
 ## Policy Evaluating
 
@@ -208,4 +208,4 @@ This information ensures experiment reproducibility. If the camera is rigidly at
 For dataset stats, just set `-in stats` in the above command.
 
 ## Data Collection
-Refer to README_DataCollection.md
+Refer to `README_DataCollection.md`.
