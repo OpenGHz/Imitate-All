@@ -4,14 +4,7 @@ import cv2
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import sys
-import logging
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger()
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -153,7 +146,10 @@ print("Try saving one data to check if everything is ok...")
 index = 0
 ep_name = episode_names[index]
 
-logger.info(f"bson dict keys: {save_one(index, ep_name).keys()}")
+bson_keys = save_one(index, ep_name).keys()
+print(f"bson dict keys: {bson_keys}")
+for key in concatenater.keys() | set(name_converter.values()):
+    assert key in bson_keys, f"key {key} not in bson_keys"
 
 # save all data
 print(f"Start saving all data to {target_dir}...")
