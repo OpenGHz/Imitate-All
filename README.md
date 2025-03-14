@@ -79,6 +79,8 @@ What's more, for policy evaluation, make sure you have set up the robot control 
   <img src="images/basic_config.png" />
 </p>
 
+For different AIRBOT robots, please select the corresponding default configuration file in the `configurations/task_configs/airbots` directory.
+
 When training with default paths, place the .hdf5 data files in the ./data/hdf5/<task_name> folder. You can create the directory with the following command:
 
 ```bash
