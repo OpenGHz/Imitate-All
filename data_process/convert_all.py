@@ -4,7 +4,7 @@ import json
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
-from typing import Any, Dict, Optional, List, Callable, Union
+from typing import Any, Dict, Optional, List, Callable, Union, Tuple
 import cv2
 from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
 import logging
@@ -504,7 +504,7 @@ def raw_bson_to_dict(
     concatenater: Optional[Dict[str, str]] = None,
     key_filter: Optional[List] = None,
     padding: Optional[Dict[str, Union[str, float]]] = None,
-) -> dict:
+) -> Tuple[Dict[str, dict], Dict[str, list]]:
     """Load the raw data to a dictionary."""
     # from airbot_data.io import load_bson
 

@@ -4,7 +4,14 @@ import cv2
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import sys
+import logging
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger()
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -138,15 +145,15 @@ def save_one(index, ep_name):
         key_filter,
         padding,
     )
-    print(bson_dict.keys())
-    return crd.save_dict_to_hdf5(bson_dict, target_dir + target_namer(index), None)
-
+    crd.save_dict_to_hdf5(bson_dict, target_dir + target_namer(index), None)
+    return bson_dict
 
 # save one first to print logs
 print("Try saving one data to check if everything is ok...")
 index = 0
 ep_name = episode_names[index]
-save_one(index, ep_name)
+
+logger.info(f"bson dict keys: {save_one(index, ep_name).keys()}")
 
 # save all data
 print(f"Start saving all data to {target_dir}...")
