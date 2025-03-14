@@ -14,6 +14,7 @@ parser.add_argument("-cn", "--camera_names", type=str, nargs="+")
 parser.add_argument("-ds", "--downsampling", type=int, default=0)
 parser.add_argument("-md", "--mode", type=str, default="play")
 parser.add_argument("-dir", "--raw_dir", type=str, default="data/raw")
+parser.add_argument("-mnw", "--max_num_workers", type=int, default=15)
 # parser.add_argument("-pad", "--padding", action="store_true")
 args = parser.parse_args()
 
@@ -22,6 +23,7 @@ camera_names = args.camera_names
 downsampling = args.downsampling
 mode = args.mode
 raw_dir = args.raw_dir
+max_num_workers = args.max_num_workers
 # padding = args.padding
 
 task_dir = os.path.abspath(f"{raw_dir}/{task_name}")
@@ -152,9 +154,14 @@ for key in concatenater.keys() | set(name_converter.values()):
     assert key in bson_keys, f"key {key} not in bson_keys"
 
 # save all data
-print(f"Start saving all data to {target_dir}...")
-futures = []
-with ThreadPoolExecutor(max_workers=25) as executor:
+print(f"Start saving all data to {target_dir} using {max_num_workers} workers...")
+if max_num_workers > 1:
+    futures = []
+    with ThreadPoolExecutor(max_workers=max_num_workers) as executor:
+        for index, ep_name in enumerate(episode_names):
+            futures.append(executor.submit(save_one, index, ep_name))
+else:
     for index, ep_name in enumerate(episode_names):
-        futures.append(executor.submit(save_one, index, ep_name))
+        save_one(index, ep_name)
+        print(f"Saved {index}: {ep_name}")
 print(f"All data saved to {target_dir}")
