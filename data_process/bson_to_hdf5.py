@@ -5,6 +5,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 import sys
 
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 parser = argparse.ArgumentParser()
@@ -33,10 +34,10 @@ name_converter = {
 
 if mode == "play":
     obs_keys_low_dim = (
-        "/observation/arm/joint_position",
-        "/observation/eef/joint_position",
+        "/observation1/arm/joint_position",
+        "/observation1/eef/joint_position",
     )
-    act_keys = ("/action/arm/joint_position", "/action/eef/joint_position")
+    act_keys = ("/action1/arm/joint_position", "/action1/eef/joint_position")
 elif mode == "mmk2":
     obs_keys_low_dim = (
         "/observation/left_arm/joint_state",
@@ -68,6 +69,7 @@ pre_process = {
     key: crd.Compresser("jpg", [int(cv2.IMWRITE_JPEG_QUALITY), 50], True).compress
     for key in image_keys
 }
+
 pre_process.update(
     {
         key: lambda data: data["pos"]
@@ -78,19 +80,31 @@ pre_process.update(
     }
 )
 
+if mode == "mmk2":
+    key_filter =  [
+            "/observation/left_arm/pose",
+            "/observation/right_arm/pose",
+            # "action/eef/pose",
+            # "/time",
+    ]
+elif mode == "play":
+    pre_process.update(
+        {"/action1/eef/joint_position": lambda data: data["t"]}
+    )
+    pre_process.update(
+        {"/observation1/eef/joint_position": lambda data: data["t"]}
+    )
+    key_filter = [
+        "/action1/eef/pose",
+        "/observation1/eef/pose",
+    ]
+else:
+    raise ValueError(f"mode {mode} not supported")
+
 concatenater = {
     "/observations/qpos": obs_keys_low_dim,
     "/action": act_keys,
 }
-key_filter = (
-    [
-        "/observation/left_arm/pose",
-        "/observation/right_arm/pose",
-        # "action/eef/pose",
-        # "/time",
-    ]
-)
-# key_filter = None
 
 padding = {key: 0 for key in image_keys}
 
@@ -104,7 +118,13 @@ target_namer = lambda i: f"episode_{i}.hdf5"
 # create target dir
 os.makedirs(target_dir, exist_ok=True)
 
-episode_names = crd.get_files_name_by_suffix(task_dir, ".bson")
+print(f"Try to find all episode files in {task_dir}...")
+if mode == "mmk2":
+    episode_names = crd.get_files_name_by_suffix(task_dir, ".bson")
+elif mode == "play":
+    episode_names = [f"{fd}/data.bson" for fd in os.listdir(task_dir)]
+else:
+    raise ValueError(f"mode {mode} not supported")
 print(f"episode_names: {episode_names}")
 
 
