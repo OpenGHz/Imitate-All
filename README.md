@@ -166,6 +166,7 @@ Evaluation command and parameters:
   - -`ci`: Camera device numbers, corresponding to the device order of the configured camera names. For example, if two cameras are used and their id are 2 and 4, specify `-ci 2 4`.
   - `-can`: Specify which CAN to use for control; default is CAN0. Change to CAN1 with -can can1, for example. For dual-arm tasks, specify multiple cans like ```-can can0 can1```.
   - `-cki`: Don't start the robotic arm, only show captured camera images, useful for verifying if the camera order matches the data collection order.
+  - `-show`: Display live images during inference via the OpenCV window.
 
 - AIRBOT PlayV3.x/TOK/MMK
   ```bash
