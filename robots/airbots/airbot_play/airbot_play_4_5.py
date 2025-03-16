@@ -8,6 +8,8 @@ from airbot_py.airbot_play import AirbotPlay
 
 @dataclass
 class AIRBOTPlayConfig(object):
+    arm_type: str = "play_short"
+    end_effector: str = "G2"
     port: int = 50000
     start_arm_joint_position: List[float] = field(
         default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -47,7 +49,6 @@ class AIRBOTPlay(object):
         self.robot = AirbotPlay(
                     port = args.port
                 )
-        args.arm_type = self.robot.params["arm_type"]
         time.sleep(0.3)
         self.reset()
 
@@ -61,17 +62,22 @@ class AIRBOTPlay(object):
         time.sleep(0.3)
         # go to start position
         if args.arm_type != "replay":
+            print("log1")
             if args.start_arm_joint_position is not None:
+                print("log2")
                 assert robot.set_target_joint_q(
                     args.start_arm_joint_position, blocking=True
                 ), "set target joint q failed"
+                print("log3")
             if args.start_eef_joint_position is not None and robot.params["eef_type"] not in ["none", "E2B"]:
-                assert robot.set_target_end(
-                    args.start_eef_joint_position, blocking=False
+                print("log4")
+                assert robot.set_target_end_accurate(
+                    args.start_eef_joint_position, blocking=True
                 ), "set target end failed"
+                print("log5")
             # enter default mode
             if args.default_robot_mode == "ONLINE_TRAJ":
-                self.enter_traj_mode()
+                self.enter_traj_mode()                          
             elif args.default_robot_mode == "ONLINE_IDLE":
                 self.enter_active_mode()                        
             elif args.default_robot_mode == "ONLINE_SERVO":
@@ -123,8 +129,8 @@ class AIRBOTPlay(object):
                 action[:6], blocking=wait, vel=0.5, use_planning=False
             ), "set target joint q failed"
             if self.robot.params["eef_type"] not in ["none", "E2B"]:
-                # assert self.robot.set_target_end(action[6]), "set target end failed"
-                self.robot.set_target_end(action[6], blocking=wait)
+                # assert self.robot.set_target_end_accurate(action[6]), "set target end failed"
+                self.robot.set_target_end_accurate(action[6], blocking=wait)
         return action
 
     def get_low_dim_data(self):
