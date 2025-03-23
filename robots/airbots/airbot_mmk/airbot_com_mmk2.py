@@ -16,7 +16,7 @@ from mmk2_types.grpc_msgs import (
     TrackingParams,
     ForwardPositionParams,
 )
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass, replace, field
 import time
 import logging
@@ -33,7 +33,7 @@ class AIRBOTMMK2Config(object):
     ip: str = "192.168.11.200"
     port: int = 50055
     default_action: Optional[List[float]] = None
-    cameras: Dict[str, List[str]] = field(default_factory=lambda: {})
+    cameras: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     components: List[str] = field(
         default_factory=lambda: [
             MMK2Components.LEFT_ARM.value,
@@ -57,46 +57,45 @@ class AIRBOTMMK2(object):
             self.config.domain_id,
         )
         self.joint_names = {}
-        self.cameras: Dict[MMK2Components, str] = {}
+        self.cameras_goal: Dict[MMK2Components, List[ImageTypes]] = {}
+        self.cameras_cfg: Dict[MMK2Components, Dict[str, str]] = {}
+        self.cameras = self.cameras_goal.keys()
         self.components: Dict[MMK2Components, ComponentTypes] = {}
-        all_joint_names = JointNames()
         self.joint_num = 0
-        for k, types in self.config.cameras.items():
-            self.cameras[MMK2Components(k)] = [ImageTypes(v) for v in types]
+        for k, cfg in self.config.cameras.items():
+            comp = MMK2Components(k)
+            types = {ImageTypes(v) for v in cfg.pop("image_types")}
+            self.cameras_goal[comp] = types
+            if types != {ImageTypes.COLOR}:
+                cfg["enable_depth"] = "true"
+            if ImageTypes.ALIGNED_DEPTH_TO_COLOR in types:
+                cfg["align_depth.enable"] = "true"
+            self.cameras_cfg[comp] = cfg
         for comp_str in self.config.components:
             comp = MMK2Components(comp_str)
             # TODO: get the type info from SDK
             self.components[comp] = ComponentTypes.UNKNOWN
-            names = all_joint_names.__dict__[comp_str]
+            names = JointNames[comp.name].value
             self.joint_names[comp] = names
             self.joint_num += len(names)
         logger.info(f"Components: {self.components}")
         logger.info(f"Joint numbers: {self.joint_num}")
-        self.robot.enable_resources(
-            {
-                comp: {
-                    "rgb_camera.color_profile": "640,480,30",
-                    "enable_depth": "false",
-                }
-                for comp in self.cameras
-            }
-        )
+        logger.info(f"enable resources cfg: {self.cameras_cfg}")
+        self.robot.enable_resources(self.cameras_cfg)
         # use stream to get images
         # self.robot.enable_stream(self.robot.get_image, self.cameras)
+        comp_action_topic = {}
         if self.config.demonstrate:
-            comp_action_topic = {
-                comp: TopicNames.tracking.format(component=comp.value)
-                for comp in MMK2ComponentsGroup.ARMS
-            }
-            comp_action_topic.update(
-                {
-                    comp: TopicNames.controller_command.format(
+            for comp in self.components:
+                if comp in MMK2ComponentsGroup.ARMS:
+                    comp_action_topic[comp] = TopicNames.tracking.format(
+                        component=comp.value
+                    )
+                elif comp in MMK2ComponentsGroup.HEAD_SPINE:
+                    comp_action_topic[comp] = TopicNames.controller_command.format(
                         component=comp.value,
                         controller=ControllerTypes.FORWARD_POSITION.value,
                     )
-                    for comp in MMK2ComponentsGroup.HEAD_SPINE
-                }
-            )
             self.robot.listen_to(list(comp_action_topic.values()))
             self._comp_action_topic = comp_action_topic
         self.logs = {}
@@ -111,23 +110,16 @@ class AIRBOTMMK2(object):
         self.reset()
 
     def _move_by_traj(self, goal: dict):
-        # goal.update(
-        #     {
-        #         MMK2Components.HEAD: JointState(position=[0, -1.0]),
-        #         MMK2Components.SPINE: JointState(position=[0.15]),
-        #     }
-        # )
         if self.config.demonstrate:
             # TODO: since the arms and eefs are controlled by the teleop bag
             for comp in MMK2ComponentsGroup.ARMS_EEFS:
-                goal.pop(comp)
+                goal.pop(comp, None)
         if goal:
             # start = time.time()
             # logger.info(f"Move by trajectory")
             self.robot.set_goal(goal, TrajectoryParams())
             # logger.info(f"Move by trajectory time: {time.time() - start}")
             self.robot.set_goal(goal, ForwardPositionParams())
-
         return goal
 
     def reset(self, sleep_time=0):
@@ -211,7 +203,7 @@ class AIRBOTMMK2(object):
         images = {}
         img_stamps: Dict[MMK2Components, Time] = {}
         before_camread_t = time.perf_counter()
-        comp_images = self.robot.get_image(self.cameras)
+        comp_images = self.robot.get_image(self.cameras_goal)
         for comp, image in comp_images.items():
             # TODO: now only support for color image
             images[comp.value] = image.data[ImageTypes.COLOR]

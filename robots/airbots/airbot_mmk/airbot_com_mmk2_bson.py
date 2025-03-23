@@ -115,13 +115,11 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
             )
             if self.config.demonstrate:
                 if comp in MMK2ComponentsGroup.ARMS:
-                    arm_jn = JointNames().__dict__[comp.value]
+                    arm_jn = JointNames[comp.name].value
                     comp_eef = comp.value + "_eef"
-                    eef_jn = JointNames().__dict__[comp_eef]
+                    eef_jn = JointNames[MMK2Components(comp_eef).name].value
                     js = self.robot.get_listened(self._comp_action_topic[comp])
-                    assert (
-                        js is not None
-                    ), "The AIRBOT MMK2 should be in bag teleopration mode."
+                    assert js is not None, "The robot should be in teleopration mode."
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data.update(
                         self._get_joint_state(
@@ -152,6 +150,56 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
         for name, img in images.items():
             data.update(self._get_image(name, img_stamps[name], img))
         return data
+
+    @property
+    def bson_dict(self):
+        bson_dict = {
+            "id": "734ad1c8-66ee-4479-b3cb-41d16c9b2e22",
+            "timestamp": 1734076528859,
+            "metadata": {
+                "driver_version": "1.0.0",
+                "operator": "manual",
+                "station_id": "3784D4BA-87AF-47E7-B86D-42CA1904AA77",
+                "task": "example",
+                "version": "1.2.1",
+                "topics": {},
+            },
+            "data": {},
+        }
+        topics = bson_dict["metadata"]["topics"]
+        for comp in self.components:
+            for tp in ["action", "observation"]:
+                topics[f"/{tp}/{comp.value}/joint_state"] = {
+                    "description": "",
+                    "type": "jointstate",
+                    "sn": "",
+                    "firmware_version": "0.0.0",
+                }
+            if comp in MMK2ComponentsGroup.ARMS:
+                topics[f"/observation/{comp.value}/pose"] = {
+                    "description": "",
+                    "type": "pose",
+                }
+        for camera in self.cameras:
+            topics[f"/images/{camera.value}"] = {
+                "description": "DSJ-2062-309",
+                "type": "image",
+                "width": 640,
+                "height": 480,
+                "encoding": "H264",
+                "distortion_model": None,
+                "distortion_params": None,
+                "intrinsics": None,
+                "fov": 120.0,
+                "start_time": 1733377253041,
+            }
+            # "/action/eef/pose": {
+            #     "description": "",
+            #     "type": "jointstate",
+            #     "sn": "",
+            #     "firmware_version": "0.0.0",
+            # },
+        return bson_dict
 
 
 def main():

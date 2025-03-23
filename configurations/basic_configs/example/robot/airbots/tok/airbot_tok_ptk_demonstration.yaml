@@ -3,29 +3,41 @@ _target_: robots.airbots.airbot_mmk.airbot_com_mmk2_bson.AIRBOTMMK2
 ip: "localhost"
 
 # NOTE: If you want to change the order of each part, be careful to change the order of each observation and action in the data conversion script simultaneously
-components: ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef"]
+components: ["left_arm", "left_arm_eef"]
+# components: ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef"]
 
+# USB cameras (only color image types)
 cameras:
-  head_camera: ["color"]
-  # left_camera: ["color"]
-  # right_camera: ["color"]
+  head_camera:
+    image_types: ["color"]
+    camera_type: "USB"
+    video_device: "/dev/video0"
+  # left_camera:
+  #   image_types: ["color"]
+  #   camera_type: "USB"
+  #   video_device: "/dev/video2"
+  # right_camera:
+  #   image_types: ["color"]
+  #   camera_type: "USB"
+  #   video_device: "/dev/video4"
+
+# RealSense
+# cameras:
+#   head_camera:
+#     image_types: ["color"]
+#     camera_type: "REALSENSE"
+#     serial_no: "'123456'"
+#   left_camera:
+#     image_types: ["color"]
+#     camera_type: "REALSENSE"
+#     serial_no: "'123456'"
+#   right_camera:
+#     image_types: ["color"]
+#     camera_type: "REALSENSE"
+#     serial_no: "'123456'"
 
 demonstrate: true
 
 default_action:
-  [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-  ]
+  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  # [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
