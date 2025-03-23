@@ -145,8 +145,8 @@ def get_all_config(args: dict, stage: str):
         # set start joint
         if all_config.get("start_joint", None) is None:
             init_states = get_init_states(all_config["load_data"], 0)
-            all_config["start_action"] = init_states[0]
-            all_config["start_joint"] = init_states[1]
+            all_config["start_joint"] = init_states[0]
+            all_config["start_action"] = init_states[1]
         # set augmentors
         all_config["load_data"]["augmentors"]["image"] = task_funcs["image_augmentor"]
         all_config["augmentors_flag"] = {
