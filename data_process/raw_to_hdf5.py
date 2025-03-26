@@ -96,6 +96,9 @@ compresser = crd.Compresser("jpg", [int(cv2.IMWRITE_JPEG_QUALITY), 50], True)
 episode_lens = []
 for low_d in low_dim_data.values():
     episode_lens.append(len(list(low_d.values())[0]))
+print(
+    f"min episode length: {min(episode_lens)}, max episode length: {max(episode_lens)}"
+)
 max_pad_length = max(episode_lens) if padding else None
 
 print(f"Episode flatten keys: {list(low_dim_data.values())[0].keys()}")
