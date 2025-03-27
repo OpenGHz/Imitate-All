@@ -48,6 +48,7 @@ elif mode == "mmk2":
         "/observation/right_arm_eef/joint_state",
         "/observation/head/joint_state",
         "/observation/spine/joint_state",
+        "/observation/base/joint_state",
     )
     act_keys = (
         "/action/left_arm/joint_state",
@@ -56,6 +57,7 @@ elif mode == "mmk2":
         "/action/right_arm_eef/joint_state",
         "/action/head/joint_state",
         "/action/spine/joint_state",
+        "/action/base/joint_state",
     )
     name_converter = {
         f"/images/{raw_name}": f"/observations/images/{raw_name}"
@@ -67,12 +69,14 @@ elif mode in ["tok", "ptk"]:
         "/observation/left_arm_eef/joint_state",
         "/observation/right_arm/joint_state",
         "/observation/right_arm_eef/joint_state",
+        "/observation/base/joint_state",
     )
     act_keys = (
         "/action/left_arm/joint_state",
         "/action/left_arm_eef/joint_state",
         "/action/right_arm/joint_state",
         "/action/right_arm_eef/joint_state",
+        "/action/base/joint_state",
     )
     name_converter = {
         f"/images/{raw_name}": f"/observations/images/{raw_name}"
@@ -103,6 +107,8 @@ if mode in ["mmk2", "tok", "ptk"]:
     key_filter =  [
             "/observation/left_arm/pose",
             "/observation/right_arm/pose",
+            "/observation/base/joint_state",
+            # "/action/base/joint_state",
             # "action/eef/pose",
             # "/time",
     ]
