@@ -12,9 +12,12 @@ class AIRBOTMMK2Env(object):
         self._all_joints_num = self.robot.joint_num
 
     def set_reset_position(self, reset_position):
-        assert (
-            len(reset_position) == self._all_joints_num
-        ), f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
+        if not len(reset_position) == self._all_joints_num:
+            des = f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
+            if self.robot.config.check_dim:
+                raise ValueError(des)
+            else:
+                print(f"Warning: {des}")
         self.robot.config.default_action = reset_position
 
     def reset(self, sleep_time=0):
@@ -46,11 +49,12 @@ class AIRBOTMMK2Env(object):
         sleep_time=0,
         get_obs=True,
     ):
+        # TODO: require the arms to be first components
         joint_limits = (
             (-3.09, 2.04),
             (-2.92, 0.12),
             (-0.04, 3.09),
-            (-2.95, 2.95), # (-3.1, 3.1)
+            (-2.95, 2.95),  # (-3.1, 3.1)
             (-1.9, 1.9),  # (-1.08, 1.08),
             (-2.90, 2.90),  # (-3.0, 3.0)
             (0, 1),
