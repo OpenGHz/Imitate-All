@@ -138,7 +138,7 @@ target_namer = lambda i: f"episode_{i}.hdf5"
 os.makedirs(target_dir, exist_ok=True)
 
 print(f"Try to find all episode files in {task_dir}...")
-if mode == "mmk2":
+if mode in ["mmk2", "tok", "ptk"]:
     episode_names = crd.get_files_name_by_suffix(task_dir, ".bson")
 elif mode == "play":
     episode_names = [f"{fd}/data.bson" for fd in os.listdir(task_dir)]
