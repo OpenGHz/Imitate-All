@@ -12,29 +12,38 @@ cameras:
     image_types: ["color"]
     camera_type: "USB"
     video_device: "/dev/video0"
+    image_width: "640"
+    image_height: "480"
   # left_camera:
   #   image_types: ["color"]
   #   camera_type: "USB"
   #   video_device: "/dev/video2"
+  #   image_width: "640"
+  #   image_height: "480"
   # right_camera:
   #   image_types: ["color"]
   #   camera_type: "USB"
   #   video_device: "/dev/video4"
+  #   image_width: "640"
+  #   image_height: "480"
 
-# RealSense
+# # RealSense
 # cameras:
 #   head_camera:
 #     image_types: ["color"]
 #     camera_type: "REALSENSE"
 #     serial_no: "'123456'"
+#     rgb_camera.color_profile: "640,480,30"
 #   left_camera:
 #     image_types: ["color"]
 #     camera_type: "REALSENSE"
 #     serial_no: "'123456'"
+#     rgb_camera.color_profile: "640,480,30"
 #   right_camera:
 #     image_types: ["color"]
 #     camera_type: "REALSENSE"
 #     serial_no: "'123456'"
+#     rgb_camera.color_profile: "640,480,30"
 
 demonstrate: true
 
