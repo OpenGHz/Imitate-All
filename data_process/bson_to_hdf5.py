@@ -30,9 +30,11 @@ task_dir = os.path.abspath(f"{raw_dir}/{task_name}")
 assert os.path.exists(task_dir), f"task_dir {task_dir} not exists"
 
 name_converter = {
-    f"/images/{raw_name}": f"/observations/images/{i}"
-    for i, raw_name in enumerate(camera_names)
+    f"/images/{raw_name}": f"/observations/images/{raw_name}"
+    for raw_name in camera_names
 }
+print(f"name_converter: {name_converter}")
+image_keys = [f"/images/{name}" for name in args.camera_names]
 
 if mode == "play":
     obs_keys_low_dim = (
@@ -59,10 +61,6 @@ elif mode == "mmk2":
         "/action/spine/joint_state",
         "/action/base/joint_state",
     )
-    name_converter = {
-        f"/images/{raw_name}": f"/observations/images/{raw_name}"
-        for raw_name in camera_names
-    }
 elif mode in ["tok", "ptk"]:
     obs_keys_low_dim = (
         "/observation/left_arm/joint_state",
@@ -78,15 +76,8 @@ elif mode in ["tok", "ptk"]:
         "/action/right_arm_eef/joint_state",
         "/action/base/joint_state",
     )
-    name_converter = {
-        f"/images/{raw_name}": f"/observations/images/{raw_name}"
-        for raw_name in camera_names
-    }
 else:
     raise ValueError(f"mode {mode} not supported")
-image_keys = [f"/images/{name}" for name in args.camera_names]
-
-print(f"name_converter: {name_converter}")
 
 pre_process = {
     key: crd.Compresser("jpg", [int(cv2.IMWRITE_JPEG_QUALITY), 50], True).compress
