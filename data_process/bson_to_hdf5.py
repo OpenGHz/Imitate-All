@@ -99,7 +99,7 @@ pre_process.update(
     }
 )
 
-if mode == "mmk2":
+if mode in ["mmk2", "tok", "ptk"]:
     key_filter =  [
             "/observation/left_arm/pose",
             "/observation/right_arm/pose",
