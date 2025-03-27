@@ -61,6 +61,23 @@ elif mode == "mmk2":
         f"/images/{raw_name}": f"/observations/images/{raw_name}"
         for raw_name in camera_names
     }
+elif mode in ["tok", "ptk"]:
+    obs_keys_low_dim = (
+        "/observation/left_arm/joint_state",
+        "/observation/left_arm_eef/joint_state",
+        "/observation/right_arm/joint_state",
+        "/observation/right_arm_eef/joint_state",
+    )
+    act_keys = (
+        "/action/left_arm/joint_state",
+        "/action/left_arm_eef/joint_state",
+        "/action/right_arm/joint_state",
+        "/action/right_arm_eef/joint_state",
+    )
+    name_converter = {
+        f"/images/{raw_name}": f"/observations/images/{raw_name}"
+        for raw_name in camera_names
+    }
 else:
     raise ValueError(f"mode {mode} not supported")
 image_keys = [f"/images/{name}" for name in args.camera_names]
