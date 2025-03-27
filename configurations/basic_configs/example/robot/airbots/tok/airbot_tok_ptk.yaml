@@ -43,3 +43,5 @@ cameras:
 #     camera_type: "REALSENSE"
 #     serial_no: "'123456'"
 #     rgb_camera.color_profile: "640,480,30"
+
+check_dim: false

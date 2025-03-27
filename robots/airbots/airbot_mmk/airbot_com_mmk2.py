@@ -15,6 +15,8 @@ from mmk2_types.grpc_msgs import (
     MoveServoParams,
     TrackingParams,
     ForwardPositionParams,
+    Pose3D,
+    Twist3D,
 )
 from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass, replace, field
@@ -43,6 +45,7 @@ class AIRBOTMMK2Config(object):
         ]
     )
     demonstrate: bool = False
+    check_dim: bool = True
 
 
 class AIRBOTMMK2(object):
