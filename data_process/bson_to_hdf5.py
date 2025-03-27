@@ -107,7 +107,7 @@ if mode in ["mmk2", "tok", "ptk"]:
     key_filter =  [
             "/observation/left_arm/pose",
             "/observation/right_arm/pose",
-            "/observation/base/joint_state",
+            # "/observation/base/joint_state",
             # "/action/base/joint_state",
             # "action/eef/pose",
             # "/time",
