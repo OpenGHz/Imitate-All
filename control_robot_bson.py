@@ -6,6 +6,7 @@ and record an evaluation dataset, and to recalibrate your robot if needed.
 """
 
 from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
+
 prepare_cv2_imshow()
 
 import argparse
@@ -571,6 +572,7 @@ def record(
             start_episode_t = time.perf_counter()
             # Record one episode
             bson_dict: Dict[str, Dict[str, list]] = robot.bson_dict
+            robot.update_data_meta(bson_dict, robot.capture_observation())
             while timestamp < episode_time_s:
                 start_loop_t = time.perf_counter()
 

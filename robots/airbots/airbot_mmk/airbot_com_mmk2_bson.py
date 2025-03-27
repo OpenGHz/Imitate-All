@@ -103,11 +103,6 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                 joint_pos = [base_pose.x, base_pose.y, base_pose.theta]
                 joint_vel = [base_vel.x, base_vel.y, base_vel.omega]
                 joint_eff = [0.0, 0.0, 0.0]
-                data.update(
-                    self._get_joint_state(
-                        "action", comp.value, stamp, joint_pos, joint_vel, joint_eff
-                    )
-                )
             data.update(
                 self._get_joint_state(
                     "observation", comp.value, stamp, joint_pos, joint_vel, joint_eff
@@ -131,6 +126,13 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                             "action", comp_eef, js.header.stamp, jq[-1:]
                         )
                     )
+                elif comp == MMK2Components.BASE:
+                    # TODO: now action and observation are the same for base
+                    data.update(
+                        self._get_joint_state(
+                            "action", comp.value, stamp, joint_pos, joint_vel, joint_eff
+                        )
+                    )
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
                     result = self.robot.get_listened(self._comp_action_topic[comp])
                     assert (
@@ -150,6 +152,15 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
         for name, img in images.items():
             data.update(self._get_image(name, img_stamps[name], img))
         return data
+
+    def update_data_meta(self, bson_dict: dict, observation: dict):
+        topics = bson_dict["metadata"]["topics"]
+        for camera in self.cameras:
+            image = observation[f"/images/{camera.value}"]
+            image_meta = topics[f"/images/{camera.value}"]
+            h, w = image.shape[:2]
+            image_meta["width"] = w
+            image_meta["height"] = h
 
     @property
     def bson_dict(self):

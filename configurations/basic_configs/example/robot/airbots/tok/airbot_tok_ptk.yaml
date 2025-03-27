@@ -1,4 +1,4 @@
-_target_: robots.airbots.airbot_mmk.airbot_com_mmk2.AIRBOTMMK2
+_target_: robots.airbots.airbot_mmk.airbot_com_mmk2_bson.AIRBOTMMK2
 
 ip: "localhost"
 
