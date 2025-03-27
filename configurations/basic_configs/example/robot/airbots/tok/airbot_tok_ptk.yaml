@@ -6,26 +6,6 @@ ip: "localhost"
 components: ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef"]
 
 cameras:
-  head_camera: ["color"]
-  # left_camera: ["color"]
-  # right_camera: ["color"]
-
-demonstrate: true
-
-default_action:
-  [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-  ]
+  # head_camera: ["color"]
+  left_camera: ["color"]
+  right_camera: ["color"]
