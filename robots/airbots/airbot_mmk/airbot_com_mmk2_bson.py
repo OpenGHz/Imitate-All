@@ -156,7 +156,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
     def update_data_meta(self, bson_dict: dict, observation: dict):
         topics = bson_dict["metadata"]["topics"]
         for camera in self.cameras:
-            image = observation[f"/images/{camera.value}"]
+            image = observation[f"/images/{camera.value}"]["data"]
             image_meta = topics[f"/images/{camera.value}"]
             h, w = image.shape[:2]
             image_meta["width"] = w
