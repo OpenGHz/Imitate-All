@@ -3,7 +3,7 @@ _target_: robots.airbots.airbot_mmk.airbot_com_mmk2_bson.AIRBOTMMK2
 ip: "localhost"
 
 # NOTE: If you want to change the order of each part, be careful to change the order of each observation and action in the data conversion script simultaneously
-components: ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef"]
+components: ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef", "base"]
 
 # USB cameras (only color image types)
 cameras:
@@ -44,4 +44,4 @@ cameras:
 #     serial_no: "'123456'"
 #     rgb_camera.color_profile: "640,480,30"
 
-check_dim: false
+ignore_base_action: true
