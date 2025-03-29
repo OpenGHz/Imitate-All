@@ -127,7 +127,7 @@ class AIRBOTMMK2(object):
             self.robot.set_goal(goal, TrajectoryParams())
             # logger.info(f"Move by trajectory time: {time.time() - start}")
             self.robot.set_goal(goal, ForwardPositionParams())
-            logger.info(f"Move by trajectory: {goal}")
+            # logger.info(f"Move by trajectory: {goal}")
         return goal
 
     def reset(self, sleep_time=0):
