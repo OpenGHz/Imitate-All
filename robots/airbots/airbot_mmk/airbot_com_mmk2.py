@@ -46,6 +46,7 @@ class AIRBOTMMK2Config(object):
     )
     demonstrate: bool = False
     check_dim: bool = True
+    ignore_base_action: bool = False
 
 
 class AIRBOTMMK2(object):
@@ -144,6 +145,8 @@ class AIRBOTMMK2(object):
         # logger.info(f"Send goal: {goal}")
 
         # param = MoveServoParams(header=self.robot.get_header())
+        if self.config.ignore_base_action:
+            goal.pop(MMK2Components.BASE, None)
         if self.traj_mode:
             self._move_by_traj(goal)
         else:
