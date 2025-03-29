@@ -162,6 +162,12 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
             image_meta["width"] = w
             image_meta["height"] = h
 
+    def low_dim_to_action(self, low_dim: dict, step: int) -> list:
+        action = []
+        for comp in self.components:
+            action.extend(low_dim[f"/action/{comp.value}/joint_state"]["data"][step])
+        return action
+
     @property
     def bson_dict(self):
         bson_dict = {
