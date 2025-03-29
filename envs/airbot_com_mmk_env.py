@@ -30,10 +30,10 @@ class AIRBOTMMK2Env(object):
         obs["images"] = {}
         raw_obs = self.robot.capture_observation()
         for comp in self.robot.components:
-            obs["qpos"].extend(raw_obs[f"observation/{comp.value}/joint_position"])
+            obs["qpos"].extend(raw_obs[f"/observation/{comp.value}/joint_state"]["data"]["pos"])
         for camera in self.robot.cameras_goal:
             assert camera not in obs["images"], f"Duplicate camera name: {camera}"
-            obs["images"][camera.value] = raw_obs[f"observation.images.{camera.value}"]
+            obs["images"][camera.value] = raw_obs[f"/images/{camera.value}"]["data"]
 
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
