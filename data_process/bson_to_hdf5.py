@@ -30,9 +30,11 @@ task_dir = os.path.abspath(f"{raw_dir}/{task_name}")
 assert os.path.exists(task_dir), f"task_dir {task_dir} not exists"
 
 name_converter = {
-    f"/images/{raw_name}": f"/observations/images/{i}"
-    for i, raw_name in enumerate(camera_names)
+    f"/images/{raw_name}": f"/observations/images/{raw_name}"
+    for raw_name in camera_names
 }
+print(f"name_converter: {name_converter}")
+image_keys = [f"/images/{name}" for name in args.camera_names]
 
 if mode == "play":
     obs_keys_low_dim = (
@@ -48,6 +50,7 @@ elif mode == "mmk2":
         "/observation/right_arm_eef/joint_state",
         "/observation/head/joint_state",
         "/observation/spine/joint_state",
+        "/observation/base/joint_state",
     )
     act_keys = (
         "/action/left_arm/joint_state",
@@ -56,16 +59,25 @@ elif mode == "mmk2":
         "/action/right_arm_eef/joint_state",
         "/action/head/joint_state",
         "/action/spine/joint_state",
+        "/action/base/joint_state",
     )
-    name_converter = {
-        f"/images/{raw_name}": f"/observations/images/{raw_name}"
-        for raw_name in camera_names
-    }
+elif mode in ["tok", "ptk"]:
+    obs_keys_low_dim = (
+        "/observation/left_arm/joint_state",
+        "/observation/left_arm_eef/joint_state",
+        "/observation/right_arm/joint_state",
+        "/observation/right_arm_eef/joint_state",
+        "/observation/base/joint_state",
+    )
+    act_keys = (
+        "/action/left_arm/joint_state",
+        "/action/left_arm_eef/joint_state",
+        "/action/right_arm/joint_state",
+        "/action/right_arm_eef/joint_state",
+        "/action/base/joint_state",
+    )
 else:
     raise ValueError(f"mode {mode} not supported")
-image_keys = [f"/images/{name}" for name in args.camera_names]
-
-print(f"name_converter: {name_converter}")
 
 pre_process = {
     key: crd.Compresser("jpg", [int(cv2.IMWRITE_JPEG_QUALITY), 50], True).compress
@@ -82,10 +94,12 @@ pre_process.update(
     }
 )
 
-if mode == "mmk2":
+if mode in ["mmk2", "tok", "ptk"]:
     key_filter =  [
             "/observation/left_arm/pose",
             "/observation/right_arm/pose",
+            # "/observation/base/joint_state",
+            # "/action/base/joint_state",
             # "action/eef/pose",
             # "/time",
     ]
@@ -121,7 +135,7 @@ target_namer = lambda i: f"episode_{i}.hdf5"
 os.makedirs(target_dir, exist_ok=True)
 
 print(f"Try to find all episode files in {task_dir}...")
-if mode == "mmk2":
+if mode in ["mmk2", "tok", "ptk"]:
     episode_names = crd.get_files_name_by_suffix(task_dir, ".bson")
 elif mode == "play":
     episode_names = [f"{fd}/data.bson" for fd in os.listdir(task_dir)]
