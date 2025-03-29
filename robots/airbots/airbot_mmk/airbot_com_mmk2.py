@@ -80,6 +80,9 @@ class AIRBOTMMK2(object):
             # TODO: get the type info from SDK
             self.components[comp] = ComponentTypes.UNKNOWN
             names = JointNames[comp.name].value
+            if comp == MMK2Components.BASE:
+                # TODO: fix base control
+                names.append("base")
             self.joint_names[comp] = names
             self.joint_num += len(names)
         logger.info(f"Components: {self.components}")
