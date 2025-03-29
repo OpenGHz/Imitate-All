@@ -259,7 +259,8 @@ class AIRBOTMMK2(object):
         ), f"Invalid action {action} with length: {len(action)}"
 
     def _action_to_goal(self, action) -> Dict[MMK2Components, JointState]:
-        self._action_check(action)
+        if self.config.check_dim:
+            self._action_check(action)
         goal = {}
         j_cnt = 0
         for comp in self.components:
