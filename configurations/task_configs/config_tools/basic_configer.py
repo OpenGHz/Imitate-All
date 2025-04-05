@@ -145,8 +145,8 @@ def get_all_config(args: dict, stage: str):
         # set start joint
         if all_config.get("start_joint", None) is None:
             init_states = get_init_states(all_config["load_data"]["dataset_dir"], 0)
-            all_config["start_action"] = init_states[0]
-            all_config["start_joint"] = init_states[1]
+            all_config["start_action"] = init_states[1]
+            all_config["start_joint"] = init_states[0]
         # set augmentors
         all_config["load_data"]["augmentors"]["image"] = task_funcs["image_augmentor"]
         all_config["augmentors_flag"] = {
@@ -173,7 +173,8 @@ def get_all_config(args: dict, stage: str):
             # 读取统计数据
             init_states = get_init_states(stats_dir)
             # 设置start_joint为初始action
-            all_config["start_joint"] = init_states[1]
+            all_config["start_joint"] = init_states[0]
+            all_config["start_action"] = init_states[1]
         all_config["learning_rate"] = (
             -1
         )  # TODO：there should not be learning_rate in policy_config
