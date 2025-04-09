@@ -1,13 +1,13 @@
 from mmk2_types.types import (
     JointNames,
-    MMK2Components,
-    MMK2ComponentsGroup,
+    RobotComponents,
+    RobotComponentsGroup,
 )
 from mmk2_types.grpc_msgs import Time
 from typing import Optional, Dict
 import logging
 import numpy as np
-from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2Config
+from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTRobotConfig
 from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2 as AIRBOTMMK2_BASE
 
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class AIRBOTMMK2(AIRBOTMMK2_BASE):
 
-    def __init__(self, config: Optional[AIRBOTMMK2Config] = None, **kwargs):
+    def __init__(self, config: Optional[AIRBOTRobotConfig] = None, **kwargs):
         self.images_ts: Dict[str, int] = {}
         super().__init__(config, **kwargs)
 
@@ -68,7 +68,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
         all_joints = robot_state.joint_state
         for comp in self.components:
             stamp = all_joints.header.stamp
-            if comp != MMK2Components.BASE:
+            if comp != RobotComponents.BASE:
                 # TODO: hand has no joint states
                 names = self.joint_names[comp]
                 if set(names) - set(all_joints.name):
@@ -86,7 +86,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                         all_joints, names, "effort"
                     )
                 # TODO: configure has-pose components
-                if comp in MMK2ComponentsGroup.ARMS:
+                if comp in RobotComponentsGroup.ARMS:
                     poses = robot_state.robot_pose.robot_pose[comp.value]
                     t = poses.position.x, poses.position.y, poses.position.z
                     r = (
@@ -109,10 +109,10 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                 )
             )
             if self.config.demonstrate:
-                if comp in MMK2ComponentsGroup.ARMS:
+                if comp in RobotComponentsGroup.ARMS:
                     arm_jn = JointNames[comp.name].value
                     comp_eef = comp.value + "_eef"
-                    eef_jn = JointNames[MMK2Components(comp_eef).name].value
+                    eef_jn = JointNames[RobotComponents(comp_eef).name].value
                     js = self.robot.get_listened(self._comp_action_topic[comp])
                     assert js is not None, "The robot should be in teleopration mode."
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
@@ -126,14 +126,14 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                             "action", comp_eef, js.header.stamp, jq[-1:]
                         )
                     )
-                elif comp == MMK2Components.BASE:
+                elif comp == RobotComponents.BASE:
                     # TODO: now action and observation are the same for base
                     data.update(
                         self._get_joint_state(
                             "action", comp.value, stamp, joint_pos, joint_vel, joint_eff
                         )
                     )
-                elif comp in MMK2ComponentsGroup.HEAD_SPINE:
+                elif comp in RobotComponentsGroup.HEAD_SPINE:
                     result = self.robot.get_listened(self._comp_action_topic[comp])
                     assert (
                         result is not None
@@ -192,7 +192,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     "sn": "",
                     "firmware_version": "0.0.0",
                 }
-            if comp in MMK2ComponentsGroup.ARMS:
+            if comp in RobotComponentsGroup.ARMS:
                 topics[f"/observation/{comp.value}/pose"] = {
                     "description": "",
                     "type": "pose",
