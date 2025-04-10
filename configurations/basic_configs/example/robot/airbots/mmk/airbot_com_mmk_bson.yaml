@@ -1,0 +1,47 @@
+_target_: robots.airbots.airbot_mmk.airbot_com_mmk2_bson.AIRBOTMMK2
+
+ip: "192.168.11.200"
+
+default_action: null
+
+# The order is important
+components: ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef", "head", "spine", "base"]
+
+# USB cameras (only color image types)
+cameras:
+  head_camera:
+    image_types: ["color"]
+    camera_type: "USB"
+    video_device: "/dev/video0"
+    image_width: "640"
+    image_height: "480"
+  # left_camera:
+  #   image_types: ["color"]
+  #   camera_type: "USB"
+  #   video_device: "/dev/video2"
+  #   image_width: "640"
+  #   image_height: "480"
+  # right_camera:
+  #   image_types: ["color"]
+  #   camera_type: "USB"
+  #   video_device: "/dev/video4"
+  #   image_width: "640"
+  #   image_height: "480"
+
+# # RealSense
+# cameras:
+#   head_camera:
+#     image_types: ["color"]
+#     camera_type: "REALSENSE"
+#     serial_no: "'123456'"
+#     rgb_camera.color_profile: "640,480,30"
+#   left_camera:
+#     image_types: ["color"]
+#     camera_type: "REALSENSE"
+#     serial_no: "'123456'"
+#     rgb_camera.color_profile: "640,480,30"
+#   right_camera:
+#     image_types: ["color"]
+#     camera_type: "REALSENSE"
+#     serial_no: "'123456'"
+#     rgb_camera.color_profile: "640,480,30"
