@@ -17,6 +17,7 @@ from mmk2_types.grpc_msgs import (
     ForwardPositionParams,
     Pose3D,
     Twist3D,
+    BaseControlParams,
 )
 from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass, replace, field
@@ -152,7 +153,12 @@ class AIRBOTMMK2(object):
         if self.traj_mode:
             self._move_by_traj(goal)
         else:
-            param = ForwardPositionParams()
+            param = {}
+            for comp in goal:
+                if comp is RobotComponents.BASE:
+                    param[comp] = BaseControlParams()
+                else:
+                    param[comp] = ForwardPositionParams()
             # param = TrackingParams()
             # param = MoveServoParams(header=self.robot.get_header())
             # param = {
