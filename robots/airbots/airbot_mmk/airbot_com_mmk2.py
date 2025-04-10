@@ -277,7 +277,11 @@ class AIRBOTMMK2(object):
         j_cnt = 0
         for comp in self.components:
             end = j_cnt + len(self.joint_names[comp])
-            goal[comp] = JointState(position=action[j_cnt:end])
+            if comp is RobotComponents.BASE:
+                x, y, omega = action[j_cnt:end]
+                goal[comp] = Twist3D(x=x, y=y, omega=omega)
+            else:
+                goal[comp] = JointState(position=action[j_cnt:end])
             j_cnt = end
         return goal
 
