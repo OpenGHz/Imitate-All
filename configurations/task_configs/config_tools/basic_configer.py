@@ -144,7 +144,7 @@ def get_all_config(args: dict, stage: str):
         assert use_stats, "now training must use stats"
         # set start joint
         if all_config.get("start_joint", None) is None:
-            init_states = get_init_states(all_config["load_data"]["dataset_dir"], 0)
+            init_states = get_init_states(all_config["load_data"], 0)
             all_config["start_action"] = init_states[0]
             all_config["start_joint"] = init_states[1]
         # set augmentors
