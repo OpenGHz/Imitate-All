@@ -19,7 +19,7 @@ def policy_maker(config: dict, stage=None):
 
 
 def environment_maker(config: dict):
-    from envs.airbot_mmk_env import make_env
+    from envs.airbot_com_mmk_env import make_env
 
     return make_env(config)
 
@@ -60,6 +60,24 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_train"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = (0, 17)
 TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = (0, 17)
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
+    "/mmk/observation/left_arm/joint_state/position",
+    "/mmk/observation/left_arm_eef/joint_state/position",
+    "/mmk/observation/right_arm/joint_state/position",
+    "/mmk/observation/right_arm_eef/joint_state/position",
+    "/mmk/observation/spine/joint_state/position",
+    "/mmk/observation/head/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
+    "/mmk/action/left_arm/joint_state/position",
+    "/mmk/action/left_arm_eef/joint_state/position",
+    "/mmk/action/right_arm/joint_state/position",
+    "/mmk/action/right_arm_eef/joint_state/position",
+    "/mmk/action/spine/joint_state/position",
+    "/mmk/action/head/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = ["/mmk/head_camera/color/video"]
+
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
