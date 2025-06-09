@@ -57,6 +57,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         self.mcap_state_topics = mcap_state_topics
         self.mcap_action_topics = mcap_action_topics
         self.mcap_camera_topics = mcap_camera_topics
+        self.time_index = {}
         if self.observation_indexes is not None:
             self.norm_stats["qpos_mean"] = self.norm_stats["qpos_mean"][
                 self.observation_indexes
@@ -144,6 +145,9 @@ class EpisodicDataset(torch.utils.data.Dataset):
                 action_len = len(action)
                 # print(f"action_shape: {action.shape}")
         elif self.data_type == "mcap":
+            if dataset_path not in self.time_index:
+                # get time index for the episode
+                self.time_index[dataset_path] = get_time_index(dataset_path)
             episode_len = get_mcap_frame_length(dataset_path, self.mcap_state_topics, self.mcap_action_topics)
 
             if sample_full_episode:
@@ -151,7 +155,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
             else:
                 start_ts = np.random.choice(episode_len)
             
-            qpos = get_mcap_qpos(dataset_path, self.mcap_state_topics, start_ts, start_ts)
+            qpos = get_mcap_qpos(dataset_path, self.mcap_state_topics, start_ts, start_ts, self.time_index[dataset_path])
             if self.observation_indexes is not None:
                 qpos = qpos[self.observation_indexes]
             image_dict = get_mcap_image(dataset_path, self.camera_names, self.mcap_camera_topics, start_ts)
@@ -162,6 +166,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
                 self.mcap_action_topics,
                 action_start,
                 action_start + action_chunk - 1,
+                self.time_index[dataset_path],
             )
             if self.action_indexes is not None:
                 action = action[:, self.action_indexes]
@@ -359,28 +364,6 @@ class LoadDataConfig(object):
             print(f"Action slice: {self.action_slice}")
 
 
-def get_qpos_and_action_from_mcap(mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]) -> Tuple[np.ndarray, np.ndarray]:
-    """Extract qpos and action data from a MCAP file."""
-    if not mcap_file_path.exists():
-        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
-    qpos = []
-    action = []
-    with mcap_file_path.open("rb") as f:
-        reader = make_reader(f)
-        is_read_topics = {topic: False for topic in mcap_state_topics + mcap_action_topics}
-        for schema_obj, channel_obj, message_obj in reader.iter_messages(
-            mcap_state_topics + mcap_action_topics
-        ):
-            if is_read_topics[channel_obj.topic]:
-                continue
-            if channel_obj.topic in mcap_state_topics:
-                qpos += FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist()
-                is_read_topics[channel_obj.topic] = True
-            elif channel_obj.topic in mcap_action_topics:
-                action += FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist()
-                is_read_topics[channel_obj.topic] = True
-    return qpos, action
-
 def get_mcap_frame_length(mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]) -> int:
     """Get the length of the episode in a MCAP file."""
     if not mcap_file_path.exists():
@@ -403,17 +386,19 @@ def get_mcap_frame_length(mcap_file_path: Path, mcap_state_topics: List[str], mc
                     ), f"Episode length mismatch: {episode_len} vs {summary.statistics.channel_message_counts[channel]} for channel {channel}"
     return episode_len
 
-def get_mcap_qpos(mcap_file_path: Path, mcap_state_topics: List[str], start_index: int = 0, end_index: int = 0) -> np.array:
+def get_mcap_qpos(mcap_file_path: Path, mcap_state_topics: List[str], start_index: int = 0, end_index: int = 0, time_index: Optional[list[tuple[int, int]]] = None) -> np.array:
     """Extract qpos data from a MCAP file."""
     if not mcap_file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
     res = []
     qpos = []
-    cnt = {topic: 0 for topic in mcap_state_topics}
-    index = 0
+    cnt = {topic: (start_index if time_index else 0) for topic in mcap_state_topics}
+    index = start_index if time_index else 0
     with mcap_file_path.open("rb") as f:
         reader = make_reader(f)
-        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_state_topics):
+        start_time = time_index[start_index][0] if time_index else None
+        end_time = time_index[end_index][1]+1 if time_index and end_index != -1 and end_index < len(time_index) else None
+        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_state_topics, start_time=start_time, end_time=end_time):
             cnt[channel_obj.topic] += 1
             if cnt[channel_obj.topic] - index > 1:
                 if index >= start_index and (index <= end_index or end_index == -1):
@@ -426,22 +411,24 @@ def get_mcap_qpos(mcap_file_path: Path, mcap_state_topics: List[str], start_inde
                 qpos +=(FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist())
         if index >= start_index and (index <= end_index or end_index == -1):
             res.append(qpos.copy())
-                
+
     res = np.array(res) if len(res) > 1 else np.array(res[0]) if res else np.array([])
     res = np.array(res, dtype=np.float32)  # ensure the output is float type
     return res
 
-def get_mcap_action(mcap_file_path: Path, mcap_action_topics: List[str], start_index: int = 0, end_index: int = 0) -> np.array:
+def get_mcap_action(mcap_file_path: Path, mcap_action_topics: List[str], start_index: int = 0, end_index: int = 0, time_index: Optional[list[tuple[int, int]]] = None) -> np.array:
     """Extract action data from a MCAP file."""
     if not mcap_file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
     res = []
     action = []
-    cnt = {topic: 0 for topic in mcap_action_topics}
-    index = 0
+    cnt = {topic: (start_index if time_index else 0) for topic in mcap_action_topics}
+    index = start_index if time_index else 0
     with mcap_file_path.open("rb") as f:
         reader = make_reader(f)
-        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_action_topics):
+        start_time = time_index[start_index][0] if time_index else None
+        end_time = time_index[end_index][1]+1 if time_index and end_index != -1 and end_index < len(time_index) else None
+        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_action_topics, start_time=start_time, end_time=end_time):
             cnt[channel_obj.topic] += 1
             if cnt[channel_obj.topic] - index > 1:
                 if index >= start_index and (index <= end_index or end_index == -1):
@@ -493,6 +480,18 @@ def get_mcap_image(mcap_file_path: Path, camera_name: List[str], mcap_camera_top
             index = mcap_camera_topics.index(attach.name)
             res[camera_name[index]] = frame
     return res
+
+def get_time_index(mcap_file_path: Path) -> List[Tuple[int, int]]:
+    """Extract time index from a MCAP file."""
+    if not mcap_file_path.exists():
+        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
+    with mcap_file_path.open("rb") as f:
+        reader = make_reader(f)
+        for attach in reader.iter_attachments():
+            if attach.name == "time_index":
+                import ast
+                time_index = ast.literal_eval(attach.data.decode("utf-8"))
+                return time_index
 
 def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):
     all_qpos_data = []
