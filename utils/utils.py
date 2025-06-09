@@ -7,6 +7,7 @@ import fnmatch
 import subprocess
 import pickle
 import re
+from pathlib import Path
 from datetime import datetime
 import time
 from threading import Thread, Event
@@ -15,7 +16,10 @@ from visualize_episodes import save_videos
 from dataclasses import dataclass
 from typing import Tuple, List, Dict, Union, Optional
 from pprint import pprint
-
+from airbot_type.FloatArray import FloatArray
+from mcap.reader import make_reader
+import tempfile
+import cv2
 
 logger = logging.getLogger(__name__)
 np.random.seed(0)
@@ -31,6 +35,10 @@ class EpisodicDataset(torch.utils.data.Dataset):
         data_indexes: dict,
         chunk_sizes: dict = None,
         action_bias: int = 1,
+        data_type: str = "mcap", # "hdf5" or "mcap"
+        mcap_state_topics: Optional[List[str]] = None,
+        mcap_action_topics: Optional[List[str]] = None,
+        mcap_camera_topics: Optional[List[str]] = None,
     ):
         super().__init__()
         self.episode_ids = episode_ids
@@ -45,6 +53,10 @@ class EpisodicDataset(torch.utils.data.Dataset):
         self.augmentors = augmentors
         self.augment_images = augmentors.get("image", None)
         self.action_bias = action_bias
+        self.data_type = data_type
+        self.mcap_state_topics = mcap_state_topics
+        self.mcap_action_topics = mcap_action_topics
+        self.mcap_camera_topics = mcap_camera_topics
         if self.observation_indexes is not None:
             self.norm_stats["qpos_mean"] = self.norm_stats["qpos_mean"][
                 self.observation_indexes
@@ -59,16 +71,24 @@ class EpisodicDataset(torch.utils.data.Dataset):
             self.norm_stats["action_std"] = self.norm_stats["action_std"][
                 self.action_indexes
             ]
-        with h5py.File(self._get_dataset_path(0), "r") as root:
-            # logger.info(f"Keys in the dataset: {list(root.keys())}")
-            cam_names = set(root["/observations/images"].keys())
-            wrong_cam_names = set(self.camera_names) - cam_names
-            if len(wrong_cam_names) > 0:
+        if self.data_type == "mcap":
+            # check if the mcap_state_topics and mcap_action_topics are provided
+            if self.mcap_state_topics is None or self.mcap_action_topics is None or self.mcap_camera_topics is None:
                 raise ValueError(
-                    f"Wrong camera names: {wrong_cam_names}, "
-                    f"available names: {cam_names}. "
-                    "Please modify the camera names in the task configuration file."
+                    "mcap_state_topics and mcap_action_topics must be provided for mcap data type"
                 )
+            # TODO: check camera topics 
+        elif self.data_type == "hdf5":
+            with h5py.File(self._get_dataset_path(0), "r") as root:
+                # logger.info(f"Keys in the dataset: {list(root.keys())}")
+                cam_names = set(root["/observations/images"].keys())
+                wrong_cam_names = set(self.camera_names) - cam_names
+                if len(wrong_cam_names) > 0:
+                    raise ValueError(
+                        f"Wrong camera names: {wrong_cam_names}, "
+                        f"available names: {cam_names}. "
+                        "Please modify the camera names in the task configuration file."
+                    )
         self.__getitem__(0)
 
     def __len__(self):
@@ -76,49 +96,77 @@ class EpisodicDataset(torch.utils.data.Dataset):
 
     def _get_dataset_path(self, index) -> str:
         episode_id = self.episode_ids[index]
-        dataset_path = os.path.join(self.dataset_dir, f"episode_{episode_id}.hdf5")
+        if self.data_type == "mcap":
+            dataset_path = Path(self.dataset_dir) / f"{episode_id}.mcap"
+        elif self.data_type == "hdf5":
+            dataset_path = os.path.join(self.dataset_dir, f"episode_{episode_id}.hdf5")
         return dataset_path
 
     def __getitem__(self, index):
         sample_full_episode = False  # TODO:hardcode
         dataset_path = self._get_dataset_path(index)
         action_chunk = self.action_chunk_size
-        with h5py.File(dataset_path, "r") as root:
-            compressed = root.attrs.get("compress", False)
-            original_action_shape = root["/action"].shape
-            episode_len = original_action_shape[0]
+        if self.data_type == "hdf5":
+            with h5py.File(dataset_path, "r") as root:
+                compressed = root.attrs.get("compress", False)
+                original_action_shape = root["/action"].shape
+                episode_len = original_action_shape[0]
+                if sample_full_episode:
+                    start_ts = 0
+                else:
+                    start_ts = np.random.choice(episode_len)
+                # get observation at start_ts only
+                qpos = root["/observations/qpos"][start_ts]
+                if self.observation_indexes is not None:
+                    qpos = qpos[self.observation_indexes]
+                image_dict = dict()
+                for cam_name in self.camera_names:
+                    image_dict[cam_name] = root[f"/observations/images/{cam_name}"][
+                        start_ts
+                    ]
+                if compressed:
+                    for cam_name in image_dict.keys():
+                        import cv2
+
+                        decompressed_image = cv2.imdecode(image_dict[cam_name], 1)
+                        image_dict[cam_name] = np.array(decompressed_image)
+                # TODO: pass the chunk_size as a arg to load only the needed actions
+                # get all actions after and including start_ts
+                # hack, to make timesteps more aligned
+                bias = self.action_bias
+                action_start = max(0, start_ts - bias)
+                action = root["/action"][action_start : action_start + action_chunk]
+                if self.action_indexes is not None:
+                    action = action[:, self.action_indexes]
+                    # chunked_action_shape = (action_chunk, action.shape[1])
+                # else:
+                # chunked_action_shape = (action_chunk, original_action_shape[1])
+                action_len = len(action)
+                # print(f"action_shape: {action.shape}")
+        elif self.data_type == "mcap":
+            episode_len = get_mcap_frame_length(dataset_path, self.mcap_state_topics, self.mcap_action_topics)
+
             if sample_full_episode:
                 start_ts = 0
             else:
                 start_ts = np.random.choice(episode_len)
-            # get observation at start_ts only
-            qpos = root["/observations/qpos"][start_ts]
+            
+            qpos = get_mcap_qpos(dataset_path, self.mcap_state_topics, start_ts, start_ts)
             if self.observation_indexes is not None:
                 qpos = qpos[self.observation_indexes]
-            image_dict = dict()
-            for cam_name in self.camera_names:
-                image_dict[cam_name] = root[f"/observations/images/{cam_name}"][
-                    start_ts
-                ]
-            if compressed:
-                for cam_name in image_dict.keys():
-                    import cv2
-
-                    decompressed_image = cv2.imdecode(image_dict[cam_name], 1)
-                    image_dict[cam_name] = np.array(decompressed_image)
-            # TODO: pass the chunk_size as a arg to load only the needed actions
-            # get all actions after and including start_ts
-            # hack, to make timesteps more aligned
+            image_dict = get_mcap_image(dataset_path, self.camera_names, self.mcap_camera_topics, start_ts)
             bias = self.action_bias
             action_start = max(0, start_ts - bias)
-            action = root["/action"][action_start : action_start + action_chunk]
+            action = get_mcap_action(
+                dataset_path,
+                self.mcap_action_topics,
+                action_start,
+                action_start + action_chunk - 1,
+            )
             if self.action_indexes is not None:
                 action = action[:, self.action_indexes]
-                # chunked_action_shape = (action_chunk, action.shape[1])
-            # else:
-            # chunked_action_shape = (action_chunk, original_action_shape[1])
             action_len = len(action)
-            # print(f"action_shape: {action.shape}")
+
         # padded_action = np.zeros(chunked_action_shape, dtype=np.float32)
         padded_action = np.tile(action[-1], (action_chunk, 1))
         padded_action[:action_len] = action
@@ -182,13 +230,32 @@ def get_pkl_info(path):
     return key_info
 
 
-def get_init_states(dir, episode_idx=None):
+def get_init_states(data_config, episode_idx=None):
+    dir = data_config["dataset_dir"]
+    data_type = data_config["data_type"]
+    mcap_state_topics = data_config.get("mcap_state_topics", None)
+    mcap_action_topics = data_config.get("mcap_action_topics", None)
     if isinstance(episode_idx, int):
-        dataset_path = os.path.join(dir, f"episode_{episode_idx}.hdf5")
-        dataset_path = os.path.abspath(dataset_path)
-        with h5py.File(dataset_path, "r") as root:
-            qpos = root["/observations/qpos"][0]
-            action = root["/action"][0]
+        if data_type == "hdf5":
+            dataset_path = os.path.join(dir, f"episode_{episode_idx}.hdf5")
+            dataset_path = os.path.abspath(dataset_path)
+            with h5py.File(dataset_path, "r") as root:
+                qpos = root["/observations/qpos"][0]
+                action = root["/action"][0]
+        elif data_type == "mcap":
+            mcap_file_path = Path(dir) / f"{episode_idx}.mcap"
+            if not mcap_file_path.exists():
+                raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
+            if mcap_state_topics is None or mcap_action_topics is None:
+                raise ValueError(
+                    "mcap_state_topics and mcap_action_topics must be provided for mcap data type"
+                )
+            qpos = get_mcap_qpos(
+                mcap_file_path, mcap_state_topics, 0, 0
+            )
+            action = get_mcap_action(
+                mcap_file_path, mcap_action_topics, 0, 0
+            )
     else:
         # dir is info dir
         key_info_path = os.path.join(dir, f"key_info.pkl")
@@ -230,12 +297,15 @@ def multi_slices_to_indexes(slices: Union[List[tuple], tuple]):
 
 
 def process_num_episodes(
-    num_episodes: Union[list, tuple, int], dataset_dir: str
+    num_episodes: Union[list, tuple, int], dataset_dir: str, data_type: str
 ) -> list:
     """Change num_episodes to list of ids"""
 
     if num_episodes in ["ALL", "all", "All", 0]:
-        num_episodes = len(find_all_hdf5(dataset_dir))
+        num_episodes = len(find_all_hdf5(dataset_dir)) if data_type == "hdf5" else len(
+            list(Path(dataset_dir).glob("*.mcap"))
+        )
+        print(f"Found {num_episodes} episodes in {dataset_dir}")
         num_episodes = list(range(num_episodes))
     else:
         num_episodes = multi_slices_to_indexes(num_episodes)
@@ -245,6 +315,7 @@ def process_num_episodes(
 @dataclass
 class LoadDataConfig(object):
     dataset_dir: str
+    data_type: str  # "hdf5" or "mcap"
     num_episodes: Union[list, tuple, int]
     batch_size_train: int
     batch_size_validate: int
@@ -257,21 +328,29 @@ class LoadDataConfig(object):
     check_episodes: bool
     camera_names: list
     chunk_sizes: dict
+    mcap_state_topics: Optional[List[str]] = None
+    mcap_action_topics: Optional[List[str]] = None
+    mcap_camera_topics: Optional[List[str]] = None
 
     def __post_init__(self):
         # change dataset_dir to absolute path
         self.dataset_dir = os.path.abspath(self.dataset_dir)
         # change num_episodes to list of ids
-        self.num_episodes = process_num_episodes(self.num_episodes, self.dataset_dir)
+        self.num_episodes = process_num_episodes(self.num_episodes, self.dataset_dir, self.data_type)
         # check if all episodes exist
         assert os.path.isdir(
             self.dataset_dir
         ), f"dataset_dir {self.dataset_dir} not found"
         if self.check_episodes:
             for ep in self.num_episodes:
-                assert os.path.exists(
-                    os.path.join(self.dataset_dir, f"episode_{ep}.hdf5")
-                ), f"episode {ep} not found"
+                if self.data_type == "mcap":
+                    assert os.path.exists(
+                        os.path.join(self.dataset_dir, f"{ep}.mcap")
+                    ), f"episode {ep} not found"
+                elif self.data_type == "hdf5":
+                    assert os.path.exists(
+                        os.path.join(self.dataset_dir, f"episode_{ep}.hdf5")
+                    ), f"episode {ep} not found"
         if self.observation_slice is not None:
             self.observation_slice = multi_slices_to_indexes(self.observation_slice)
             print(f"Observation slice: {self.observation_slice}")
@@ -280,15 +359,160 @@ class LoadDataConfig(object):
             print(f"Action slice: {self.action_slice}")
 
 
+def get_qpos_and_action_from_mcap(mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+    """Extract qpos and action data from a MCAP file."""
+    if not mcap_file_path.exists():
+        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
+    qpos = []
+    action = []
+    with mcap_file_path.open("rb") as f:
+        reader = make_reader(f)
+        is_read_topics = {topic: False for topic in mcap_state_topics + mcap_action_topics}
+        for schema_obj, channel_obj, message_obj in reader.iter_messages(
+            mcap_state_topics + mcap_action_topics
+        ):
+            if is_read_topics[channel_obj.topic]:
+                continue
+            if channel_obj.topic in mcap_state_topics:
+                qpos += FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist()
+                is_read_topics[channel_obj.topic] = True
+            elif channel_obj.topic in mcap_action_topics:
+                action += FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist()
+                is_read_topics[channel_obj.topic] = True
+    return qpos, action
+
+def get_mcap_frame_length(mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]) -> int:
+    """Get the length of the episode in a MCAP file."""
+    if not mcap_file_path.exists():
+        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
+    with mcap_file_path.open("rb") as f:
+        reader = make_reader(f)
+        summary = reader.get_summary()
+        assert summary is not None, f"Summary of {mcap_file_path} is None"
+        episode_len = 0
+        for channel in summary.channels:
+            if (
+                summary.channels[channel].topic in mcap_action_topics
+                or summary.channels[channel].topic in mcap_state_topics
+            ):
+                if episode_len == 0:
+                    episode_len = summary.statistics.channel_message_counts[channel]
+                else:
+                    assert (
+                        episode_len == summary.statistics.channel_message_counts[channel]
+                    ), f"Episode length mismatch: {episode_len} vs {summary.statistics.channel_message_counts[channel]} for channel {channel}"
+    return episode_len
+
+def get_mcap_qpos(mcap_file_path: Path, mcap_state_topics: List[str], start_index: int = 0, end_index: int = 0) -> np.array:
+    """Extract qpos data from a MCAP file."""
+    if not mcap_file_path.exists():
+        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
+    res = []
+    qpos = []
+    cnt = {topic: 0 for topic in mcap_state_topics}
+    index = 0
+    with mcap_file_path.open("rb") as f:
+        reader = make_reader(f)
+        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_state_topics):
+            cnt[channel_obj.topic] += 1
+            if cnt[channel_obj.topic] - index > 1:
+                if index >= start_index and (index <= end_index or end_index == -1):
+                    res.append(qpos.copy())
+                    qpos.clear()
+                index += 1
+                if index > end_index and end_index != -1:
+                    break
+            if index >= start_index:
+                qpos +=(FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist())
+        if index >= start_index and (index <= end_index or end_index == -1):
+            res.append(qpos.copy())
+                
+    res = np.array(res) if len(res) > 1 else np.array(res[0]) if res else np.array([])
+    res = np.array(res, dtype=np.float32)  # ensure the output is float type
+    return res
+
+def get_mcap_action(mcap_file_path: Path, mcap_action_topics: List[str], start_index: int = 0, end_index: int = 0) -> np.array:
+    """Extract action data from a MCAP file."""
+    if not mcap_file_path.exists():
+        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
+    res = []
+    action = []
+    cnt = {topic: 0 for topic in mcap_action_topics}
+    index = 0
+    with mcap_file_path.open("rb") as f:
+        reader = make_reader(f)
+        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_action_topics):
+            cnt[channel_obj.topic] += 1
+            if cnt[channel_obj.topic] - index > 1:
+                if index >= start_index and (index <= end_index or end_index == -1):
+                    res.append(action.copy())
+                    action.clear()
+                index += 1
+                if index > end_index and end_index != -1:
+                    break
+            if index >= start_index:
+                action +=(FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist())
+        if index >= start_index and (index <= end_index or end_index == -1):
+            res.append(action.copy())
+
+    res = np.array(res) if len(res) > 1 else np.array(res[0]) if res else np.array([])
+    res = np.array(res, dtype=np.float32)  # ensure the output is float type
+    return res
+
+
+def get_mcap_image(mcap_file_path: Path, camera_name: List[str], mcap_camera_topics: List[str], index: int = 0) -> dict[str: np.ndarray]:
+    """Extract image data from a MCAP file."""
+    if not mcap_file_path.exists():
+        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
+    res = {}
+    with mcap_file_path.open("rb") as f:
+        reader = make_reader(f)
+        for attach in reader.iter_attachments():
+            if attach.name not in mcap_camera_topics:
+                continue
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+                tmp.write(attach.data)
+                tmp.flush()
+                tmp_path = tmp.name
+
+            cap = cv2.VideoCapture(tmp_path)
+            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if not (0 <= index < total):
+                cap.release()
+                os.remove(tmp_path)
+                raise IndexError(f"Frame number {index} out of range [0, {total})")
+
+            cap.set(cv2.CAP_PROP_POS_FRAMES, index)
+            ret, frame = cap.read()
+            cap.release()
+            os.remove(tmp_path)
+            
+            if not ret:
+                raise RuntimeError(f"Could not read frame {index}")
+            
+            index = mcap_camera_topics.index(attach.name)
+            res[camera_name[index]] = frame
+    return res
+
 def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):
     all_qpos_data = []
     all_action_data = []
     for episode_idx in num_episodes:
-        dataset_path = os.path.join(dataset_dir, f"episode_{episode_idx}.hdf5")
-        dataset_path = os.path.abspath(dataset_path)
-        with h5py.File(dataset_path, "r") as root:
-            qpos = root["/observations/qpos"][()]
-            action = root["/action"][()]
+        if config.data_type == "hdf5":
+            dataset_path = os.path.join(dataset_dir, f"episode_{episode_idx}.hdf5")
+            dataset_path = os.path.abspath(dataset_path)
+            with h5py.File(dataset_path, "r") as root:
+                qpos = root["/observations/qpos"][()]
+                action = root["/action"][()]
+        elif config.data_type == "mcap":
+            dataset_path = Path(dataset_dir) / f"{episode_idx}.mcap"
+            qpos = get_mcap_qpos(
+                dataset_path, config.mcap_state_topics, 0, -1
+            )
+            action = get_mcap_action(
+                dataset_path, config.mcap_action_topics, 0, -1
+            )
+
         all_qpos_data.append(qpos)
         all_action_data.append(action)
 
@@ -348,6 +572,10 @@ def load_data(config: LoadDataConfig):
         },
         "chunk_sizes": config.chunk_sizes,
         "action_bias": 1,
+        "data_type": config.data_type,
+        "mcap_state_topics": config.mcap_state_topics,
+        "mcap_action_topics": config.mcap_action_topics,
+        "mcap_camera_topics": config.mcap_camera_topics,
     }
     train_dataset = EpisodicDataset(train_indices, **ep_ds_config)
     val_dataset = EpisodicDataset(val_indices, **ep_ds_config)
@@ -374,7 +602,6 @@ def load_data(config: LoadDataConfig):
         num_workers=num_workers_val,
         prefetch_factor=1,
     )
-
     return train_dataloader, val_dataloader, norm_stats
 
 

@@ -89,7 +89,7 @@ def policy_ensembler(grouped_out: dict):
 
 
 # relative to the root of the project where you run the train/eval script
-DATA_DIR_DEFAULT = "./data/hdf5"
+DATA_DIR_DEFAULT = "./data/mcap"
 TRAIN_DIR_DEFAULT = "./my_ckpt"  # when training to save and when evaluating to load
 EVAL_DIR_DEFAULT = "./eval_results"
 
@@ -163,6 +163,7 @@ TRAIN_CONFIG_DEFAULT = {
     # directory containing the hdf5 files
     "load_data": {
         "dataset_dir": DATA_DIR_DEFAULT + f"/{TASK_NAME}",
+        "data_type": "mcap", # the type of the data, e.g. "mcap", "hdf5"
         # 0/"ALL" if use all episodes or a number to use the first n episodes
         # or a tuple of (start, end) to use the episodes from start to end (not included the end), e.g. (50, 100)
         # or a tuple of (start, end, postfix) to use the episodes from start to end with the postfix,
@@ -182,6 +183,9 @@ TRAIN_CONFIG_DEFAULT = {
         "num_workers_validate": 1,
         "observation_slice": None,
         "action_slice": None,
+        "mcap_state_topics": ["/follow/arm/joint_state/position", "/follow/eef/joint_state/position"],
+        "mcap_action_topics": ["/lead/arm/joint_state/position", "/lead/eef/joint_state/position"],
+        "mcap_camera_topics": ["/env_camera/color/image_raw"],
     },
 }
 

@@ -81,16 +81,16 @@ What's more, for policy evaluation, make sure you have set up the robot control 
 
 For different AIRBOT robots, please select the corresponding default configuration file in the `configurations/task_configs/airbots` directory.
 
-When training with default paths, place the .hdf5 data files in the ./data/hdf5/<task_name> folder. You can create the directory with the following command:
+When training with default paths, place the .mcap data files in the ./data/mcap/<task_name> folder. You can create the directory with the following command:
 
 ```bash
-mkdir -p data/hdf5
+mkdir -p data/mcap
 ```
 
 You can then copy the data manually or using a command like this (remember to modify the paths in the command):
 
 ```bash
-cp path/to/your/task/hdf5_file data/hdf5
+cp path/to/your/task/mcap_file data/mcap
 ```
 
 ## Policy Training
@@ -202,11 +202,8 @@ You will see key information related to that task in the terminal, including:
   <img src="images/train_info.png" />
 </p>
 
-This includes the absolute path to the HDF5 data used during training, training parameter configurations, initial joint values of the first episode for inference, and other information. 
+This includes the absolute path to the MCAP data used during training, training parameter configurations, initial joint values of the first episode for inference, and other information. 
 
 This information ensures experiment reproducibility. If the camera is rigidly attached to the robotic arm, replicating the robotic arm's behavior is relatively straightforward. Object placement can be determined through retraining data replication.
 
 For dataset stats, just set `-in stats` in the above command.
-
-## Data Collection
-Refer to `README_DataCollection.md`.
