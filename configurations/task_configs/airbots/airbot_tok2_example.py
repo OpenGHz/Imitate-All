@@ -45,8 +45,8 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
 chunk_size = 25
-joint_num = 7
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
+joint_num = 14
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0","1","2"]
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num
 TASK_CONFIG_DEFAULT["common"]["action_dim"] = joint_num
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = False
@@ -56,11 +56,26 @@ TASK_CONFIG_DEFAULT["common"]["policy_config"]["kl_weight"] = 10
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["policy_maker"] = policy_maker
 
 
+TASK_CONFIG_DEFAULT["train"]["data_type"] = "mcap"
 TASK_CONFIG_DEFAULT["train"]["load_data"]["num_episodes"] = "ALL"
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_train"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = None
 TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = None
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
+    "left/follow/arm/joint_state/position",
+    "left/follow/eef/joint_state/position",
+    "right/follow/arm/joint_state/position",
+    "right/follow/eef/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
+    "left/lead/arm/joint_state/position",
+    "left/lead/eef/joint_state/position",
+    "right/lead/arm/joint_state/position",
+    "right/lead/eef/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = ["/env_camera/color/image_raw", "/left_camera/color/image_raw", "/right_camera/color/image_raw"]
+
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
