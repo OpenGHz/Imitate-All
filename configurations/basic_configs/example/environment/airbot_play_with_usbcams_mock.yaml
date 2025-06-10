@@ -1,0 +1,20 @@
+left:
+  _target_: airbot_data_collection.airbot.robots.airbot_play_mock.AIRBOTPlay
+  port: 50050
+right:
+  _target_: airbot_data_collection.airbot.robots.airbot_play_mock.AIRBOTPlay
+  port: 50050
+
+cameras:
+  "0":
+    _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
+    camera_index: 2
+    mock: true
+  "1":
+    _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
+    camera_index: 4
+    mock: true
+  "2":
+    _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
+    camera_index: 6
+    mock: true

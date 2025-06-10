@@ -1,0 +1,17 @@
+left:
+  _target_: airbot_data_collection.airbot.robots.airbot_play.AIRBOTPlay
+  port: 50050
+right:
+  _target_: airbot_data_collection.airbot.robots.airbot_play.AIRBOTPlay
+  port: 50050
+
+cameras:
+  "0":
+    _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
+    camera_index: 2
+  "1":
+    _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
+    camera_index: 4
+  "2":
+    _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
+    camera_index: 4

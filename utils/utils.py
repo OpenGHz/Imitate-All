@@ -35,7 +35,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         data_indexes: dict,
         chunk_sizes: dict = None,
         action_bias: int = 1,
-        data_type: str = "mcap", # "hdf5" or "mcap"
+        data_type: str = "mcap",  # "hdf5" or "mcap"
         mcap_state_topics: Optional[List[str]] = None,
         mcap_action_topics: Optional[List[str]] = None,
         mcap_camera_topics: Optional[List[str]] = None,
@@ -73,11 +73,15 @@ class EpisodicDataset(torch.utils.data.Dataset):
             ]
         if self.data_type == "mcap":
             # check if the mcap_state_topics and mcap_action_topics are provided
-            if self.mcap_state_topics is None or self.mcap_action_topics is None or self.mcap_camera_topics is None:
+            if (
+                self.mcap_state_topics is None
+                or self.mcap_action_topics is None
+                or self.mcap_camera_topics is None
+            ):
                 raise ValueError(
                     "mcap_state_topics and mcap_action_topics must be provided for mcap data type"
                 )
-            # TODO: check camera topics 
+            # TODO: check camera topics
         elif self.data_type == "hdf5":
             with h5py.File(self._get_dataset_path(0), "r") as root:
                 # logger.info(f"Keys in the dataset: {list(root.keys())}")
@@ -144,17 +148,23 @@ class EpisodicDataset(torch.utils.data.Dataset):
                 action_len = len(action)
                 # print(f"action_shape: {action.shape}")
         elif self.data_type == "mcap":
-            episode_len = get_mcap_frame_length(dataset_path, self.mcap_state_topics, self.mcap_action_topics)
+            episode_len = get_mcap_frame_length(
+                dataset_path, self.mcap_state_topics, self.mcap_action_topics
+            )
 
             if sample_full_episode:
                 start_ts = 0
             else:
                 start_ts = np.random.choice(episode_len)
-            
-            qpos = get_mcap_qpos(dataset_path, self.mcap_state_topics, start_ts, start_ts)
+
+            qpos = get_mcap_qpos(
+                dataset_path, self.mcap_state_topics, start_ts, start_ts
+            )
             if self.observation_indexes is not None:
                 qpos = qpos[self.observation_indexes]
-            image_dict = get_mcap_image(dataset_path, self.camera_names, self.mcap_camera_topics, start_ts)
+            image_dict = get_mcap_image(
+                dataset_path, self.camera_names, self.mcap_camera_topics, start_ts
+            )
             bias = self.action_bias
             action_start = max(0, start_ts - bias)
             action = get_mcap_action(
@@ -230,12 +240,14 @@ def get_pkl_info(path):
     return key_info
 
 
-def get_init_states(data_config, episode_idx=None):
-    dir = data_config["dataset_dir"]
-    data_type = data_config["data_type"]
-    mcap_state_topics = data_config.get("mcap_state_topics", None)
-    mcap_action_topics = data_config.get("mcap_action_topics", None)
+def get_init_states(data_config: Union[dict, str], episode_idx: Optional[int] = None):
+    """Get initial joint positions and actions from the dataset."""
+
     if isinstance(episode_idx, int):
+        dir = data_config["dataset_dir"]
+        data_type = data_config["data_type"]
+        mcap_state_topics = data_config.get("mcap_state_topics", None)
+        mcap_action_topics = data_config.get("mcap_action_topics", None)
         if data_type == "hdf5":
             dataset_path = os.path.join(dir, f"episode_{episode_idx}.hdf5")
             dataset_path = os.path.abspath(dataset_path)
@@ -250,15 +262,11 @@ def get_init_states(data_config, episode_idx=None):
                 raise ValueError(
                     "mcap_state_topics and mcap_action_topics must be provided for mcap data type"
                 )
-            qpos = get_mcap_qpos(
-                mcap_file_path, mcap_state_topics, 0, 0
-            )
-            action = get_mcap_action(
-                mcap_file_path, mcap_action_topics, 0, 0
-            )
+            qpos = get_mcap_qpos(mcap_file_path, mcap_state_topics, 0, 0)
+            action = get_mcap_action(mcap_file_path, mcap_action_topics, 0, 0)
     else:
         # dir is info dir
-        key_info_path = os.path.join(dir, f"key_info.pkl")
+        key_info_path = os.path.join(data_config, "key_info.pkl")
         with open(key_info_path, "rb") as f:
             key_info = pickle.load(f)
             qpos = key_info["init_info"]["init_joint"]
@@ -302,8 +310,10 @@ def process_num_episodes(
     """Change num_episodes to list of ids"""
 
     if num_episodes in ["ALL", "all", "All", 0]:
-        num_episodes = len(find_all_hdf5(dataset_dir)) if data_type == "hdf5" else len(
-            list(Path(dataset_dir).glob("*.mcap"))
+        num_episodes = (
+            len(find_all_hdf5(dataset_dir))
+            if data_type == "hdf5"
+            else len(list(Path(dataset_dir).glob("*.mcap")))
         )
         print(f"Found {num_episodes} episodes in {dataset_dir}")
         num_episodes = list(range(num_episodes))
@@ -336,7 +346,9 @@ class LoadDataConfig(object):
         # change dataset_dir to absolute path
         self.dataset_dir = os.path.abspath(self.dataset_dir)
         # change num_episodes to list of ids
-        self.num_episodes = process_num_episodes(self.num_episodes, self.dataset_dir, self.data_type)
+        self.num_episodes = process_num_episodes(
+            self.num_episodes, self.dataset_dir, self.data_type
+        )
         # check if all episodes exist
         assert os.path.isdir(
             self.dataset_dir
@@ -359,7 +371,9 @@ class LoadDataConfig(object):
             print(f"Action slice: {self.action_slice}")
 
 
-def get_qpos_and_action_from_mcap(mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+def get_qpos_and_action_from_mcap(
+    mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]
+) -> Tuple[np.ndarray, np.ndarray]:
     """Extract qpos and action data from a MCAP file."""
     if not mcap_file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
@@ -367,21 +381,34 @@ def get_qpos_and_action_from_mcap(mcap_file_path: Path, mcap_state_topics: List[
     action = []
     with mcap_file_path.open("rb") as f:
         reader = make_reader(f)
-        is_read_topics = {topic: False for topic in mcap_state_topics + mcap_action_topics}
+        is_read_topics = {
+            topic: False for topic in mcap_state_topics + mcap_action_topics
+        }
         for schema_obj, channel_obj, message_obj in reader.iter_messages(
             mcap_state_topics + mcap_action_topics
         ):
             if is_read_topics[channel_obj.topic]:
                 continue
             if channel_obj.topic in mcap_state_topics:
-                qpos += FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist()
+                qpos += (
+                    FloatArray.GetRootAsFloatArray(message_obj.data)
+                    .ValuesAsNumpy()
+                    .tolist()
+                )
                 is_read_topics[channel_obj.topic] = True
             elif channel_obj.topic in mcap_action_topics:
-                action += FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist()
+                action += (
+                    FloatArray.GetRootAsFloatArray(message_obj.data)
+                    .ValuesAsNumpy()
+                    .tolist()
+                )
                 is_read_topics[channel_obj.topic] = True
     return qpos, action
 
-def get_mcap_frame_length(mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]) -> int:
+
+def get_mcap_frame_length(
+    mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]
+) -> int:
     """Get the length of the episode in a MCAP file."""
     if not mcap_file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
@@ -399,11 +426,18 @@ def get_mcap_frame_length(mcap_file_path: Path, mcap_state_topics: List[str], mc
                     episode_len = summary.statistics.channel_message_counts[channel]
                 else:
                     assert (
-                        episode_len == summary.statistics.channel_message_counts[channel]
+                        episode_len
+                        == summary.statistics.channel_message_counts[channel]
                     ), f"Episode length mismatch: {episode_len} vs {summary.statistics.channel_message_counts[channel]} for channel {channel}"
     return episode_len
 
-def get_mcap_qpos(mcap_file_path: Path, mcap_state_topics: List[str], start_index: int = 0, end_index: int = 0) -> np.array:
+
+def get_mcap_qpos(
+    mcap_file_path: Path,
+    mcap_state_topics: List[str],
+    start_index: int = 0,
+    end_index: int = 0,
+) -> np.array:
     """Extract qpos data from a MCAP file."""
     if not mcap_file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
@@ -413,7 +447,9 @@ def get_mcap_qpos(mcap_file_path: Path, mcap_state_topics: List[str], start_inde
     index = 0
     with mcap_file_path.open("rb") as f:
         reader = make_reader(f)
-        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_state_topics):
+        for schema_obj, channel_obj, message_obj in reader.iter_messages(
+            mcap_state_topics
+        ):
             cnt[channel_obj.topic] += 1
             if cnt[channel_obj.topic] - index > 1:
                 if index >= start_index and (index <= end_index or end_index == -1):
@@ -423,15 +459,25 @@ def get_mcap_qpos(mcap_file_path: Path, mcap_state_topics: List[str], start_inde
                 if index > end_index and end_index != -1:
                     break
             if index >= start_index:
-                qpos +=(FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist())
+                qpos += (
+                    FloatArray.GetRootAsFloatArray(message_obj.data)
+                    .ValuesAsNumpy()
+                    .tolist()
+                )
         if index >= start_index and (index <= end_index or end_index == -1):
             res.append(qpos.copy())
-                
+
     res = np.array(res) if len(res) > 1 else np.array(res[0]) if res else np.array([])
     res = np.array(res, dtype=np.float32)  # ensure the output is float type
     return res
 
-def get_mcap_action(mcap_file_path: Path, mcap_action_topics: List[str], start_index: int = 0, end_index: int = 0) -> np.array:
+
+def get_mcap_action(
+    mcap_file_path: Path,
+    mcap_action_topics: List[str],
+    start_index: int = 0,
+    end_index: int = 0,
+) -> np.array:
     """Extract action data from a MCAP file."""
     if not mcap_file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
@@ -441,7 +487,9 @@ def get_mcap_action(mcap_file_path: Path, mcap_action_topics: List[str], start_i
     index = 0
     with mcap_file_path.open("rb") as f:
         reader = make_reader(f)
-        for schema_obj, channel_obj, message_obj in reader.iter_messages(mcap_action_topics):
+        for schema_obj, channel_obj, message_obj in reader.iter_messages(
+            mcap_action_topics
+        ):
             cnt[channel_obj.topic] += 1
             if cnt[channel_obj.topic] - index > 1:
                 if index >= start_index and (index <= end_index or end_index == -1):
@@ -451,7 +499,11 @@ def get_mcap_action(mcap_file_path: Path, mcap_action_topics: List[str], start_i
                 if index > end_index and end_index != -1:
                     break
             if index >= start_index:
-                action +=(FloatArray.GetRootAsFloatArray(message_obj.data).ValuesAsNumpy().tolist())
+                action += (
+                    FloatArray.GetRootAsFloatArray(message_obj.data)
+                    .ValuesAsNumpy()
+                    .tolist()
+                )
         if index >= start_index and (index <= end_index or end_index == -1):
             res.append(action.copy())
 
@@ -460,7 +512,12 @@ def get_mcap_action(mcap_file_path: Path, mcap_action_topics: List[str], start_i
     return res
 
 
-def get_mcap_image(mcap_file_path: Path, camera_name: List[str], mcap_camera_topics: List[str], index: int = 0) -> dict[str: np.ndarray]:
+def get_mcap_image(
+    mcap_file_path: Path,
+    camera_name: List[str],
+    mcap_camera_topics: List[str],
+    index: int = 0,
+) -> dict[str : np.ndarray]:
     """Extract image data from a MCAP file."""
     if not mcap_file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
@@ -486,13 +543,14 @@ def get_mcap_image(mcap_file_path: Path, camera_name: List[str], mcap_camera_top
             ret, frame = cap.read()
             cap.release()
             os.remove(tmp_path)
-            
+
             if not ret:
                 raise RuntimeError(f"Could not read frame {index}")
-            
+
             index = mcap_camera_topics.index(attach.name)
             res[camera_name[index]] = frame
     return res
+
 
 def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):
     all_qpos_data = []
@@ -506,12 +564,8 @@ def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):
                 action = root["/action"][()]
         elif config.data_type == "mcap":
             dataset_path = Path(dataset_dir) / f"{episode_idx}.mcap"
-            qpos = get_mcap_qpos(
-                dataset_path, config.mcap_state_topics, 0, -1
-            )
-            action = get_mcap_action(
-                dataset_path, config.mcap_action_topics, 0, -1
-            )
+            qpos = get_mcap_qpos(dataset_path, config.mcap_state_topics, 0, -1)
+            action = get_mcap_action(dataset_path, config.mcap_action_topics, 0, -1)
 
         all_qpos_data.append(qpos)
         all_action_data.append(action)
