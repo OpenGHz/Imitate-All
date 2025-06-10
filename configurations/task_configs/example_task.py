@@ -19,11 +19,12 @@ def policy_maker(config: dict, stage=None):
 
 
 def environment_maker(config: dict):
-    from envs.make_env import make_environment
+    from configurations.task_configs.config_tools.env_makers import (
+        make_airbot_play5_env,
+    )
 
-    env_config = config["environments"]
     # TODO: use env_config only
-    return make_environment(config)
+    return make_airbot_play5_env(config)
 
 
 @activator(False)
@@ -47,11 +48,10 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
 chunk_size = 25
-joint_num = 7
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
-TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num
-TASK_CONFIG_DEFAULT["common"]["action_dim"] = joint_num
-TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = False
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0", "1", "2"]
+TASK_CONFIG_DEFAULT["common"]["state_dim"] = 14
+TASK_CONFIG_DEFAULT["common"]["action_dim"] = 14
+TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["chunk_size"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["num_queries"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["kl_weight"] = 10
@@ -64,19 +64,25 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_train"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = None
 TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = None
-TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = ["/follow/arm/joint_state/position", "/follow/eef/joint_state/position"]
-TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = ["/lead/arm/joint_state/position", "/lead/eef/joint_state/position"]
-TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = ["/env_camera/color/image_raw"]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
+    "/follow/arm/joint_state/position",
+    "/follow/eef/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
+    "/lead/arm/joint_state/position",
+    "/lead/eef/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
+    "/env_camera/color/image_raw"
+]
 
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
 TASK_CONFIG_DEFAULT["train"]["pretrain_epoch_base"] = "AUTO"
 
-TASK_CONFIG_DEFAULT["eval"]["robot_num"] = 1
-TASK_CONFIG_DEFAULT["eval"]["joint_num"] = joint_num
-TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
 TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 300
+TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
 TASK_CONFIG_DEFAULT["eval"]["ensemble"] = None
 TASK_CONFIG_DEFAULT["eval"]["environments"]["environment_maker"] = environment_maker
 TASK_CONFIG_DEFAULT["eval"]["ckpt_names"] = ["policy_best.ckpt"]
