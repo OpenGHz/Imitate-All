@@ -48,9 +48,9 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
 chunk_size = 25
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
-TASK_CONFIG_DEFAULT["common"]["state_dim"] = 7
-TASK_CONFIG_DEFAULT["common"]["action_dim"] = 7
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0", "1", "2"]
+TASK_CONFIG_DEFAULT["common"]["state_dim"] = 14
+TASK_CONFIG_DEFAULT["common"]["action_dim"] = 14
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["chunk_size"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["num_queries"] = chunk_size
@@ -65,25 +65,30 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = None
 TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = None
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
-    "/follow/arm/joint_state/position",
-    "/follow/eef/joint_state/position",
+    "left/follow/arm/joint_state/position",
+    "left/follow/eef/joint_state/position",
+    "right/follow/arm/joint_state/position",
+    "right/follow/eef/joint_state/position",
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
-    "/lead/arm/joint_state/position",
-    "/lead/eef/joint_state/position",
+    "left/lead/arm/joint_state/position",
+    "left/lead/eef/joint_state/position",
+    "right/lead/arm/joint_state/position",
+    "right/lead/eef/joint_state/position",
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
     "/env_camera/color/image_raw",
-    # "/follow_camera/color/image_raw",
+    "/left_camera/color/image_raw",
+    "/right_camera/color/image_raw",
 ]
 
-TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
+TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 10000
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
 TASK_CONFIG_DEFAULT["train"]["pretrain_epoch_base"] = "AUTO"
 
-TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 300
 TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
+TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 300
 TASK_CONFIG_DEFAULT["eval"]["ensemble"] = None
 TASK_CONFIG_DEFAULT["eval"]["environments"]["environment_maker"] = environment_maker
 TASK_CONFIG_DEFAULT["eval"]["ckpt_names"] = ["policy_best.ckpt"]

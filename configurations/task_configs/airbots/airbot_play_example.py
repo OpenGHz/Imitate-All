@@ -19,9 +19,12 @@ def policy_maker(config: dict, stage=None):
 
 
 def environment_maker(config: dict):
-    from envs.airbot_tok_2_env import make_env
+    from configurations.task_configs.config_tools.env_makers import (
+        make_airbot_play5_env,
+    )
 
-    return make_env(config)
+    # TODO: use env_config only
+    return make_airbot_play5_env(config)
 
 
 @activator(False)
