@@ -49,8 +49,8 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 
 chunk_size = 25
 TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0", "1", "2"]
-TASK_CONFIG_DEFAULT["common"]["state_dim"] = 14
-TASK_CONFIG_DEFAULT["common"]["action_dim"] = 14
+TASK_CONFIG_DEFAULT["common"]["state_dim"] = 7
+TASK_CONFIG_DEFAULT["common"]["action_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["chunk_size"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["num_queries"] = chunk_size
