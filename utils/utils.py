@@ -18,8 +18,8 @@ from typing import Tuple, List, Dict, Union, Optional
 from pprint import pprint
 from airbot_type.FloatArray import FloatArray
 from mcap.reader import make_reader
-import tempfile
-import cv2
+import av
+import io
 
 logger = logging.getLogger(__name__)
 np.random.seed(0)
@@ -457,26 +457,14 @@ def get_mcap_image(mcap_file_path: Path, camera_name: List[str], mcap_camera_top
         for attach in reader.iter_attachments():
             if attach.name not in mcap_camera_topics:
                 continue
-            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
-                tmp.write(attach.data)
-                tmp.flush()
-                tmp_path = tmp.name
-
-            cap = cv2.VideoCapture(tmp_path)
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if not (0 <= index < total):
-                cap.release()
-                os.remove(tmp_path)
-                raise IndexError(f"Frame number {index} out of range [0, {total})")
-
-            cap.set(cv2.CAP_PROP_POS_FRAMES, index)
-            ret, frame = cap.read()
-            cap.release()
-            os.remove(tmp_path)
-            
-            if not ret:
-                raise RuntimeError(f"Could not read frame {index}")
-            
+            with io.BytesIO(attach.data) as buf:
+                container = av.open(buf)
+                frame_iter = container.decode(video=0)
+                for i, frame in enumerate(frame_iter):
+                    if i == index:
+                        frame = frame.to_ndarray(format="bgr24")
+                        break
+                container.close()
             index = mcap_camera_topics.index(attach.name)
             res[camera_name[index]] = frame
     return res
