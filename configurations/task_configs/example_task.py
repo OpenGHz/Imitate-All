@@ -48,7 +48,7 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
 chunk_size = 25
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0", "1", "2"]
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["action_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
