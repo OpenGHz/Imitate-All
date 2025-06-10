@@ -5,6 +5,7 @@ from typing import List, Dict, Union
 from airbot_data_collection.basis import System, SystemMode
 from logging import getLogger
 import numpy as np
+from pprint import pformat
 
 
 class AIRBOTPlayWithCameraEnv:
@@ -24,9 +25,10 @@ class AIRBOTPlayWithCameraEnv:
             if not ins.configure():
                 raise RuntimeError(f"Failed to configure {name}.")
 
-    def set_reset_position(self, action):
+    def set_reset_position(self, action: np.ndarray):
         for index, key in enumerate(self.arms.keys()):
-            self._reset_actions[key] = list(action[index * 7 : (index + 1) * 7])
+            self._reset_actions[key] = action[index * 7 : (index + 1) * 7].tolist()
+        self.get_logger().info(f"Set reset actions: {pformat(self._reset_actions)}")
 
     def _capture_observation(self) -> dict:
         """Capture the current observation from the robot."""
@@ -74,12 +76,12 @@ class AIRBOTPlayWithCameraEnv:
 
     def step(
         self,
-        action,
+        action: np.ndarray,
         sleep_time=0,
         get_obs=True,
     ):
         for index, (_key, robot) in enumerate(self.arms.items()):
-            robot.send_action(list(action[index * 7 : (index + 1) * 7]))
+            robot.send_action(action[index * 7 : (index + 1) * 7].tolist())
         time.sleep(sleep_time)
         obs = self._get_obs() if get_obs else None
         return obs
