@@ -1,12 +1,12 @@
 from mmk2_types.types import (
     JointNames,
-    MMK2ComponentsGroup,
+    RobotComponentsGroup,
 )
 from mmk2_types.grpc_msgs import Time
 from typing import Optional, Dict
 import logging
 import numpy as np
-from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2Config
+from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTRobotConfig
 from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2 as AIRBOTMMK2_BASE
 
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class AIRBOTMMK2(AIRBOTMMK2_BASE):
 
-    def __init__(self, config: Optional[AIRBOTMMK2Config] = None, **kwargs):
+    def __init__(self, config: Optional[AIRBOTRobotConfig] = None, **kwargs):
         self.images_ts: Dict[str, int] = {}
         super().__init__(config, **kwargs)
 
@@ -69,7 +69,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                 )
             )
             if self.config.demonstrate:
-                if comp in MMK2ComponentsGroup.ARMS:
+                if comp in RobotComponentsGroup.ARMS:
                     arm_jn = JointNames().__dict__[comp.value]
                     comp_eef = comp.value + "_eef"
                     eef_jn = JointNames().__dict__[comp_eef]
@@ -86,7 +86,7 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                             "action", comp_eef, js.header.stamp, jq[-1:]
                         )
                     )
-                elif comp in MMK2ComponentsGroup.HEAD_SPINE:
+                elif comp in RobotComponentsGroup.HEAD_SPINE:
                     result = self.robot.get_listened(self._comp_action_topic[comp])
                     assert result is not None, "The AIRBOT MMK2 should be in bag teleopration sync mode."
                     jq = list(result.data)
