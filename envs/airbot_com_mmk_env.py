@@ -1,7 +1,6 @@
 from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2
 from robots.common import make_robot_from_yaml
 import time
-import collections
 import dm_env
 import numpy as np
 
@@ -13,9 +12,12 @@ class AIRBOTMMK2Env(object):
         self._all_joints_num = self.robot.joint_num
 
     def set_reset_position(self, reset_position):
-        assert (
-            len(reset_position) == self._all_joints_num
-        ), f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
+        if not len(reset_position) == self._all_joints_num:
+            des = f"Expected {self._all_joints_num} joints, got {len(reset_position)}"
+            if self.robot.config.check_dim:
+                raise ValueError(des)
+            else:
+                print(f"Warning: {des}")
         self.robot.config.default_action = reset_position
 
     def reset(self, sleep_time=0):
@@ -23,16 +25,15 @@ class AIRBOTMMK2Env(object):
         return self._get_obs()
 
     def _get_obs(self):
-        obs = collections.OrderedDict()
+        obs = {}
         obs["qpos"] = []
         obs["images"] = {}
         raw_obs = self.robot.capture_observation()
-        low_dim = raw_obs["low_dim"]
         for comp in self.robot.components:
-            obs["qpos"].extend(low_dim[f"observation/{comp.value}/joint_position"])
-        for camera in self.robot.cameras:
+            obs["qpos"].extend(raw_obs[f"/observation/{comp.value}/joint_state"]["data"]["pos"])
+        for camera in self.robot.cameras_goal:
             assert camera not in obs["images"], f"Duplicate camera name: {camera}"
-            obs["images"][camera.value] = raw_obs[f"observation.images.{camera.value}"]
+            obs["images"][camera.value] = raw_obs[f"/images/{camera.value}"]["data"]
 
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
@@ -47,13 +48,14 @@ class AIRBOTMMK2Env(object):
         sleep_time=0,
         get_obs=True,
     ):
+        # TODO: require the arms to be first components
         joint_limits = (
-            (-3.09, 2.04),
-            (-2.92, 0.12),
-            (-0.04, 3.09),
-            (-2.95, 2.95), # (-3.1, 3.1)
-            (-1.9, 1.9),  # (-1.08, 1.08),
-            (-2.90, 2.90),  # (-3.0, 3.0)
+            (-3.151, 2.09),  # (-3.09, 2.04)
+            (-2.963, 0.181),  # (-2.92, 0.12)
+            (-0.094, 3.161),  # (-0.04, 3.09)
+            (-2.95, 2.95),  # (-3.012, 3.012)
+            (-1.9, 1.9),  # (-1.859, 1.859)
+            (-2.90, 2.90),  # (-3.017, 3.017)
             (0, 1),
         )
 

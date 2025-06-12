@@ -1,10 +1,10 @@
-from mmk2_sdk.mmk2_client import AIRBOTMMK2 as AIRBOTMMK2Client
+from mmk2_sdk.mmk2_client import AIRBOTMMK2 as AIRBOTRobotClient
 from mmk2_types.types import (
-    MMK2Components,
+    RobotComponents,
     JointNames,
     ComponentTypes,
     TopicNames,
-    MMK2ComponentsGroup,
+    RobotComponentsGroup,
     ImageTypes,
     ControllerTypes,
 )
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class AIRBOTMMK2Config(object):
+class AIRBOTRobotConfig(object):
     name: str = "mmk2"
     domain_id: int = -1
     ip: str = "192.168.11.200"
@@ -35,35 +35,35 @@ class AIRBOTMMK2Config(object):
     cameras: Dict[str, str] = field(default_factory=lambda: {})
     components: List[str] = field(
         default_factory=lambda: [
-            MMK2Components.LEFT_ARM.value,
-            MMK2Components.LEFT_ARM_EEF.value,
-            MMK2Components.RIGHT_ARM.value,
-            MMK2Components.RIGHT_ARM_EEF.value,
+            RobotComponents.LEFT_ARM.value,
+            RobotComponents.LEFT_ARM_EEF.value,
+            RobotComponents.RIGHT_ARM.value,
+            RobotComponents.RIGHT_ARM_EEF.value,
         ]
     )
     demonstrate: bool = False
 
 
 class AIRBOTMMK2(object):
-    def __init__(self, config: Optional[AIRBOTMMK2Config] = None, **kwargs) -> None:
+    def __init__(self, config: Optional[AIRBOTRobotConfig] = None, **kwargs) -> None:
         if config is None:
-            config = AIRBOTMMK2Config()
+            config = AIRBOTRobotConfig()
         self.config = replace(config, **kwargs)
-        self.robot = AIRBOTMMK2Client(
+        self.robot = AIRBOTRobotClient(
             self.config.ip,
             self.config.port,
             self.config.name,
             self.config.domain_id,
         )
         self.joint_names = {}
-        self.cameras: Dict[MMK2Components, str] = {}
-        self.components: Dict[MMK2Components, ComponentTypes] = {}
+        self.cameras: Dict[RobotComponents, str] = {}
+        self.components: Dict[RobotComponents, ComponentTypes] = {}
         all_joint_names = JointNames()
         self.joint_num = 0
         for k, v in self.config.cameras.items():
-            self.cameras[MMK2Components(k)] = ImageTypes(v)
+            self.cameras[RobotComponents(k)] = ImageTypes(v)
         for comp_str in self.config.components:
-            comp = MMK2Components(comp_str)
+            comp = RobotComponents(comp_str)
             # TODO: get the type info from SDK
             self.components[comp] = ComponentTypes.UNKNOWN
             names = all_joint_names.__dict__[comp_str]
@@ -85,7 +85,7 @@ class AIRBOTMMK2(object):
         if self.config.demonstrate:
             comp_action_topic = {
                 comp: TopicNames.tracking.format(component=comp.value)
-                for comp in MMK2ComponentsGroup.ARMS
+                for comp in RobotComponentsGroup.ARMS
             }
             comp_action_topic.update(
                 {
@@ -93,7 +93,7 @@ class AIRBOTMMK2(object):
                         component=comp.value,
                         controller=ControllerTypes.FORWARD_POSITION.value,
                     )
-                    for comp in MMK2ComponentsGroup.HEAD_SPINE
+                    for comp in RobotComponentsGroup.HEAD_SPINE
                 }
             )
             self.robot.listen_to(list(comp_action_topic.values()))
@@ -112,13 +112,13 @@ class AIRBOTMMK2(object):
     def _move_by_traj(self, goal: dict):
         # goal.update(
         #     {
-        #         MMK2Components.HEAD: JointState(position=[0, -1.0]),
-        #         MMK2Components.SPINE: JointState(position=[0.15]),
+        #         RobotComponents.HEAD: JointState(position=[0, -1.0]),
+        #         RobotComponents.SPINE: JointState(position=[0.15]),
         #     }
         # )
         if self.config.demonstrate:
             # TODO: since the arms and eefs are controlled by the teleop bag
-            for comp in MMK2ComponentsGroup.ARMS_EEFS:
+            for comp in RobotComponentsGroup.ARMS_EEFS:
                 goal.pop(comp)
         if goal:
             self.robot.set_goal(goal, TrajectoryParams())
@@ -150,12 +150,12 @@ class AIRBOTMMK2(object):
             param = ForwardPositionParams()
             # param = MoveServoParams(header=self.robot.get_header())
             # param = {
-            #     MMK2Components.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
-            #     MMK2Components.RIGHT_ARM: MoveServoParams(header=self.robot.get_header()),
-            #     MMK2Components.LEFT_ARM_EEF: TrajectoryParams(),
-            #     MMK2Components.RIGHT_ARM_EEF: TrajectoryParams(),
-            #     MMK2Components.HEAD: ForwardPositionParams(),
-            #     MMK2Components.SPINE: ForwardPositionParams(),
+            #     RobotComponents.LEFT_ARM: MoveServoParams(header=self.robot.get_header()),
+            #     RobotComponents.RIGHT_ARM: MoveServoParams(header=self.robot.get_header()),
+            #     RobotComponents.LEFT_ARM_EEF: TrajectoryParams(),
+            #     RobotComponents.RIGHT_ARM_EEF: TrajectoryParams(),
+            #     RobotComponents.HEAD: ForwardPositionParams(),
+            #     RobotComponents.SPINE: ForwardPositionParams(),
             # }
             self.robot.set_goal(goal, param)
 
@@ -169,7 +169,7 @@ class AIRBOTMMK2(object):
             )
             data[f"observation/{comp.value}/joint_position"] = joint_states
             if self.config.demonstrate:
-                if comp in MMK2ComponentsGroup.ARMS:
+                if comp in RobotComponentsGroup.ARMS:
                     arm_jn = JointNames().__dict__[comp.value]
                     comp_eef = comp.value + "_eef"
                     eef_jn = JointNames().__dict__[comp_eef]
@@ -178,7 +178,7 @@ class AIRBOTMMK2(object):
                     data[f"action/{comp.value}/joint_position"] = jq[:-1]
                     # the eef joint is in arms
                     data[f"action/{comp_eef}/joint_position"] = jq[-1:]
-                elif comp in MMK2ComponentsGroup.HEAD_SPINE:
+                elif comp in RobotComponentsGroup.HEAD_SPINE:
                     jq = list(
                         self.robot.get_listened(self._comp_action_topic[comp]).data
                     )
@@ -187,7 +187,7 @@ class AIRBOTMMK2(object):
 
     def _capture_images(self) -> Tuple[Dict[str, bytes], Dict[str, Time]]:
         images = {}
-        img_stamps: Dict[MMK2Components, Time] = {}
+        img_stamps: Dict[RobotComponents, Time] = {}
         before_camread_t = time.perf_counter()
         comp_images = self.robot.get_image(self.cameras)
         for comp, image in comp_images.items():
@@ -232,7 +232,7 @@ class AIRBOTMMK2(object):
         for comp in self.components:
             # action.extend(low_dim[f"action/{comp.value}/joint_position"][step])
             # old version
-            if comp in MMK2ComponentsGroup.ARMS_EEFS:
+            if comp in RobotComponentsGroup.ARMS_EEFS:
                 pos_comp = comp.value.split("_")
                 key = f"{pos_comp[1]}/{pos_comp[0]}"
             else:
@@ -248,7 +248,7 @@ class AIRBOTMMK2(object):
             len(action) == self.joint_num
         ), f"Invalid action {action} with length: {len(action)}"
 
-    def _action_to_goal(self, action) -> Dict[MMK2Components, JointState]:
+    def _action_to_goal(self, action) -> Dict[RobotComponents, JointState]:
         self._action_check(action)
         goal = {}
         j_cnt = 0
