@@ -527,7 +527,7 @@ def get_mcap_image(
         reader = make_reader(f)
         for attach in reader.iter_attachments():
             if attach.name not in mcap_camera_topics:
-                print(f"Attachment {attach.name} not in mcap_camera_topics, skip it")
+                # print(f"Attachment {attach.name} not in mcap_camera_topics, skip it")
                 continue
             topic_index = mcap_camera_topics.index(attach.name)
             images[camera_name[topic_index]] = av_coder.decode(attach.data, [index])[
