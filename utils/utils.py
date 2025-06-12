@@ -529,9 +529,9 @@ def get_mcap_image(
             if attach.name not in mcap_camera_topics:
                 continue
             topic_index = mcap_camera_topics.index(attach.name)
-            images[camera_name[topic_index]] = av_coder.decode(attach.data, [index])[
-                index
-            ]
+            images[camera_name[topic_index]] = av_coder.decode(
+                attach.data, [index], mismatch_tolerance=5
+            )[index]
     return images
 
 
