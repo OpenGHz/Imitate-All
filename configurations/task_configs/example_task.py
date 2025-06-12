@@ -48,7 +48,9 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
 chunk_size = 25
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
+camera_names = ["env_camera"]
+# camera_names = ["env_camera", "follow_camera"]
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["env_camera"]
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["action_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
@@ -73,8 +75,7 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
     "/lead/eef/joint_state/position",
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
-    "/env_camera/color/image_raw",
-    # "/follow_camera/color/image_raw",
+    f"/{cam_name}/color/image_raw" for cam_name in camera_names
 ]
 
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
