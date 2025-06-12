@@ -20,6 +20,8 @@ from airbot_type.FloatArray import FloatArray
 from mcap.reader import make_reader
 import tempfile
 import cv2
+from airbot_data_collection.tools.av_coder import AvCoder
+
 
 logger = logging.getLogger(__name__)
 np.random.seed(0)
@@ -513,43 +515,25 @@ def get_mcap_action(
 
 
 def get_mcap_image(
-    mcap_file_path: Path,
+    mcap_file_path: str,
     camera_name: List[str],
     mcap_camera_topics: List[str],
     index: int = 0,
-) -> dict[str : np.ndarray]:
+) -> Dict[str, np.ndarray]:
     """Extract image data from a MCAP file."""
-    if not mcap_file_path.exists():
-        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
-    res = {}
-    with mcap_file_path.open("rb") as f:
+    images = {}
+    av_coder = AvCoder()
+    with Path(mcap_file_path).open("rb") as f:
         reader = make_reader(f)
         for attach in reader.iter_attachments():
             if attach.name not in mcap_camera_topics:
+                print(f"Attachment {attach.name} not in mcap_camera_topics, skip it")
                 continue
-            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
-                tmp.write(attach.data)
-                tmp.flush()
-                tmp_path = tmp.name
-
-            cap = cv2.VideoCapture(tmp_path)
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if not (0 <= index < total):
-                cap.release()
-                os.remove(tmp_path)
-                raise IndexError(f"Frame number {index} out of range [0, {total})")
-
-            cap.set(cv2.CAP_PROP_POS_FRAMES, index)
-            ret, frame = cap.read()
-            cap.release()
-            os.remove(tmp_path)
-
-            if not ret:
-                raise RuntimeError(f"Could not read frame {index}")
-
-            index = mcap_camera_topics.index(attach.name)
-            res[camera_name[index]] = frame
-    return res
+            topic_index = mcap_camera_topics.index(attach.name)
+            images[camera_name[topic_index]] = av_coder.decode(attach.data, [index])[
+                index
+            ]
+    return images
 
 
 def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):
