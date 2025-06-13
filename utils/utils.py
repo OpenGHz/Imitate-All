@@ -374,41 +374,6 @@ class LoadDataConfig(object):
             print(f"Action slice: {self.action_slice}")
 
 
-def get_qpos_and_action_from_mcap(
-    mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Extract qpos and action data from a MCAP file."""
-    if not mcap_file_path.exists():
-        raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
-    qpos = []
-    action = []
-    with mcap_file_path.open("rb") as f:
-        reader = make_reader(f)
-        is_read_topics = {
-            topic: False for topic in mcap_state_topics + mcap_action_topics
-        }
-        for schema_obj, channel_obj, message_obj in reader.iter_messages(
-            mcap_state_topics + mcap_action_topics
-        ):
-            if is_read_topics[channel_obj.topic]:
-                continue
-            if channel_obj.topic in mcap_state_topics:
-                qpos += (
-                    FloatArray.GetRootAsFloatArray(message_obj.data)
-                    .ValuesAsNumpy()
-                    .tolist()
-                )
-                is_read_topics[channel_obj.topic] = True
-            elif channel_obj.topic in mcap_action_topics:
-                action += (
-                    FloatArray.GetRootAsFloatArray(message_obj.data)
-                    .ValuesAsNumpy()
-                    .tolist()
-                )
-                is_read_topics[channel_obj.topic] = True
-    return qpos, action
-
-
 def get_mcap_frame_length(
     mcap_file_path: Path, mcap_state_topics: List[str], mcap_action_topics: List[str]
 ) -> int:
