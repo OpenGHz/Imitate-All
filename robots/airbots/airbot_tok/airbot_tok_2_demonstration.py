@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field, replace
-from robots.airbots.airbot_play.airbot_play_2_demonstration import (
-    AIRBOTPlayDemonstrationConfig,
-    AIRBOTPlayDemonstration,
-)
-from robots.airbots.airbot_base.airbot_base import AIRBOTBase, AIRBOTBaseConfig
 from typing import Optional
+
+from robots.airbots.airbot_base.airbot_base import AIRBOTBase, AIRBOTBaseConfig
+from robots.airbots.airbot_play.airbot_play_2_demonstration import (
+    AIRBOTPlayDemonstration,
+    AIRBOTPlayDemonstrationConfig,
+)
 
 
 @dataclass

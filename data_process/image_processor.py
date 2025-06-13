@@ -1,10 +1,11 @@
-import numpy as np
-from pathlib import Path
-from PIL import Image
-from concurrent.futures import ThreadPoolExecutor
-from collections import OrderedDict
 import subprocess
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Optional
+
+import numpy as np
+from PIL import Image
 
 
 def save_images_concurrently(

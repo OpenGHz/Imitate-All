@@ -1,15 +1,12 @@
-from mmk2_types.types import (
-    JointNames,
-    MMK2Components,
-    MMK2ComponentsGroup,
-)
-from mmk2_types.grpc_msgs import Time
-from typing import Optional, Dict
 import logging
-import numpy as np
-from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2Config
-from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2 as AIRBOTMMK2_BASE
+from typing import Dict, Optional
 
+import numpy as np
+from mmk2_types.grpc_msgs import Time
+from mmk2_types.types import JointNames, MMK2Components, MMK2ComponentsGroup
+
+from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2 as AIRBOTMMK2_BASE
+from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2Config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

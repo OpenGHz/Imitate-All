@@ -1,9 +1,11 @@
-import sys, os
+import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import data_process.convert_all as crd
 import argparse
+
+import data_process.convert_all as crd
 
 parser = argparse.ArgumentParser(description="Convert mmk2 data to hdf5")
 
@@ -72,6 +74,7 @@ data = crd.raw_to_dict(
 )
 
 import os
+
 import cv2
 
 # merge high_dim data and save

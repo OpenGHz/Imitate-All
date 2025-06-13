@@ -1,4 +1,3 @@
-
 def kl_divergence(mu, logvar):
     batch_size = mu.size(0)
     assert batch_size != 0

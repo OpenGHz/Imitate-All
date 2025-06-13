@@ -2,22 +2,27 @@ from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
 
 prepare_cv2_imshow()
 
-import torch
-import numpy as np
-import os, time, logging, pickle, inspect
+import argparse
+import inspect
+import logging
+import os
+import pickle
+import time
 from typing import Dict
+
+import cv2
+import dm_env
+import numpy as np
+import torch
 from tqdm import tqdm
-from utils.utils import set_seed, save_eval_results
+
 from configurations.task_configs.config_tools.basic_configer import (
     basic_parser,
     get_all_config,
 )
+from envs.common_env import CommonEnv, get_image
 from policies.common.maker import make_policy
-from envs.common_env import get_image, CommonEnv
-import dm_env
-import cv2
-import argparse
-
+from utils.utils import save_eval_results, set_seed
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

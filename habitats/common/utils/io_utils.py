@@ -13,8 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import platform
 import warnings
-import os, platform
+
 import imageio
 
 
@@ -22,9 +24,12 @@ def write_video(video_path, stacked_frames, fps):
     # Filter out DeprecationWarnings raised from pkg_resources
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            "ignore", "pkg_resources is deprecated as an API", category=DeprecationWarning
+            "ignore",
+            "pkg_resources is deprecated as an API",
+            category=DeprecationWarning,
         )
         imageio.mimsave(video_path, stacked_frames, fps=fps)
+
 
 def say(text, blocking=False):
     # Check if mac, linux, or windows.

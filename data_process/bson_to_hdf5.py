@@ -1,10 +1,10 @@
-import convert_all as crd
-import os
-import cv2
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
+import convert_all as crd
+import cv2
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -83,19 +83,15 @@ pre_process.update(
 )
 
 if mode == "mmk2":
-    key_filter =  [
-            "/observation/left_arm/pose",
-            "/observation/right_arm/pose",
-            # "action/eef/pose",
-            # "/time",
+    key_filter = [
+        "/observation/left_arm/pose",
+        "/observation/right_arm/pose",
+        # "action/eef/pose",
+        # "/time",
     ]
 elif mode == "play":
-    pre_process.update(
-        {"/action1/eef/joint_position": lambda data: data["t"]}
-    )
-    pre_process.update(
-        {"/observation1/eef/joint_position": lambda data: data["t"]}
-    )
+    pre_process.update({"/action1/eef/joint_position": lambda data: data["t"]})
+    pre_process.update({"/observation1/eef/joint_position": lambda data: data["t"]})
     key_filter = [
         "/action1/eef/pose",
         "/observation1/eef/pose",
@@ -142,6 +138,7 @@ def save_one(index, ep_name):
     )
     crd.save_dict_to_hdf5(bson_dict, target_dir + target_namer(index), None)
     return bson_dict
+
 
 # save one first to print logs
 print("Try saving one data to check if everything is ok...")

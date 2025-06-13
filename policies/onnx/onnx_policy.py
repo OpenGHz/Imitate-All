@@ -1,10 +1,11 @@
+import logging
+
+import numpy as np
 import onnx
 import onnxruntime as ort
-import logging
 import torch
-import numpy as np
-from policies.common.wrapper import TemporalEnsembling
 
+from policies.common.wrapper import TemporalEnsembling
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

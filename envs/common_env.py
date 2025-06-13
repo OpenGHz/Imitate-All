@@ -1,9 +1,11 @@
 import time
-import numpy as np
-import dm_env
-import torch
 from typing import List
+
+import dm_env
+import numpy as np
+import torch
 from einops import rearrange
+
 from robots.common_robot import AssembledRobot
 
 

@@ -1,6 +1,6 @@
+import rospy
 from geometry_msgs.msg import Pose
 from sensor_msgs.msg import JointState
-import rospy
 
 
 class Lister(object):
@@ -116,10 +116,7 @@ if __name__ == "__main__":
     joint_state.velocity = []
     joint_state_list_2 = Lister.joint_state_to_list(joint_state)
 
-    from std_msgs.msg import (
-        Float32MultiArray,
-        Int32,
-    )
+    from std_msgs.msg import Float32MultiArray, Int32
 
     float32_multi_array = Float32MultiArray()
     float32_multi_array.data = [1, 2, 3]

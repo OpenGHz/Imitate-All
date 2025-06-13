@@ -1,7 +1,9 @@
-import time
 import collections
-import dm_env
+import time
 from typing import List, Union
+
+import dm_env
+
 from robots.airbots.airbot_play.airbot_play_4 import AIRBOTPlay
 from robots.common import make_robot_from_yaml
 

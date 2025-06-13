@@ -1,10 +1,10 @@
 from configurations.task_configs.template import (
+    TASK_CONFIG_DEFAULT,
+    activator,
     get_task_name,
+    is_valid_module_name,
     replace_task_name,
     set_paths,
-    is_valid_module_name,
-    activator,
-    TASK_CONFIG_DEFAULT,
 )
 
 
@@ -76,7 +76,9 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
     "/mmk/action/spine/joint_state/position",
     "/mmk/action/head/joint_state/position",
 ]
-TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = ["/mmk/head_camera/color/video"]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
+    "/mmk/head_camera/color/video"
+]
 
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5

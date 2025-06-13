@@ -172,7 +172,7 @@ Evaluation command and parameters:
   ```bash
   python3 policy_evaluate.py -tn example_task -cf configurations/basic_configs/example/robot/airbots/tok/airbot_tok_2.yaml
   ```
-  
+
   - `-cf`: The path of the configuration file. The above command specifies the configuration file for TOKv2.x. For PlayV3.x, TOKv3.x and MMK, modify the last parts of the path to `play/airbot_play.yaml`, `tok/airbot_tok.yaml` and `mmk/airbot_mmk.yaml`. You should modify the configurations in the file according to your usage.
 
 
@@ -202,7 +202,7 @@ You will see key information related to that task in the terminal, including:
   <img src="images/train_info.png" />
 </p>
 
-This includes the absolute path to the MCAP data used during training, training parameter configurations, initial joint values of the first episode for inference, and other information. 
+This includes the absolute path to the MCAP data used during training, training parameter configurations, initial joint values of the first episode for inference, and other information.
 
 This information ensures experiment reproducibility. If the camera is rigidly attached to the robotic arm, replicating the robotic arm's behavior is relatively straightforward. Object placement can be determined through retraining data replication.
 

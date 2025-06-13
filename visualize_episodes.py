@@ -1,11 +1,13 @@
+import argparse
+import logging
 import os
-import numpy as np
+
 import cv2
 import h5py
-import argparse
 import matplotlib.pyplot as plt
+import numpy as np
+
 from data_process.convert_all import Compresser
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
@@ -84,7 +86,9 @@ def visualize_joints(
     qpos = np.array(state_list)  # ts, dim
     action = np.array(action_list)
     if qpos.shape != action.shape:
-        logger.warning(f"qpos and action have different shapes: {qpos.shape} vs {action.shape}")
+        logger.warning(
+            f"qpos and action have different shapes: {qpos.shape} vs {action.shape}"
+        )
     num_ts, num_dim = qpos.shape
     h, w = 2, num_dim
     num_figs = num_dim

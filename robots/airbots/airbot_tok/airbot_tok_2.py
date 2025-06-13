@@ -1,11 +1,12 @@
-from dataclasses import dataclass, field, replace
-from habitats.common.robot_devices.cameras.utils import Camera
-from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlayConfig, AIRBOTPlay
-from robots.airbots.airbot_base.airbot_base import AIRBOTBase, AIRBOTBaseConfig
-from robot_utils import ping_ip
-from typing import Dict, Optional
-import time
 import logging
+import time
+from dataclasses import dataclass, field, replace
+from typing import Dict, Optional
+
+from habitats.common.robot_devices.cameras.utils import Camera
+from robot_utils import ping_ip
+from robots.airbots.airbot_base.airbot_base import AIRBOTBase, AIRBOTBaseConfig
+from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
 
 logging.basicConfig(level=logging.INFO)
 

@@ -1,10 +1,8 @@
-import os
-import importlib
-from utils.utils import (
-    get_init_states,
-    replace_timestamp,
-)
 import argparse
+import importlib
+import os
+
+from utils.utils import get_init_states, replace_timestamp
 
 
 def basic_parser():

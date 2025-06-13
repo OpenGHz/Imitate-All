@@ -1,9 +1,10 @@
+import time
+from threading import Thread
+
 import rclpy
+from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
-from threading import Thread
-import time
 
 
 class ROS2Camera(Node):

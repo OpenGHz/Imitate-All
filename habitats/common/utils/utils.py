@@ -20,7 +20,7 @@ import random
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Generator, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 import hydra
 import numpy as np
@@ -31,13 +31,14 @@ try:
 except Exception as e:
     print(f"Warning: {e}")
 
+
 def inside_slurm():
     """Check whether the python process was launched through slurm"""
     # TODO(rcadene): return False for interactive mode `--pty bash`
     return "SLURM_JOB_ID" in os.environ
 
 
-def get_safe_torch_device(cfg_device: str, log: bool = False) -> 'torch.device':
+def get_safe_torch_device(cfg_device: str, log: bool = False) -> "torch.device":
     """Given a string, return a torch.device with checks on whether the device is available."""
     if cfg_device == "cuda":
         assert torch.cuda.is_available()
@@ -149,11 +150,16 @@ def _relative_path_between(path1: Path, path2: Path) -> Path:
     except ValueError:  # most likely because path1 is not a subpath of path2
         common_parts = Path(osp.commonpath([path1, path2])).parts
         return Path(
-            "/".join([".."] * (len(path2.parts) - len(common_parts)) + list(path1.parts[len(common_parts) :]))
+            "/".join(
+                [".."] * (len(path2.parts) - len(common_parts))
+                + list(path1.parts[len(common_parts) :])
+            )
         )
 
 
-def init_hydra_config(config_path: str, overrides: Optional[List[str]] = None) -> DictConfig:
+def init_hydra_config(
+    config_path: str, overrides: Optional[List[str]] = None
+) -> DictConfig:
     """Initialize a Hydra config given only the path to the relevant config file.
 
     For config resolution, it is assumed that the config file's parent is the Hydra config dir.
@@ -162,7 +168,11 @@ def init_hydra_config(config_path: str, overrides: Optional[List[str]] = None) -
     hydra.core.global_hydra.GlobalHydra.instance().clear()
     # Hydra needs a path relative to this file.
     hydra.initialize(
-        str(_relative_path_between(Path(config_path).absolute().parent, Path(__file__).absolute().parent)),
+        str(
+            _relative_path_between(
+                Path(config_path).absolute().parent, Path(__file__).absolute().parent
+            )
+        ),
         version_base="1.2",
     )
     cfg = hydra.compose(Path(config_path).stem, overrides)
@@ -176,10 +186,26 @@ def print_cuda_memory_usage():
     gc.collect()
     # Also clear the cache if you want to fully release the memory
     torch.cuda.empty_cache()
-    print("Current GPU Memory Allocated: {:.2f} MB".format(torch.cuda.memory_allocated(0) / 1024**2))
-    print("Maximum GPU Memory Allocated: {:.2f} MB".format(torch.cuda.max_memory_allocated(0) / 1024**2))
-    print("Current GPU Memory Reserved: {:.2f} MB".format(torch.cuda.memory_reserved(0) / 1024**2))
-    print("Maximum GPU Memory Reserved: {:.2f} MB".format(torch.cuda.max_memory_reserved(0) / 1024**2))
+    print(
+        "Current GPU Memory Allocated: {:.2f} MB".format(
+            torch.cuda.memory_allocated(0) / 1024**2
+        )
+    )
+    print(
+        "Maximum GPU Memory Allocated: {:.2f} MB".format(
+            torch.cuda.max_memory_allocated(0) / 1024**2
+        )
+    )
+    print(
+        "Current GPU Memory Reserved: {:.2f} MB".format(
+            torch.cuda.memory_reserved(0) / 1024**2
+        )
+    )
+    print(
+        "Maximum GPU Memory Reserved: {:.2f} MB".format(
+            torch.cuda.max_memory_reserved(0) / 1024**2
+        )
+    )
 
 
 def capture_timestamp_utc():

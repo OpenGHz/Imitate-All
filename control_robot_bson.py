@@ -6,6 +6,7 @@ and record an evaluation dataset, and to recalibrate your robot if needed.
 """
 
 from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
+
 prepare_cv2_imshow()
 
 import argparse
@@ -15,25 +16,24 @@ import logging
 import shutil
 import time
 import traceback
-from pathlib import Path
-from threading import Event
 from functools import partial
+from pathlib import Path
+from pprint import pprint
+from threading import Event
+from typing import Callable, Dict, Optional
+
 import cv2
+import numpy as np
 import tqdm
+from airbot_data.io import save_bson
 from omegaconf import DictConfig
 from PIL import Image
 from termcolor import colored
 
+from data_process.dataset.raw_dataset import RawDataset
 from habitats.common.robot_devices.utils import busy_wait
 from habitats.common.utils.utils import init_logging
-
-from typing import Optional, Callable, Dict
-from data_process.dataset.raw_dataset import RawDataset
 from robots.common import Robot, make_robot_from_yaml
-from pprint import pprint
-import numpy as np
-from airbot_data.io import save_bson
-
 
 ########################################################################################
 # Utilities

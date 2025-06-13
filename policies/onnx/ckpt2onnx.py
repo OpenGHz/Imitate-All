@@ -7,12 +7,11 @@ The .onnx file is exported to `act/onnx_output/act_policy.onnx`.
 Please run this script with `python ckpt2onnx.py` in the root directory of the repository.
 """
 
-import torch
-
-from configurations.task_configs.example_task import TASK_CONFIG
-from configurations.task_configs.example_task import policy_maker
 from pathlib import Path
 
+import torch
+
+from configurations.task_configs.example_task import TASK_CONFIG, policy_maker
 
 if __name__ == "__main__":
 

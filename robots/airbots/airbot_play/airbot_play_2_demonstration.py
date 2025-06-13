@@ -1,14 +1,16 @@
+import time
 from dataclasses import dataclass, field, replace
+from threading import Event, Thread
+from typing import Dict, List, Optional, Union
+
+import numpy as np
+
 from habitats.common.robot_devices.cameras.utils import Camera
-from typing import Dict, Optional, List, Union
 from robots.airbots.airbot_play.airbot_play_2 import AIRBOTPlay, AIRBOTPlayConfig
 from robots.airbots.airbot_play.airbot_replay_remote import (
     AIRBOTReplay,
     AIRBOTReplayConfig,
 )
-from threading import Thread, Event
-import time
-import numpy as np
 
 
 @dataclass

@@ -1,7 +1,9 @@
-import airbot
-from robots.common_robot import Configer
-from typing import Optional, List
 from dataclasses import dataclass, replace
+from typing import List, Optional
+
+import airbot
+
+from robots.common_robot import Configer
 
 
 @dataclass

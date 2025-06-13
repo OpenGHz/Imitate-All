@@ -1,4 +1,5 @@
 from typing import List
+
 from robots.common_robot import AssembledRobot
 
 
@@ -65,8 +66,9 @@ def make_environment(env_config):
                 )
             )
     elif "ros" in robot_name:
-        from robots.common_robot import AssembledRosRobot
         import rospy
+
+        from robots.common_robot import AssembledRosRobot
 
         rospy.init_node("replay_episodes")
         namespace = "/airbot_play"
@@ -106,6 +108,7 @@ def make_environment(env_config):
             raise NotImplementedError(f"robot_name: {robot_name} is not implemented")
     elif habitat == "mujoco":
         from envs.airbot_play_mujoco_env import make_env
+
         print(f"Using Mujoco environment with config file: {robot_name}")
         env = make_env(robot_name)
     elif habitat == "isaac":

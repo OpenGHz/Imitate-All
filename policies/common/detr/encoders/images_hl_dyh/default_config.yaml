@@ -1,7 +1,7 @@
 encoder:
   _target_: detr.encoders.images_hl_dyh.images_hl_dyh.MultiImageObsEncoder
   shape_meta: ${task.shape_meta}
-  high_res_encoder: 
+  high_res_encoder:
     _target_: detr.encoders.images_hl_dyh.images_hl_dyh.get_high_res_encoder
     model_name: convnext_small.fb_in22k_ft_in1k_384
     local_weights_path: detr/encoders/images_hl_dyh/model_weights/convnext_small/pytorch_model.bin

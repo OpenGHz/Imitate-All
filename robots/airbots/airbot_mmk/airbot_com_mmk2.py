@@ -1,26 +1,26 @@
-from airbot_py.airbot_mmk2 import AirbotMMK2
-from mmk2_types.types import (
-    MMK2Components,
-    JointNames,
-    ComponentTypes,
-    TopicNames,
-    MMK2ComponentsGroup,
-    ImageTypes,
-    ControllerTypes,
-)
-from mmk2_types.grpc_msgs import (
-    Time,
-    JointState,
-    TrajectoryParams,
-    MoveServoParams,
-    TrackingParams,
-    ForwardPositionParams,
-)
-from typing import Optional, Dict, List, Tuple
-from dataclasses import dataclass, replace, field
-import time
 import logging
+import time
+from dataclasses import dataclass, field, replace
+from typing import Dict, List, Optional, Tuple
 
+from airbot_py.airbot_mmk2 import AirbotMMK2
+from mmk2_types.grpc_msgs import (
+    ForwardPositionParams,
+    JointState,
+    MoveServoParams,
+    Time,
+    TrackingParams,
+    TrajectoryParams,
+)
+from mmk2_types.types import (
+    ComponentTypes,
+    ControllerTypes,
+    ImageTypes,
+    JointNames,
+    MMK2Components,
+    MMK2ComponentsGroup,
+    TopicNames,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

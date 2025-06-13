@@ -1,9 +1,10 @@
-import convert_all as crd
-import os
-import cv2
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
+
+import convert_all as crd
+import cv2
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 

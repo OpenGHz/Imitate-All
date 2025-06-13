@@ -1,6 +1,8 @@
-import logging, os
-import torch
+import logging
+import os
 from typing import List
+
+import torch
 
 
 def make_policy(
@@ -26,16 +28,23 @@ def post_init_policies(policies: List[torch.nn.Module], stage, ckpt_paths) -> No
             if not os.path.exists(ckpt_path):
                 raise Exception(f"Checkpoint path does not exist: {ckpt_path}")
             if stage == "train":
-                loading_status = policy.load_state_dict(torch.load(ckpt_path, weights_only=weights_only))
-                logging.info(f'Resume policy from: {ckpt_path}, Status: {loading_status}')
+                loading_status = policy.load_state_dict(
+                    torch.load(ckpt_path, weights_only=weights_only)
+                )
+                logging.info(
+                    f"Resume policy from: {ckpt_path}, Status: {loading_status}"
+                )
             elif stage == "eval":
-                loading_status = policy.load_state_dict(torch.load(ckpt_path, weights_only=weights_only))
+                loading_status = policy.load_state_dict(
+                    torch.load(ckpt_path, weights_only=weights_only)
+                )
                 logging.info(loading_status)
                 logging.info(f"Loaded: {ckpt_path}")
         policy.cuda()
 
         if stage == "eval":
             policy.eval()
+
 
 def save_model(policy, path):
     torch.save(policy.state_dict(), path)

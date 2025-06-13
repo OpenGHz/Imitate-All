@@ -1,9 +1,9 @@
 import json
+import logging
 from pathlib import Path
 from typing import List, Union
-import cv2
-import logging
 
+import cv2
 
 """
 - data/raw (root)
@@ -45,7 +45,7 @@ class RawDataset(object):
         for episode in episodes:
             self.load_episode(episode, low_dim_only)
 
-    def load_episode(self, episode:int, low_dim_only=False):
+    def load_episode(self, episode: int, low_dim_only=False):
         if episode not in self.raw_data:
             self.raw_data[episode] = {}
         else:

@@ -1,7 +1,8 @@
-import cv2
-import apriltag
-import os
 import contextlib
+import os
+
+import apriltag
+import cv2
 
 
 class ApriTagDetector(object):

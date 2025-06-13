@@ -1,9 +1,10 @@
-from dataclasses import dataclass, field, replace
-from habitats.common.robot_devices.cameras.utils import Camera
-from robots.airbots.airbot_play.airbot_play_3 import AIRBOTPlayConfig, AIRBOTPlay
-from data_process.convert_all import replace_keys
-from typing import Dict, Optional
 import time
+from dataclasses import dataclass, field, replace
+from typing import Dict, Optional
+
+from data_process.convert_all import replace_keys
+from habitats.common.robot_devices.cameras.utils import Camera
+from robots.airbots.airbot_play.airbot_play_3 import AIRBOTPlay, AIRBOTPlayConfig
 
 
 @dataclass

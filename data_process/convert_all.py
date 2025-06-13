@@ -1,16 +1,15 @@
+import json
+import logging
 import os
 import subprocess
-import json
-import numpy as np
-from pathlib import Path
-from tqdm import tqdm
-from typing import Any, Dict, Optional, List, Callable, Union, Tuple
-import cv2
-from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
-import logging
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from io import BytesIO
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-
+import cv2
+import numpy as np
+from tqdm import tqdm
 
 try:
     import bson
@@ -23,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 def decode_h264(h264_bytes: bytes) -> List[Dict[str, Union[np.ndarray, int]]]:
     import av
+
     inbuf = BytesIO(h264_bytes)
     container = av.open(inbuf)
     ret = [

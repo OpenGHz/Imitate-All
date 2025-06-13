@@ -1,9 +1,11 @@
-from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2
-from robots.common import make_robot_from_yaml
-import time
 import collections
+import time
+
 import dm_env
 import numpy as np
+
+from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2
+from robots.common import make_robot_from_yaml
 
 
 class AIRBOTMMK2Env(object):
@@ -51,7 +53,7 @@ class AIRBOTMMK2Env(object):
             (-3.09, 2.04),
             (-2.92, 0.12),
             (-0.04, 3.09),
-            (-2.95, 2.95), # (-3.1, 3.1)
+            (-2.95, 2.95),  # (-3.1, 3.1)
             (-1.9, 1.9),  # (-1.08, 1.08),
             (-2.90, 2.90),  # (-3.0, 3.0)
             (0, 1),

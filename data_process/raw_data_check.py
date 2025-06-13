@@ -1,6 +1,7 @@
-import cv2
 import argparse
 import json
+
+import cv2
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-tn", "--task_name", type=str, default="example")

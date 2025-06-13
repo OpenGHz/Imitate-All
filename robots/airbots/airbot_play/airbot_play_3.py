@@ -1,8 +1,10 @@
-from dataclasses import dataclass, field, replace
 import time
-from habitats.common.robot_devices.cameras.utils import Camera
-from typing import Dict, Optional, List
+from dataclasses import dataclass, field, replace
+from typing import Dict, List, Optional
+
 from airbot_python_sdk.airbot_client import Robot
+
+from habitats.common.robot_devices.cameras.utils import Camera
 
 
 @dataclass

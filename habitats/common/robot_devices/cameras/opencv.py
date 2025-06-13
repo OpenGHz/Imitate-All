@@ -12,6 +12,7 @@ import time
 from dataclasses import dataclass, replace
 from pathlib import Path
 from threading import Thread
+from typing import List, Optional
 
 import cv2
 import numpy as np
@@ -23,7 +24,6 @@ from habitats.common.robot_devices.utils import (
     busy_wait,
 )
 from habitats.common.utils.utils import capture_timestamp_utc
-from typing import List, Optional
 
 # Use 1 thread to avoid blocking the main thread. Especially useful during data collection
 # when other threads are used to save the images.
@@ -37,10 +37,14 @@ cv2.setNumThreads(1)
 MAX_OPENCV_INDEX = 60
 
 
-def find_camera_indices(raise_when_empty=False, max_index_search_range=MAX_OPENCV_INDEX):
+def find_camera_indices(
+    raise_when_empty=False, max_index_search_range=MAX_OPENCV_INDEX
+):
     if platform.system() == "Linux":
         # Linux uses camera ports
-        print("Linux detected. Finding available camera indices through scanning '/dev/video*' ports")
+        print(
+            "Linux detected. Finding available camera indices through scanning '/dev/video*' ports"
+        )
         possible_camera_ids = []
         for port in Path("/dev").glob("video*"):
             camera_idx = int(str(port).replace("/dev/video", ""))
@@ -79,7 +83,12 @@ def save_image(img_array, camera_index, frame_index, images_dir):
 
 
 def save_images_from_cameras(
-    images_dir: Path, camera_ids: Optional[List[int]] = None, fps=None, width=None, height=None, record_time_s=2
+    images_dir: Path,
+    camera_ids: Optional[List[int]] = None,
+    fps=None,
+    width=None,
+    height=None,
+    record_time_s=2,
 ):
     """
     Initializes all the cameras and saves images to the directory. Useful to visually identify the camera
@@ -133,7 +142,9 @@ def save_images_from_cameras(
             if time.perf_counter() - start_time > record_time_s:
                 break
 
-            print(f"Frame: {frame_index:04d}\tLatency (ms): {(time.perf_counter() - now) * 1000:.2f}")
+            print(
+                f"Frame: {frame_index:04d}\tLatency (ms): {(time.perf_counter() - now) * 1000:.2f}"
+            )
 
             frame_index += 1
 
@@ -204,7 +215,9 @@ class OpenCVCamera:
     ```
     """
 
-    def __init__(self, camera_index: int, config: Optional[OpenCVCameraConfig] = None, **kwargs):
+    def __init__(
+        self, camera_index: int, config: Optional[OpenCVCameraConfig] = None, **kwargs
+    ):
         if config is None:
             config = OpenCVCameraConfig()
 
@@ -226,7 +239,9 @@ class OpenCVCamera:
 
     def connect(self):
         if self.is_connected:
-            raise RobotDeviceAlreadyConnectedError(f"OpenCVCamera({self.camera_index}) is already connected.")
+            raise RobotDeviceAlreadyConnectedError(
+                f"OpenCVCamera({self.camera_index}) is already connected."
+            )
 
         # First create a temporary camera trying to access `camera_index`,
         # and verify it is a valid camera by calling `isOpened`.
@@ -273,7 +288,9 @@ class OpenCVCamera:
         actual_width = self.camera.get(cv2.CAP_PROP_FRAME_WIDTH)
         actual_height = self.camera.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-        if self.fps is not None and not math.isclose(self.fps, actual_fps, rel_tol=1e-3):
+        if self.fps is not None and not math.isclose(
+            self.fps, actual_fps, rel_tol=1e-3
+        ):
             raise OSError(
                 f"Can't set {self.fps=} for OpenCVCamera({self.camera_index}). Actual value is {actual_fps}."
             )
@@ -310,7 +327,9 @@ class OpenCVCamera:
         if not ret:
             raise OSError(f"Can't capture color image from camera {self.camera_index}.")
 
-        requested_color_mode = self.color_mode if temporary_color_mode is None else temporary_color_mode
+        requested_color_mode = (
+            self.color_mode if temporary_color_mode is None else temporary_color_mode
+        )
 
         if requested_color_mode not in ["rgb", "bgr"]:
             raise ValueError(
@@ -357,7 +376,9 @@ class OpenCVCamera:
         while self.color_image is None:
             num_tries += 1
             time.sleep(1 / self.fps)
-            if num_tries > self.fps and (self.thread.ident is None or not self.thread.is_alive()):
+            if num_tries > self.fps and (
+                self.thread.ident is None or not self.thread.is_alive()
+            ):
                 raise Exception(
                     "The thread responsible for `self.async_read()` took too much time to start. There might be an issue. Verify that `self.thread.start()` has been called."
                 )

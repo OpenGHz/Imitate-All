@@ -1,12 +1,12 @@
 # ******************************************************************************
 #  Copyright (c) 2023 Orbbec 3D Technology, Inc
-#  
+#
 #  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.  
+#  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
-#  
+#
 #      http:# www.apache.org/licenses/LICENSE-2.0
-#  
+#
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,12 +14,16 @@
 #  limitations under the License.
 # ******************************************************************************
 import cv2
+from pyorbbecsdk import (
+    Config,
+    FrameSet,
+    OBError,
+    OBFormat,
+    OBSensorType,
+    Pipeline,
+    VideoStreamProfile,
+)
 
-from pyorbbecsdk import Config
-from pyorbbecsdk import OBError
-from pyorbbecsdk import OBSensorType, OBFormat
-from pyorbbecsdk import Pipeline, FrameSet
-from pyorbbecsdk import VideoStreamProfile
 from utils.utils import frame_to_bgr_image
 
 ESC_KEY = 27
@@ -31,7 +35,9 @@ def main():
     try:
         profile_list = pipeline.get_stream_profile_list(OBSensorType.COLOR_SENSOR)
         try:
-            color_profile: VideoStreamProfile = profile_list.get_video_stream_profile(1920, 0, OBFormat.RGB, 30)
+            color_profile: VideoStreamProfile = profile_list.get_video_stream_profile(
+                1920, 0, OBFormat.RGB, 30
+            )
         except OBError as e:
             print(e)
             color_profile = profile_list.get_default_video_stream_profile()
@@ -56,7 +62,7 @@ def main():
                 continue
             cv2.imshow("Color Viewer", color_image)
             key = cv2.waitKey(1)
-            if key == ord('q') or key == ESC_KEY:
+            if key == ord("q") or key == ESC_KEY:
                 break
         except KeyboardInterrupt:
             break
