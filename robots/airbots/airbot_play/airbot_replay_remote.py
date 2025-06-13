@@ -3,14 +3,16 @@ try:
     from sensor_msgs.msg import JointState
 except Exception as e:
     print(e)
-    print("ROS not installed. This is expected if you are running this code on your local machine.")
+    print(
+        "ROS not installed. This is expected if you are running this code on your local machine."
+    )
     print("This code is meant to be run on the robot.")
     from typing import Any
 
     rospy = Any
     JointState = Any
-from typing import Optional, List
 from dataclasses import dataclass, replace
+from typing import List, Optional
 
 
 @dataclass

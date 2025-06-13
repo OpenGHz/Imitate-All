@@ -1,14 +1,12 @@
-from mmk2_types.types import (
-    JointNames,
-    RobotComponentsGroup,
-)
-from mmk2_types.grpc_msgs import Time
-from typing import Optional, Dict
 import logging
-import numpy as np
-from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTRobotConfig
-from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2 as AIRBOTMMK2_BASE
+from typing import Dict, Optional
 
+import numpy as np
+from mmk2_types.grpc_msgs import Time
+from mmk2_types.types import JointNames, RobotComponentsGroup
+
+from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2 as AIRBOTMMK2_BASE
+from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTRobotConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -74,7 +72,9 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     comp_eef = comp.value + "_eef"
                     eef_jn = JointNames().__dict__[comp_eef]
                     js = self.robot.get_listened(self._comp_action_topic[comp])
-                    assert js is not None, "The AIRBOT MMK2 should be in bag teleopration sync mode."
+                    assert (
+                        js is not None
+                    ), "The AIRBOT MMK2 should be in bag teleopration sync mode."
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data.update(
                         self._get_joint_state(
@@ -88,12 +88,12 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     )
                 elif comp in RobotComponentsGroup.HEAD_SPINE:
                     result = self.robot.get_listened(self._comp_action_topic[comp])
-                    assert result is not None, "The AIRBOT MMK2 should be in bag teleopration sync mode."
+                    assert (
+                        result is not None
+                    ), "The AIRBOT MMK2 should be in bag teleopration sync mode."
                     jq = list(result.data)
                     data.update(
-                        self._get_joint_state(
-                            "action", comp.value, result.stamp, jq
-                        )
+                        self._get_joint_state("action", comp.value, result.stamp, jq)
                     )
         return data
 

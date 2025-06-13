@@ -1,12 +1,13 @@
 import argparse
 import os
+from pprint import pprint
+
 from configurations.task_configs.config_tools.basic_configer import (
     get_all_config,
-    replace_timestamp,
     get_stats_path,
+    replace_timestamp,
 )
 from utils.utils import get_pkl_info
-from pprint import pprint
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     all_config = get_all_config(args, "eval")
     stats_path = all_config["stats_path"]
     # show info
-    if name in ["key_info", "key_info.pkl","all"]:
+    if name in ["key_info", "key_info.pkl", "all"]:
         key_info = get_pkl_info(os.path.dirname(stats_path) + "/key_info.pkl")
         pprint(key_info)
     elif name in ["dataset_stats", "dataset_stats.pkl", "stats", "all"]:

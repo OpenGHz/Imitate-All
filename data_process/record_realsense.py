@@ -1,11 +1,11 @@
-import time
-import numpy as np
-import os
-from pathlib import Path
 import argparse
-from typing import Optional, Union, Any
-from image_processor import save_images_concurrently, encode_video_frames
+import os
+import time
+from pathlib import Path
+from typing import Any, Optional, Union
 
+import numpy as np
+from image_processor import encode_video_frames, save_images_concurrently
 
 iMPORT_ERRORS = []
 try:
@@ -23,19 +23,20 @@ except ImportError:
 try:
     from pyorbbecsdk import (
         Config,
-        VideoStreamProfile,
-        OBError,
-        OBSensorType,
         FormatConvertFilter,
-        VideoFrame,
-        OBFormat,
-        OBConvertFormat,
-        Pipeline,
         FrameSet,
+        OBConvertFormat,
+        OBError,
+        OBFormat,
+        OBSensorType,
+        Pipeline,
+        VideoFrame,
+        VideoStreamProfile,
     )
 except Exception as e:
     iMPORT_ERRORS.append("pyorbbecsdk")
     print(f"Error with pyorbbecsdk package: {e}")
+
 
 class RealsenseCamera(object):
     """
@@ -91,7 +92,9 @@ class OrbbecCamera(object):
         assert width in [640, 1280, 1920], "Width must be 640, 1280, or 1920"
         fps = 30 if fps == "max" else fps
         try:
-            color_profile: VideoStreamProfile = profile_list.get_video_stream_profile(width, 0, OBFormat.RGB, fps)
+            color_profile: VideoStreamProfile = profile_list.get_video_stream_profile(
+                width, 0, OBFormat.RGB, fps
+            )
         except OBError as e:
             print(e)
             color_profile = profile_list.get_default_video_stream_profile()

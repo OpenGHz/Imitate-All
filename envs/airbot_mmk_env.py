@@ -1,9 +1,11 @@
-from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2
-from robots.common import make_robot_from_yaml
-import time
 import collections
+import time
+
 import dm_env
 import numpy as np
+
+from robots.airbots.airbot_mmk.airbot_mmk2 import AIRBOTMMK2
+from robots.common import make_robot_from_yaml
 
 
 class AIRBOTMMK2Env(object):

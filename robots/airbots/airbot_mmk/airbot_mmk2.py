@@ -1,25 +1,25 @@
-from mmk2_sdk.mmk2_client import AIRBOTMMK2 as AIRBOTRobotClient
-from mmk2_types.types import (
-    RobotComponents,
-    JointNames,
-    ComponentTypes,
-    TopicNames,
-    RobotComponentsGroup,
-    ImageTypes,
-    ControllerTypes,
-)
-from mmk2_types.grpc_msgs import (
-    Time,
-    JointState,
-    TrajectoryParams,
-    MoveServoParams,
-    ForwardPositionParams,
-)
-from typing import Optional, Dict, List, Tuple
-from dataclasses import dataclass, replace, field
-import time
 import logging
+import time
+from dataclasses import dataclass, field, replace
+from typing import Dict, List, Optional, Tuple
 
+from mmk2_sdk.mmk2_client import AIRBOTMMK2 as AIRBOTRobotClient
+from mmk2_types.grpc_msgs import (
+    ForwardPositionParams,
+    JointState,
+    MoveServoParams,
+    Time,
+    TrajectoryParams,
+)
+from mmk2_types.types import (
+    ComponentTypes,
+    ControllerTypes,
+    ImageTypes,
+    JointNames,
+    RobotComponents,
+    RobotComponentsGroup,
+    TopicNames,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

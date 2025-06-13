@@ -1,7 +1,9 @@
-from typing import Dict, Union, Callable, Tuple
+from typing import Callable, Dict, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 try:
     import timm
 except Exception as e:
@@ -186,6 +188,7 @@ def get_low_res_encoder_dinov2(
     model_name="vit_small_patch14_dinov2.lvd142m", local_weights_path=None
 ):
     from transformers import AutoModel
+
     model = AutoModel.from_pretrained(local_weights_path)
     return model
 

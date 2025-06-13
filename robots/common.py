@@ -1,11 +1,12 @@
 """A robot is a physical instance that has its proprioception state and can interact with the environment by subjective initiative actions. The robot's state is the information that can be obtained from the robot's body sensors while the actions are the control commands that can be sent to the robot's actuators. Vision, touch and the other external sensation (obtained by tactile sensors, cameras, lidar, radar, ultrasonic sensors, etc.) are not included in the robot's state, but in the environment. However, in addition to being related to the external environment, external observation also depends on the robot's state and the position and posture of the corresponding sensors. So the robot instance should have the full information and configurations of its external sensors to let the environment obtaining correct observations."""
 
-from typing import Protocol, Dict, List, Optional, Union
-from dataclasses import dataclass, field, replace
-from habitats.common.robot_devices.cameras.utils import Camera
 import time
+from dataclasses import dataclass, field, replace
+from typing import Dict, List, Optional, Protocol, Union
+
 import numpy as np
 
+from habitats.common.robot_devices.cameras.utils import Camera
 
 # class Robot(Protocol):
 #     """Assume the __init__ method of the robot class is the same as the reset method.
@@ -38,7 +39,7 @@ class Robot(Protocol):
     def enter_traj_mode(self): ...
     def get_low_dim_data(self): ...
     def capture_observation(self): ...
-    def update_data_meta(self, bson_dict: dict, observation:dict): ...
+    def update_data_meta(self, bson_dict: dict, observation: dict): ...
     def send_action(self, action): ...
     def reset(self): ...
     def exit(self): ...
@@ -151,8 +152,8 @@ def make_robot(config) -> Robot:
 
 
 def make_robot_from_hydra_config(cfg) -> Robot:
-    from omegaconf import DictConfig
     import hydra
+    from omegaconf import DictConfig
 
     cfg: DictConfig
     robot = hydra.utils.instantiate(cfg)

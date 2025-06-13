@@ -1,8 +1,8 @@
-import numpy as np
-import torch
 import logging
 from typing import Union
 
+import numpy as np
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,9 @@ class TemporalEnsemblingWithDroppedActions(object):
         self.reset()
 
         self._prediction_step_max = 1 + (max_timesteps - 1) // dropped_num + 1
-        self.buffer_max_col = 1 + (self._prediction_step_max - 2) * dropped_num + chunk_size
+        self.buffer_max_col = (
+            1 + (self._prediction_step_max - 2) * dropped_num + chunk_size
+        )
 
     @staticmethod
     def get_dropped_action_num(action_freq, predict_freq) -> int:
@@ -144,7 +146,11 @@ class TemporalEnsemblingWithDroppedActions(object):
         self.t = 0
         self.infer_t = 0
 
-    def update(self, all_time_actions: Union[torch.Tensor, np.ndarray], return_type:str="input") -> Union[torch.Tensor, np.ndarray]:
+    def update(
+        self,
+        all_time_actions: Union[torch.Tensor, np.ndarray],
+        return_type: str = "input",
+    ) -> Union[torch.Tensor, np.ndarray]:
         # max_temporal_len + res + 初始行（可能）才为实际的
         ddl_num = self.infer_t - 2
         logger.debug("ddl_num: %d", ddl_num)

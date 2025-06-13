@@ -1,10 +1,12 @@
-import time
-import numpy as np
 import collections
-import dm_env
+import time
 from typing import List
-from robots.common_robot import AssembledRobot, AssembledFakeRobot
+
+import dm_env
+import numpy as np
+
 from envs.common_env import move_robots
+from robots.common_robot import AssembledFakeRobot, AssembledRobot
 
 
 class RealEnv:
@@ -45,8 +47,8 @@ class RealEnv:
             elif isinstance(cameras, dict):
                 from robot_utils import ImageRecorderVideo as ImageRecorder
             else:
-                from robot_tools.recorder import ImageRecorderRos as ImageRecorder
                 import rospy
+                from robot_tools.recorder import ImageRecorderRos as ImageRecorder
 
                 if rospy.get_name() == "/unnamed":
                     rospy.init_node("real_env", anonymous=True)
@@ -124,7 +126,9 @@ class RealEnv:
         for index, robot in enumerate(self.airbot_players):
             jn = robot.joints_num
             robot.set_joint_position_target(
-                action[jn * index : jn * (index + 1)], [arm_vel], use_planning,
+                action[jn * index : jn * (index + 1)],
+                [arm_vel],
+                use_planning,
             )
         time.sleep(sleep_time)
         if get_obs:
@@ -137,6 +141,7 @@ class RealEnv:
             discount=None,
             observation=obs,
         )
+
 
 def make_env(
     record_images=True,

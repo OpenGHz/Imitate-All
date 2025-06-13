@@ -1,10 +1,10 @@
 from configurations.task_configs.template import (
+    TASK_CONFIG_DEFAULT,
+    activator,
     get_task_name,
+    is_valid_module_name,
     replace_task_name,
     set_paths,
-    is_valid_module_name,
-    activator,
-    TASK_CONFIG_DEFAULT,
 )
 
 
@@ -65,9 +65,17 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_train"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = None
 TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = None
-TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = ["/follow/arm/joint_state/position", "/follow/eef/joint_state/position"]
-TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = ["/lead/arm/joint_state/position", "/lead/eef/joint_state/position"]
-TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = ["/env_camera/color/image_raw"]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
+    "/follow/arm/joint_state/position",
+    "/follow/eef/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
+    "/lead/arm/joint_state/position",
+    "/lead/eef/joint_state/position",
+]
+TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
+    "/env_camera/color/image_raw"
+]
 
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
 TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5

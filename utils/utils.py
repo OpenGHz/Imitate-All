@@ -1,27 +1,28 @@
-import torch
-from torch.utils.data import DataLoader
-import numpy as np
-import os
-import h5py
 import fnmatch
-import subprocess
+import logging
+import os
 import pickle
 import re
-from pathlib import Path
-from datetime import datetime
-import time
-from threading import Thread, Event
-import logging
-from visualize_episodes import save_videos
-from dataclasses import dataclass
-from typing import Tuple, List, Dict, Union, Optional
-from pprint import pprint
-from airbot_type.FloatArray import FloatArray
-from mcap.reader import make_reader
+import subprocess
 import tempfile
-import cv2
-from airbot_data_collection.tools.av_coder import AvCoder
+import time
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from pprint import pprint
+from threading import Event, Thread
+from typing import Dict, List, Optional, Tuple, Union
 
+import cv2
+import h5py
+import numpy as np
+import torch
+from airbot_data_collection.tools.av_coder import AvCoder
+from mcap.reader import make_reader
+from torch.utils.data import DataLoader
+
+from airbot_type.FloatArray import FloatArray
+from visualize_episodes import save_videos
 
 logger = logging.getLogger(__name__)
 np.random.seed(0)
@@ -687,12 +688,13 @@ def save_eval_results(
             for cam_name in camera_names:
                 image_dict[f"/observations/images/{cam_name}"].append(frame[cam_name])
         mid_time = time.time()
+        import cv2
+
         from data_process.convert_all import (
+            Compresser,
             compress_images,
             save_dict_to_hdf5,
-            Compresser,
         )
-        import cv2
 
         compresser = Compresser("jpg", [int(cv2.IMWRITE_JPEG_QUALITY), 50], True)
         for key, value in image_dict.items():

@@ -1,6 +1,7 @@
+from typing import Union
+
 import cv2
 import numpy as np
-from typing import Union
 from cv2.aruco import Dictionary
 
 
@@ -71,8 +72,8 @@ class ArucoDetector(object):
                 for i in range(len(rvecs)):
                     cv2.drawFrameAxes(
                         image,
-                        #self.camera_matrix,
-                        #self.dist_coeffs,
+                        # self.camera_matrix,
+                        # self.dist_coeffs,
                         self.cam_params[camera]["camera_matrix"],
                         self.cam_params[camera]["dist_coeffs"],
                         rvecs[i],

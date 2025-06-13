@@ -1,9 +1,10 @@
-from dataclasses import dataclass, field, replace
 import time
-from habitats.common.robot_devices.cameras.utils import Camera
-from typing import Dict, Optional, List
+from dataclasses import dataclass, field, replace
+from typing import Dict, List, Optional
+
 from airbot_py.airbot_play import AirbotPlay
 
+from habitats.common.robot_devices.cameras.utils import Camera
 
 
 @dataclass
@@ -46,9 +47,7 @@ class AIRBOTPlay(object):
         for name in self.cameras:
             self.cameras[name].connect()
         # Connect the robot
-        self.robot = AirbotPlay(
-                    port = args.port
-                )
+        self.robot = AirbotPlay(port=args.port)
         time.sleep(0.3)
         self.reset()
 
@@ -69,7 +68,9 @@ class AIRBOTPlay(object):
                     args.start_arm_joint_position, blocking=True
                 ), "set target joint q failed"
                 print("log3")
-            if args.start_eef_joint_position is not None and robot.params["eef_type"] not in ["none", "E2B"]:
+            if args.start_eef_joint_position is not None and robot.params[
+                "eef_type"
+            ] not in ["none", "E2B"]:
                 print("log4")
                 assert robot.set_target_end_accurate(
                     args.start_eef_joint_position, blocking=True
@@ -77,11 +78,11 @@ class AIRBOTPlay(object):
                 print("log5")
             # enter default mode
             if args.default_robot_mode == "ONLINE_TRAJ":
-                self.enter_traj_mode()                          
+                self.enter_traj_mode()
             elif args.default_robot_mode == "ONLINE_IDLE":
-                self.enter_active_mode()                        
+                self.enter_active_mode()
             elif args.default_robot_mode == "ONLINE_SERVO":
-                self.enter_servo_mode()                        
+                self.enter_servo_mode()
             else:
                 raise ValueError(
                     f"Invalid default robot mode: {args.default_robot_mode}"

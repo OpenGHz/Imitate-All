@@ -1,13 +1,21 @@
+from functools import partial
 from threading import Thread
 from typing import Dict
-from functools import partial
+
 import rclpy
+from geometry_msgs.msg import Pose, PoseStamped
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import Pose, PoseStamped
-from ros_tools import Lister
+
 from data_process.convert_all import flatten_dict
-from robots.ros_robots.ros_robot_config import EEF_POSE_POSITION, EEF_POSE_ORIENTATION, ACTIONS_TOPIC_CONFIG, STATES_TOPIC_CONFIG, EXAMPLE_CONFIG
+from robots.ros_robots.ros_robot_config import (
+    ACTIONS_TOPIC_CONFIG,
+    EEF_POSE_ORIENTATION,
+    EEF_POSE_POSITION,
+    EXAMPLE_CONFIG,
+    STATES_TOPIC_CONFIG,
+)
+from ros_tools import Lister
 
 
 class AssembledROS2Robot(object):
@@ -41,11 +49,18 @@ class AssembledROS2Robot(object):
             self.state_subs[new_key] = self.node.create_subscription(
                 msg_type,
                 topic,
-                partial(self._current_state_callback, new_key, self.state_listers[new_key], state_pre_funcs.get(new_key, lambda x: x)),
-                10
+                partial(
+                    self._current_state_callback,
+                    new_key,
+                    self.state_listers[new_key],
+                    state_pre_funcs.get(new_key, lambda x: x),
+                ),
+                10,
             )
             self.current_data[new_key] = None
-            self.node.get_logger().info(f"Subscribed to {topic} with type {msg_type} as observation")
+            self.node.get_logger().info(
+                f"Subscribed to {topic} with type {msg_type} as observation"
+            )
         # Initiate Action Publishers and Target Data
         pubs_configs = flatten_dict(ACTIONS_TOPIC_CONFIG)
         self.action_config = flatten_dict(config["action"])
@@ -130,7 +145,7 @@ class AssembledROS2Robot(object):
         """The string after last / is the interface of states and control"""
         last_slash_index = key.rfind("/")
         if last_slash_index != -1:
-            last_slash_substring = key[last_slash_index + 1:]  # 从'/'之后开始切片
+            last_slash_substring = key[last_slash_index + 1 :]  # 从'/'之后开始切片
             return last_slash_substring
         else:
             raise ValueError("No interface found")

@@ -4,37 +4,38 @@ Utilities to control a robot.
 Useful to record a dataset, replay a recorded episode, run the policy on your robot
 and record an evaluation dataset, and to recalibrate your robot if needed.
 """
+
 from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
+
 prepare_cv2_imshow()
 
 import argparse
 import concurrent.futures
 import json
 import logging
+import os
 import shutil
 import time
 import traceback
-from pathlib import Path
-from threading import Event
 from functools import partial
+from pathlib import Path
+from pprint import pprint
+from threading import Event
+from typing import Callable, Optional
+
 import cv2
+import numpy as np
 import tqdm
 from omegaconf import DictConfig
 from PIL import Image
 from termcolor import colored
 
+from data_process.convert_all import concatenate_by_key, replace_keys
+from data_process.dataset.raw_dataset import RawDataset
 from habitats.common.datasets.video_utils import encode_video_frames
 from habitats.common.robot_devices.utils import busy_wait
 from habitats.common.utils.utils import init_logging
-
-from typing import Optional, Callable
-from data_process.dataset.raw_dataset import RawDataset
-from data_process.convert_all import concatenate_by_key, replace_keys
 from robots.common import Robot, make_robot_from_yaml
-from pprint import pprint
-import numpy as np
-import os
-
 
 ########################################################################################
 # Utilities

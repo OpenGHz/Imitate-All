@@ -1,8 +1,10 @@
-from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2
-from robots.common import make_robot_from_yaml
 import time
+
 import dm_env
 import numpy as np
+
+from robots.airbots.airbot_mmk.airbot_com_mmk2 import AIRBOTMMK2
+from robots.common import make_robot_from_yaml
 
 
 class AIRBOTMMK2Env(object):
@@ -30,7 +32,9 @@ class AIRBOTMMK2Env(object):
         obs["images"] = {}
         raw_obs = self.robot.capture_observation()
         for comp in self.robot.components:
-            obs["qpos"].extend(raw_obs[f"/observation/{comp.value}/joint_state"]["data"]["pos"])
+            obs["qpos"].extend(
+                raw_obs[f"/observation/{comp.value}/joint_state"]["data"]["pos"]
+            )
         for camera in self.robot.cameras_goal:
             assert camera not in obs["images"], f"Duplicate camera name: {camera}"
             obs["images"][camera.value] = raw_obs[f"/images/{camera.value}"]["data"]

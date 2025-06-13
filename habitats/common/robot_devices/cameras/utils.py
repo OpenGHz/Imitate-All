@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Protocol, Optional
+from typing import Optional, Protocol
 
 import cv2
 import einops

@@ -1,9 +1,10 @@
-import rospy
-from std_msgs.msg import Float64MultiArray
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
 from typing import Dict
+
 import numpy as np
+import rospy
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
+from std_msgs.msg import Float64MultiArray
 
 
 class LoggerROS1(object):

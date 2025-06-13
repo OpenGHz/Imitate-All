@@ -1,10 +1,11 @@
-import cv2
+import os
 import time
 from collections import deque
-import numpy as np
 from threading import Thread
 from typing import Union
-import os
+
+import cv2
+import numpy as np
 
 
 class ImageRecorderRos:
@@ -13,6 +14,7 @@ class ImageRecorderRos:
     ):
         print("Starting image recorder...")
         from collections import deque
+
         import rospy
         from cv_bridge import CvBridge
         from sensor_msgs.msg import Image

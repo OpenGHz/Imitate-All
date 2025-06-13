@@ -1,10 +1,10 @@
 from configurations.task_configs.template import (
+    TASK_CONFIG_DEFAULT,
+    activator,
     get_task_name,
+    is_valid_module_name,
     replace_task_name,
     set_paths,
-    is_valid_module_name,
-    activator,
-    TASK_CONFIG_DEFAULT,
 )
 
 

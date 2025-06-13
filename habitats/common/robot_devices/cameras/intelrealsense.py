@@ -5,7 +5,9 @@ This file contains utilities for recording frames from Intel Realsense cameras.
 import argparse
 import concurrent.futures
 import logging
+import os
 import shutil
+import sys
 import threading
 import time
 import traceback
@@ -18,17 +20,16 @@ import numpy as np
 import pyrealsense2 as rs
 from PIL import Image
 
-import sys, os
-
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../../.."))
 
+from typing import List, Optional, Tuple, Union
+
+from control_robot import busy_wait
 from habitats.common.robot_devices.utils import (
     RobotDeviceAlreadyConnectedError,
     RobotDeviceNotConnectedError,
 )
 from habitats.common.utils.utils import capture_timestamp_utc
-from control_robot import busy_wait
-from typing import List, Optional, Tuple, Union
 
 SERIAL_NUMBER_INDEX = 1
 

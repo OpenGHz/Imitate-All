@@ -1,8 +1,10 @@
-from dataclasses import dataclass, field, replace
 import time
-from habitats.common.robot_devices.cameras.utils import Camera
-from typing import Dict, Optional, List
+from dataclasses import dataclass, field, replace
+from typing import Dict, List, Optional
+
 from airbot_python_sdk.airbot_client import Robot
+
+from habitats.common.robot_devices.cameras.utils import Camera
 
 
 @dataclass
@@ -113,13 +115,13 @@ class AIRBOTPlay(object):
         for i in range(args.leader_number):
             if args.leader_arm_type[i] == "replay":
                 continue
-            assert leader_robot[i].set_target_joint_q(args.start_arm_joint_position[i]), (
-                "Leader robot %d set target joint q failed" % i
-            )
+            assert leader_robot[i].set_target_joint_q(
+                args.start_arm_joint_position[i]
+            ), ("Leader robot %d set target joint q failed" % i)
             if args.leader_end_effector[i] not in ["E2B", "none"]:
-                assert leader_robot[i].set_target_end(args.start_eef_joint_position[i]), (
-                    "Leader robot %d set target end failed" % i
-                )
+                assert leader_robot[i].set_target_end(
+                    args.start_eef_joint_position[i]
+                ), ("Leader robot %d set target end failed" % i)
             assert leader_robot[i].online_idle_mode(), (
                 "Leader robot %d online idle mode failed" % i
             )

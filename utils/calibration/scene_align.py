@@ -1,10 +1,11 @@
 import argparse
-import os, sys
 import json
+import logging
+import os
+import sys
+from datetime import datetime
 
 import numpy as np
-import logging
-from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -13,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 os.environ["OPENCV_LOG_LEVEL"] = "SILENT"
 import cv2
-
 
 try:
     from habitats.common.robot_devices.cameras.ros2 import ROS2Camera

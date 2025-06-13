@@ -1,8 +1,10 @@
+import collections
+import time
+
+import dm_env
+
 from robots.airbots.airbot_tok.airbot_tok_2 import AIRBOTTOK
 from robots.common import make_robot_from_yaml
-import time
-import collections
-import dm_env
 
 
 class AIRBOTTOKEnv(object):

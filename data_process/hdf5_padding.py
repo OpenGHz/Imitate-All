@@ -1,13 +1,14 @@
 # pad hdf5 data
-import sys, os
+import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
-import convert_all as crd
 import argparse
 import random
 
+import convert_all as crd
 
 parser = argparse.ArgumentParser(description="Pad hdf5 data")
 parser.add_argument(

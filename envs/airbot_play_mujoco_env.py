@@ -1,7 +1,8 @@
-import time
 import collections
-import dm_env
 import importlib
+import time
+
+import dm_env
 from discoverse.envs.airbot_play_base import AirbotPlayCfg
 from discoverse.task_base import AirbotPlayTaskBase
 

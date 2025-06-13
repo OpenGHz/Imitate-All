@@ -1,15 +1,23 @@
-import torch
-import numpy as np
-import os, time, logging, pickle, inspect
+import inspect
+import logging
+import os
+import pickle
+import time
+from threading import Event, Thread
 from typing import Dict
-from tqdm import tqdm
-from utils.utils import set_seed, save_eval_results
-from configurations.task_configs.config_tools.basic_configer import basic_parser, get_all_config
-from policies.common.maker import make_policy
-from envs.common_env import get_image, CommonEnv
-from threading import Thread, Event
-from policies.common.wrapper import TemporalEnsemblingWithDroppedActions as TEDA
 
+import numpy as np
+import torch
+from tqdm import tqdm
+
+from configurations.task_configs.config_tools.basic_configer import (
+    basic_parser,
+    get_all_config,
+)
+from envs.common_env import CommonEnv, get_image
+from policies.common.maker import make_policy
+from policies.common.wrapper import TemporalEnsemblingWithDroppedActions as TEDA
+from utils.utils import save_eval_results, set_seed
 
 logging.basicConfig(level=logging.DEBUG)
 

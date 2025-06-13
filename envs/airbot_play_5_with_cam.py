@@ -1,11 +1,12 @@
-import time
 import collections
-import dm_env
-from typing import List, Dict, Union
-from airbot_data_collection.basis import System, SystemMode
+import time
 from logging import getLogger
-import numpy as np
 from pprint import pformat
+from typing import Dict, List, Union
+
+import dm_env
+import numpy as np
+from airbot_data_collection.basis import System, SystemMode
 
 
 class AIRBOTPlayWithCameraEnv:
