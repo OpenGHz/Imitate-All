@@ -48,10 +48,10 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 # set_paths(DATA_DIR, CKPT_DIR, STATS_PATH)  # replace the default data and ckpt paths
 
 chunk_size = 25
-joint_num = 7
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["0"]
-TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num
-TASK_CONFIG_DEFAULT["common"]["action_dim"] = joint_num
+camera_names = ["env_camera", "follow_camera"]
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = camera_names
+TASK_CONFIG_DEFAULT["common"]["state_dim"] = 7
+TASK_CONFIG_DEFAULT["common"]["action_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = False
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["chunk_size"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["num_queries"] = chunk_size
@@ -74,7 +74,7 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
     "/lead/eef/joint_state/position",
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
-    "/env_camera/color/image_raw"
+    f"/{cam_name}/color/image_raw" for cam_name in camera_names
 ]
 
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500
@@ -82,8 +82,6 @@ TASK_CONFIG_DEFAULT["train"]["learning_rate"] = 2e-5
 TASK_CONFIG_DEFAULT["train"]["pretrain_ckpt_path"] = ""
 TASK_CONFIG_DEFAULT["train"]["pretrain_epoch_base"] = "AUTO"
 
-TASK_CONFIG_DEFAULT["eval"]["robot_num"] = 1
-TASK_CONFIG_DEFAULT["eval"]["joint_num"] = joint_num
 TASK_CONFIG_DEFAULT["eval"]["start_joint"] = "AUTO"
 TASK_CONFIG_DEFAULT["eval"]["max_timesteps"] = 300
 TASK_CONFIG_DEFAULT["eval"]["ensemble"] = None
