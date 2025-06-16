@@ -507,26 +507,35 @@ def get_mcap_action(
     return res
 
 
+def check_mcap_images(
+    mcap_file_path: str,
+    camera_names: List[str],
+    mcap_camera_topics: List[str],
+):
+    images = {}
+    av_coder = AvCoder()
+    with Path(mcap_file_path).open("rb") as f:
+        reader = make_reader(f)
+        names = set()
+        for attach in reader.iter_attachments():
+            if attach.name not in mcap_camera_topics:
+                continue
+            names.add(attach.name)
+            topic_index = mcap_camera_topics.index(attach.name)
+            # images[camera_name[topic_index]] = av_coder.decode(
+            #     attach.data, [index], mismatch_tolerance=5
+            # )[index]
+            print(len(av_coder.decode(attach.data)))
+        print(f"Camera topics: {names}")
+    return images
+
+
 def get_mcap_image(
     mcap_file_path: str,
-    camera_name: List[str],
+    camera_names: List[str],
     mcap_camera_topics: List[str],
     index: int = 0,
 ) -> Dict[str, np.ndarray]:
-    # """Extract image data from a MCAP file."""
-    # images = {}
-    # av_coder = AvCoder()
-    # with Path(mcap_file_path).open("rb") as f:
-    #     reader = make_reader(f)
-    #     for attach in reader.iter_attachments():
-    #         if attach.name not in mcap_camera_topics:
-    #             continue
-    #         topic_index = mcap_camera_topics.index(attach.name)
-    #         # images[camera_name[topic_index]] = av_coder.decode(
-    #         #     attach.data, [index], mismatch_tolerance=5
-    #         # )[index]
-    #         print(len(av_coder.decode(attach.data)))
-    # return images
     """Extract image data from a MCAP file."""
     file_path = Path(mcap_file_path)
     if not file_path.exists():
@@ -561,7 +570,7 @@ def get_mcap_image(
                     ret, frame = cap.read()
             assert ret, f"Failed to read frame {index} from {attach.name}"
             index = mcap_camera_topics.index(attach.name)
-            res[camera_name[index]] = frame
+            res[camera_names[index]] = frame
     return res
 
 
