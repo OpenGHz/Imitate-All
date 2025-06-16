@@ -512,19 +512,56 @@ def get_mcap_image(
     mcap_camera_topics: List[str],
     index: int = 0,
 ) -> Dict[str, np.ndarray]:
+    # """Extract image data from a MCAP file."""
+    # images = {}
+    # av_coder = AvCoder()
+    # with Path(mcap_file_path).open("rb") as f:
+    #     reader = make_reader(f)
+    #     for attach in reader.iter_attachments():
+    #         if attach.name not in mcap_camera_topics:
+    #             continue
+    #         topic_index = mcap_camera_topics.index(attach.name)
+    #         # images[camera_name[topic_index]] = av_coder.decode(
+    #         #     attach.data, [index], mismatch_tolerance=5
+    #         # )[index]
+    #         print(len(av_coder.decode(attach.data)))
+    # return images
     """Extract image data from a MCAP file."""
-    images = {}
-    av_coder = AvCoder()
-    with Path(mcap_file_path).open("rb") as f:
+    file_path = Path(mcap_file_path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"MCAP file {file_path.absolute()} not found")
+    res = {}
+    with file_path.open("rb") as f:
         reader = make_reader(f)
         for attach in reader.iter_attachments():
             if attach.name not in mcap_camera_topics:
                 continue
-            topic_index = mcap_camera_topics.index(attach.name)
-            images[camera_name[topic_index]] = av_coder.decode(
-                attach.data, [index], mismatch_tolerance=5
-            )[index]
-    return images
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+                tmp.write(attach.data)
+                tmp.flush()
+                tmp_path = tmp.name
+            cap = cv2.VideoCapture(tmp_path)
+            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if not (0 <= index < total):
+                cap.release()
+                os.remove(tmp_path)
+                raise IndexError(f"Frame number {index} out of range [0, {total})")
+            cap.set(cv2.CAP_PROP_POS_FRAMES, index)
+            ret, frame = cap.read()
+            cap.release()
+            os.remove(tmp_path)
+            if not ret:
+                logger.error(
+                    f"Could not read frame {index} from {attach.name}, use the last frame"
+                )
+                while not ret and total > 0:
+                    total -= 2
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, total)
+                    ret, frame = cap.read()
+            assert ret, f"Failed to read frame {index} from {attach.name}"
+            index = mcap_camera_topics.index(attach.name)
+            res[camera_name[index]] = frame
+    return res
 
 
 def get_time_index(mcap_file_path: str) -> List[int]:
