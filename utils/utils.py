@@ -17,6 +17,7 @@ import cv2
 import h5py
 import numpy as np
 import torch
+import json
 from airbot_data_collection.tools.av_coder import AvCoder
 from mcap.reader import make_reader
 from torch.utils.data import DataLoader
@@ -566,17 +567,19 @@ def get_mcap_image(
 
 def get_time_index(mcap_file_path: str) -> List[int]:
     """Extract time index from a MCAP file."""
-    mcap_file_path = Path(mcap_file_path)
-    if not mcap_file_path.exists():
+    file_path = Path(mcap_file_path)
+    if not file_path.exists():
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
-    with mcap_file_path.open("rb") as f:
+    with file_path.open("rb") as f:
         reader = make_reader(f)
         for attach in reader.iter_attachments():
             if attach.name == "log_stamps":
-                import ast
-
-                time_index = ast.literal_eval(attach.data.decode("utf-8"))
+                time_index = json.loads(attach.data)
                 return time_index
+    raise ValueError(
+        f"Time index not found in {mcap_file_path}. "
+        "Please ensure the MCAP file contains a 'log_stamps' attachment."
+    )
 
 
 def get_norm_stats(dataset_dir, num_episodes, config: LoadDataConfig):

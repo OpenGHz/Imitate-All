@@ -14,4 +14,4 @@ cameras:
     camera_index: 4
   "2":
     _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
-    camera_index: 4
+    camera_index: 6
