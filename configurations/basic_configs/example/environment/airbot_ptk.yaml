@@ -6,12 +6,12 @@ right:
   port: 50053
 
 cameras:
-  "0":
+  env_camera:
     _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
     camera_index: 2
-  "1":
+  left_camera:
     _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
     camera_index: 4
-  "2":
+  right_camera:
     _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
     camera_index: 6
