@@ -176,6 +176,10 @@ class EpisodicDataset(torch.utils.data.Dataset):
             image_dict = get_mcap_image(
                 dataset_path, self.camera_names, self.mcap_camera_topics, start_ts
             )
+            if len(image_dict) != len(self.camera_names):
+                raise RuntimeError(
+                    f"Available attachment names are {get_mcap_attachment_names(dataset_path)} but expected: {self.mcap_action_topics}."
+                )
             bias = self.action_bias
             action_start = max(0, start_ts - bias)
             action = get_mcap_action(
@@ -572,6 +576,19 @@ def get_mcap_image(
             index = mcap_camera_topics.index(attach.name)
             res[camera_names[index]] = frame
     return res
+
+
+def get_mcap_attachment_names(mcap_file_path: str) -> List[str]:
+    """Extract attachment names from a MCAP file."""
+    file_path = Path(mcap_file_path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"MCAP file {file_path.absolute()} not found")
+    names = []
+    with file_path.open("rb") as f:
+        reader = make_reader(f)
+        for attach in reader.iter_attachments():
+            names.append(attach.name)
+    return names
 
 
 def get_time_index(mcap_file_path: str) -> List[int]:
