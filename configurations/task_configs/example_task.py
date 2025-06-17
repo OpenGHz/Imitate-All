@@ -50,7 +50,7 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 chunk_size = 25
 camera_names = ["env_camera"]
 # camera_names = ["env_camera", "follow_camera"]
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["env_camera"]
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = camera_names
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["action_dim"] = 7
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
