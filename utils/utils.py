@@ -1,4 +1,5 @@
 import fnmatch
+import json
 import logging
 import os
 import pickle
@@ -17,7 +18,6 @@ import cv2
 import h5py
 import numpy as np
 import torch
-import json
 from airbot_data_collection.tools.av_coder import AvCoder
 from mcap.reader import make_reader
 from torch.utils.data import DataLoader
