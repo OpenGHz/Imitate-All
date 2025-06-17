@@ -66,16 +66,16 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = None
 TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = None
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
-    "left/follow/arm/joint_state/position",
-    "left/follow/eef/joint_state/position",
-    "right/follow/arm/joint_state/position",
-    "right/follow/eef/joint_state/position",
+    "/left/follow/arm/joint_state/position",
+    "/left/follow/eef/joint_state/position",
+    "/right/follow/arm/joint_state/position",
+    "/right/follow/eef/joint_state/position",
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
-    "left/lead/arm/joint_state/position",
-    "left/lead/eef/joint_state/position",
-    "right/lead/arm/joint_state/position",
-    "right/lead/eef/joint_state/position",
+    "/left/lead/arm/joint_state/position",
+    "/left/lead/eef/joint_state/position",
+    "/right/lead/arm/joint_state/position",
+    "/right/lead/eef/joint_state/position",
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
     f"/{cam_name}/color/image_raw" for cam_name in camera_names
