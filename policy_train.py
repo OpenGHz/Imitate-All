@@ -52,13 +52,13 @@ def main(args: dict):
     shutil.copy(all_config["config_file_sys_path"], stats_dir)
     # 保存统计数据
     stats_path = (
-        os.path.join(ckpt_dir, f"dataset_stats.pkl") if stats_path == "" else stats_path
+        os.path.join(ckpt_dir, "dataset_stats.pkl") if stats_path == "" else stats_path
     )
     print(f"Saving stats into {stats_path}...")
     with open(stats_path, "wb") as f:
         pickle.dump(stats, f)
     # 保存关键信息（must pop functions)
-    key_info_path = os.path.join(stats_dir, f"key_info.pkl")
+    key_info_path = os.path.join(stats_dir, "key_info.pkl")
     print(f"Saving key info into {key_info_path}...")
     all_config_cp = deepcopy(all_config)
     all_config_cp["policy_config"].pop("policy_maker")

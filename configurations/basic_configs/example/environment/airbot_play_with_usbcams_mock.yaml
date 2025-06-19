@@ -6,15 +6,15 @@ right:
   port: 50050
 
 cameras:
-  "0":
+  env_camera:
     _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
     camera_index: 2
     mock: true
-  "1":
+  left_camera:
     _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
     camera_index: 4
     mock: true
-  "2":
+  right_camera:
     _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
     camera_index: 6
     mock: true

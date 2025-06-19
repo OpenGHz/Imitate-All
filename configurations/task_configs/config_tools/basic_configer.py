@@ -172,9 +172,8 @@ def get_all_config(args: dict, stage: str):
             init_states = get_init_states(stats_dir)
             # 设置start_joint为初始action
             all_config["start_joint"] = init_states[1]
-        all_config["learning_rate"] = (
-            -1
-        )  # TODO：there should not be learning_rate in policy_config
+        # TODO：there should not be learning_rate in policy_config
+        all_config["learning_rate"] = -1
     else:
         raise ValueError(f"stage {stage} not supported, must be 'train' or 'eval'")
     # set policy class and config
