@@ -545,7 +545,7 @@ def check_mcap_images(
             # images[camera_name[topic_index]] = av_coder.decode(
             #     attach.data, [index], mismatch_tolerance=5
             # )[index]
-            print(len(av_coder.decode(attach.data)))
+            print(len(av_coder.decode(attach.data, mismatch_tolerance=5)))
         print(f"Camera topics: {names}")
     return images
 
@@ -578,19 +578,22 @@ def get_mcap_image(
                 raise IndexError(f"Frame number {index} out of range [0, {total})")
             cap.set(cv2.CAP_PROP_POS_FRAMES, index)
             ret, frame = cap.read()
-            cap.release()
-            os.remove(tmp_path)
             if not ret:
-                logger.error(
+                logger.warning(
                     f"Could not read frame {index} from {attach.name}, use the last frame"
                 )
                 while not ret and total > 0:
-                    total -= 2
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, total)
+                    index -= 2
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, index)
                     ret, frame = cap.read()
+                logger.info(
+                    f"Read frame {index} from {attach.name}, total frames: {total}"
+                )
             assert ret, f"Failed to read frame {index} from {attach.name}"
             index = mcap_camera_topics.index(attach.name)
             res[camera_names[index]] = frame
+            cap.release()
+            os.remove(tmp_path)
     return res
 
 
