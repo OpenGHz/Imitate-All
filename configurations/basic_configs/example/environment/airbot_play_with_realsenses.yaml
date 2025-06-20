@@ -1,0 +1,11 @@
+/:
+  _target_: airbot_data_collection.airbot.robots.airbot_play.AIRBOTPlay
+  port: 50051
+
+cameras:
+  env_camera:
+    _target_: airbot_data_collection.airbot.sensors.cameras.realsense.RealSense
+    camera_index: 427622274177
+  follow_camera:
+    _target_: airbot_data_collection.airbot.sensors.cameras.realsense.RealSense
+    camera_index: 427622274178
