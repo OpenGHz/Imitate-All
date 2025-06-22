@@ -23,6 +23,8 @@ from configurations.task_configs.config_tools.basic_configer import (
 from envs.common_env import CommonEnv, get_image
 from policies.common.maker import make_policy
 from utils.utils import save_eval_results, set_seed
+from airbot_data_collection.tools.av_coder import AvCoder
+from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -159,7 +161,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             # logger.info(f"Showing {name}: {value}...")
             cv2.imshow(name, value)
             # cv2.imwrite(f"{name}.png", value)
-        cv2.waitKey(1)
+        return cv2.waitKey(1) & 0xFF
 
     # evaluation loop
     if hasattr(policy, "eval"):
@@ -182,37 +184,57 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         qpos_list = []
         action_list = []
         rewards = []
+        coder = AvCoder()
         with torch.inference_mode():
             logger.info("Reset environment...")
             ts = env.reset(sleep_time=1)
-            if showing_images:
-                # must show enough times to clear the black screen
-                for _ in range(10):
-                    show_images(ts)
             logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
-            v = input(f"Press Enter to start evaluation or z and Enter to exit...")
-            if v == "z":
-                break
+            if showing_images:
+                logger.info("Press `Enter` to start evaluation or `ESC` to exit")
+                # must show enough times to clear the black screen
+                while True:
+                    key = show_images(ts)
+                    exit_keys = {27, ord("q"), ord("z")}
+                    next_keys = {13}
+                    if key in exit_keys | next_keys:
+                        break
+                    ts = env._get_obs()
+                if key in exit_keys:
+                    break
+            else:
+                key = input(
+                    "Press `Enter` to start evaluation or `z` and `Enter` to exit"
+                )
+                if key == "z":
+                    break
             ts = env.reset()
             if hasattr(policy, "reset"):
                 policy.reset()
             try:
                 for t in tqdm(range(max_timesteps)):
                     start_time = time.time()
-                    image_list.append(ts.observation["images"])
+                    if save_dir != "":
+                        # image_list.append(ts.observation["images"])
+                        # for name, image in ts.observation["images"].items():
+                        coder.encode_frame(
+                            np.concatenate(
+                                list(ts.observation["images"].values()), axis=1
+                            ),
+                            timestamp=time.time_ns(),
+                        )
                     if showing_images:
                         show_images(ts)
                     # pre-process current observations
                     curr_image = get_image(ts, camera_names, image_mode)
                     qpos_numpy = np.array(ts.observation["qpos"])
 
-                    logger.debug(f"raw qpos: {qpos_numpy}")
+                    # logger.debug(f"raw qpos: {qpos_numpy}")
                     qpos = pre_process(qpos_numpy)  # normalize qpos
-                    logger.debug(f"pre qpos: {qpos}")
+                    # logger.debug(f"pre qpos: {qpos}")
                     qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
                     qpos_history[:, t] = qpos
 
-                    logger.debug(f"observe time: {time.time() - start_time}")
+                    # logger.debug(f"observe time: {time.time() - start_time}")
                     start_time = time.time()
                     # wrap policy
                     target_t = t % num_queries
@@ -226,7 +248,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     # post-process predicted action
                     # dim: (1,7) -> (7,)
                     raw_action = raw_action.squeeze(0).cpu().numpy()
-                    logger.debug(f"raw action: {raw_action}")
+                    # logger.debug(f"raw action: {raw_action}")
                     action = post_process(raw_action)  # de-normalize action
                     # logger.debug(f"post action: {action}")
                     if filter_type is not None:  # filt action
@@ -234,7 +256,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                             action[i] = filter(action[i], time.time())
                     # limit the prediction frequency
                     time.sleep(max(0, 1 / prediction_freq - (time.time() - start_time)))
-                    logger.debug(f"prediction time: {time.time() - start_time}")
+                    # logger.debug(f"prediction time: {time.time() - start_time}")
                     # step the environment
                     if debug:
                         # dt = 1
@@ -282,6 +304,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 save_all=save_all,
                 save_time_actions=save_time_actions,
             )
+            coder.end(f"{os.path.join(save_dir, dataset_name)}.mp4")
 
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
