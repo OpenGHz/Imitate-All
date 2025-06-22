@@ -1,9 +1,9 @@
 left:
   _target_: airbot_data_collection.airbot.robots.airbot_play_mock.AIRBOTPlay
-  port: 50050
+  port: 50051
 right:
   _target_: airbot_data_collection.airbot.robots.airbot_play_mock.AIRBOTPlay
-  port: 50050
+  port: 50053
 
 cameras:
   env_camera:
