@@ -190,7 +190,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             ts = env.reset(sleep_time=1)
             logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
             if showing_images:
-                logger.info("Press `Enter` to start evaluation or `ESC` to exit")
+                logger.info("Press `Enter` to start evaluation or `ESC` to exit...")
                 # must show enough times to clear the black screen
                 while True:
                     key = show_images(ts)
@@ -203,7 +203,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     break
             else:
                 key = input(
-                    "Press `Enter` to start evaluation or `z` and `Enter` to exit"
+                    "Press `Enter` to start evaluation or `z` and `Enter` to exit..."
                 )
                 if key == "z":
                     break
