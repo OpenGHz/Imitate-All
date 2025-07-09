@@ -3,7 +3,7 @@ import importlib
 import time
 
 import dm_env
-from discoverse.envs.airbot_play_base import AirbotPlayCfg
+from discoverse.robots_env.airbot_play_base import AirbotPlayCfg
 from discoverse.task_base import AirbotPlayTaskBase
 
 
