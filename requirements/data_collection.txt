@@ -8,3 +8,5 @@ opencv-python >=4.9.0
 pillow >=10.2.0
 tqdm
 h5py
+tyro
+pydantic
