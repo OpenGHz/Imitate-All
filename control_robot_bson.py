@@ -651,18 +651,18 @@ def record(
                             "sn": "",
                             "firmware_version": "0.0.0",
                         },
-                        "/observation/left_arm_eef/joint_state": {
-                            "description": "airbot-play-short",
-                            "type": "jointstate",
-                            "sn": "",
-                            "firmware_version": "0.0.0",
-                        },
-                        "/observation/right_arm_eef/joint_state": {
-                            "description": "airbot-play-short",
-                            "type": "jointstate",
-                            "sn": "",
-                            "firmware_version": "0.0.0",
-                        },
+                        # "/observation/left_arm_eef/joint_state": {
+                        #     "description": "airbot-play-short",
+                        #     "type": "jointstate",
+                        #     "sn": "",
+                        #     "firmware_version": "0.0.0",
+                        # },
+                        # "/observation/right_arm_eef/joint_state": {
+                        #     "description": "airbot-play-short",
+                        #     "type": "jointstate",
+                        #     "sn": "",
+                        #     "firmware_version": "0.0.0",
+                        # },
                         "/observation/left_arm/pose": {
                             "description": "",
                             "type": "pose",

@@ -120,7 +120,7 @@ class AIRBOTMMK2(object):
         if self.config.demonstrate:
             # TODO: since the arms and eefs are controlled by the teleop bag
             for comp in MMK2ComponentsGroup.ARMS_EEFS:
-                goal.pop(comp)
+                goal.pop(comp, None)
         if goal:
             # start = time.time()
             # logger.info(f"Move by trajectory")
@@ -197,9 +197,9 @@ class AIRBOTMMK2(object):
                     eef_jn = JointNames().__dict__[comp_eef]
                     js = self.robot.get_listened(self._comp_action_topic[comp])
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
-                    data[f"action/{comp.value}/joint_position"] = jq[:-1]
+                    data[f"action/{comp.value}/joint_position"] = jq[:len(arm_jn)]
                     # the eef joint is in arms
-                    data[f"action/{comp_eef}/joint_position"] = jq[-1:]
+                    data[f"action/{comp_eef}/joint_position"] = jq[len(arm_jn):]
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
                     jq = list(
                         self.robot.get_listened(self._comp_action_topic[comp]).data
