@@ -125,12 +125,12 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
                     jq = self.robot.get_joint_values_by_names(js, arm_jn + eef_jn)
                     data.update(
                         self._get_joint_state(
-                            "action", comp.value, js.header.stamp, jq[:-1]
+                            "action", comp.value, js.header.stamp, jq[:len(arm_jn)]
                         )
                     )
                     data.update(
                         self._get_joint_state(
-                            "action", comp_eef, js.header.stamp, jq[-1:]
+                            "action", comp_eef, js.header.stamp, jq[len(arm_jn):]
                         )
                     )
                 elif comp in MMK2ComponentsGroup.HEAD_SPINE:
@@ -149,8 +149,12 @@ class AIRBOTMMK2(AIRBOTMMK2_BASE):
         # Capture images from cameras
         images, img_stamps = self._capture_images()
         data = self.get_low_dim_data()
+        # logger.info(f"Low dim data: {data.keys()}")
+        # from pprint import pprint
+        # pprint(data)
         for name, img in images.items():
             data.update(self._get_image(name, img_stamps[name], img))
+        # logger.info(f"Images: {images.keys()}")
         return data
 
 
