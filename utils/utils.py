@@ -26,7 +26,7 @@ from collections import Counter, defaultdict
 from functools import wraps
 
 try:
-    from airbot_data_collection.tools.av_coder import AvCoder
+    from airbot_data_collection.common.utils.av_coder import AvCoder
     from mcap.reader import make_reader
     from airbot_type.FloatArray import FloatArray
 except ImportError as e:
