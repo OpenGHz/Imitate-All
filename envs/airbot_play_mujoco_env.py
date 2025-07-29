@@ -74,7 +74,7 @@ class MujocoEnv(object):
             obs["qpos"] = list(raw_obs["jq"])
             obs["images"] = {}
             for id in self.exec_node.config.obs_rgb_cam_id:
-                obs["images"][f"{id}"] = raw_obs["img"][id][:, :, ::-1]
+                obs["images"][f"cam_{id}"] = raw_obs["img"][id][:, :, ::-1]
         else:
             obs = None
         return dm_env.TimeStep(
