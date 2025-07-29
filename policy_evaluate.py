@@ -23,8 +23,8 @@ from configurations.task_configs.config_tools.basic_configer import (
 from envs.common_env import CommonEnv, get_image
 from policies.common.maker import make_policy
 from utils.utils import save_eval_results, set_seed
-from airbot_data_collection.tools.av_coder import AvCoder
-from collections import defaultdict
+from airbot_data_collection.common.utils.av_coder import AvCoder
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
