@@ -52,7 +52,7 @@ class MujocoEnv(object):
         # obs["qvel"] = raw_obs["jv"]
         obs["images"] = {}
         for id in self.exec_node.config.obs_rgb_cam_id:
-            obs["images"][f"{id}"] = raw_obs["img"][id][:, :, ::-1]
+            obs["images"][f"cam_{id}"] = raw_obs["img"][id][:, :, ::-1]
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
             reward=self.get_reward(),
