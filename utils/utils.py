@@ -203,7 +203,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
             )
             if len(image_dict) != len(self.camera_names):
                 raise RuntimeError(
-                    f"Available attachment names are {get_mcap_attachment_names(dataset_path)} but expected: {self.mcap_camera_topics}."
+                    f"Available attachment names are {get_mcap_attachment_names(dataset_path)} but expected: {self.mcap_camera_topics}. PS: {image_dict.keys()=} and {self.camera_names=}"
                 )
             bias = self.action_bias
             action_start = max(0, start_ts - bias)
