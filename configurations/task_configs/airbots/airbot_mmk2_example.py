@@ -46,7 +46,11 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 
 chunk_size = 25
 joint_num = 17
-TASK_CONFIG_DEFAULT["common"]["camera_names"] = ["head_camera"]
+components = ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef", "spine", "head"]
+cameras = ["head_camera"]
+# cameras = ["head_camera", "left_camera", "right_camera"]
+
+TASK_CONFIG_DEFAULT["common"]["camera_names"] = cameras
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num
 TASK_CONFIG_DEFAULT["common"]["action_dim"] = joint_num
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = False
@@ -61,23 +65,13 @@ TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = (0, 17)
 TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = (0, 17)
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
-    "/mmk/observation/left_arm/joint_state/position",
-    "/mmk/observation/left_arm_eef/joint_state/position",
-    "/mmk/observation/right_arm/joint_state/position",
-    "/mmk/observation/right_arm_eef/joint_state/position",
-    "/mmk/observation/spine/joint_state/position",
-    "/mmk/observation/head/joint_state/position",
+    f"/mmk/observation/{component}/joint_state/position" for component in components
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_action_topics"] = [
-    "/mmk/action/left_arm/joint_state/position",
-    "/mmk/action/left_arm_eef/joint_state/position",
-    "/mmk/action/right_arm/joint_state/position",
-    "/mmk/action/right_arm_eef/joint_state/position",
-    "/mmk/action/spine/joint_state/position",
-    "/mmk/action/head/joint_state/position",
+    f"/mmk/action/{component}/joint_state/position" for component in components
 ]
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_camera_topics"] = [
-    "/mmk/head_camera/color/video"
+    f"/mmk/{camera}/color/image_raw" for camera in cameras
 ]
 
 TASK_CONFIG_DEFAULT["train"]["num_epochs"] = 500

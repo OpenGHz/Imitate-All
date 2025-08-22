@@ -385,9 +385,9 @@ class LoadDataConfig(object):
             self.num_episodes, self.dataset_dir, self.data_type
         )
         # check if all episodes exist
-        assert os.path.isdir(
-            self.dataset_dir
-        ), f"dataset_dir {self.dataset_dir} not found"
+        assert os.path.isdir(self.dataset_dir), (
+            f"dataset_dir {self.dataset_dir} not found"
+        )
         if self.check_episodes:
             for ep in self.num_episodes:
                 if self.data_type == "mcap":
@@ -428,14 +428,16 @@ def get_mcap_frame_length(
                     assert (
                         episode_len
                         == summary.statistics.channel_message_counts[channel]
-                    ), f"Episode length mismatch: {episode_len} vs {summary.statistics.channel_message_counts[channel]} for channel {channel}"
+                    ), (
+                        f"Episode length mismatch: {episode_len} vs {summary.statistics.channel_message_counts[channel]} for channel {channel}"
+                    )
     return episode_len
 
 
 # @timer
 def get_mcap_fb_arrary(
     mcap_file_path: Path,
-    mcap_state_topics: List[str],
+    topic_names: List[str],
     start_time: Optional[int] = None,
     points_num: int = 0,
     end_time: Optional[int] = None,
@@ -448,13 +450,13 @@ def get_mcap_fb_arrary(
         raise FileNotFoundError(f"MCAP file {mcap_file_path} not found")
     cnt = Counter()
     messages = defaultdict(list)
-    topic_num = len(mcap_state_topics)
+    topic_num = len(topic_names)
     total_cnt = points_num * topic_num
     with mcap_file_path.open("rb") as f:
         reader = make_reader(f)
         assert isinstance(start_time, int) or start_time is None
         for schema_obj, channel_obj, message_obj in reader.iter_messages(
-            mcap_state_topics,
+            topic_names,
             start_time=start_time,
             end_time=end_time,
         ):
@@ -468,18 +470,23 @@ def get_mcap_fb_arrary(
                 break
         else:
             assert points_num == 0 or allow_less, (
-                f"Not enough messages in {mcap_file_path} for topics {mcap_state_topics}. "
+                f"Not enough messages in {mcap_file_path} for topics {topic_names}. "
                 f"Expected {total_cnt}, got {cnt.total()}"
             )
 
     arrays = []
-    for topic in mcap_state_topics:
-        topic_msg = messages[topic]
-        topic_cnt = cnt[topic]
-        arr = np.zeros((topic_cnt, len(topic_msg[0])))
-        for i in range(topic_cnt):
-            arr[i] = topic_msg[i]
-        arrays.append(arr)
+    try:
+        for topic in topic_names:
+            topic_msg = messages[topic]
+            topic_cnt = cnt[topic]
+            arr = np.zeros((topic_cnt, len(topic_msg[0])))
+            for i in range(topic_cnt):
+                arr[i] = topic_msg[i]
+            arrays.append(arr)
+    except IndexError:
+        raise ValueError(
+            f"Topics: {topic_names} not a subset of {[cn.topic for cn in reader.get_summary().channels.values()]} "
+        )
     return np.concatenate(arrays, axis=1, dtype=np.float32)
 
 
@@ -843,7 +850,6 @@ def replace_timestamp(input_str, time_stamp):
 
 
 class CAN_Tools(object):
-
     @staticmethod
     def check_can_status(interface):
         # 使用 ip link show 命令获取网络接口状态
@@ -882,7 +888,6 @@ class CAN_Tools(object):
 
 
 class GPUer(object):
-
     def __init__(self, interval=1):
         self.interval = interval
         self.gpu_info = self.get_gpu_info()
