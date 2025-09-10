@@ -17,7 +17,7 @@ def make_airbot_mmk2_env(config: dict):
 
 
 def make_com_airbot_mmk2_env(config: dict):
-    from envs.airbot_com_mmk_env import make_env
+    from envs.airbot_mmk_env import make_env
 
     return make_env(config)
 

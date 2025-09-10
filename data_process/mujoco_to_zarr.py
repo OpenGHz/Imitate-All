@@ -24,9 +24,9 @@ parser.add_argument("-vn", "--video_names", type=str, nargs="+")
 parser.add_argument(
     "--num_points", type=int, default=1024, help="Number of points after sampling"
 )
-parser.add_argument("--no_crop", action="store_true", help="Disable workspace cropping")
+parser.add_argument("-nc", "--no_crop", action="store_true", help="Disable workspace cropping")
 parser.add_argument(
-    "--no_transform", action="store_true", help="Disable extrinsic transform + scaling"
+    "-nt", "--no_transform", action="store_true", help="Disable extrinsic transform + scaling"
 )
 parser.add_argument(
     "--device", type=str, default="cuda", choices=["cuda", "cpu"], help="Device for FPS"
@@ -273,9 +273,9 @@ for ep, demo in low_dim_data.items():
     demo_length = episode_lens[ep]
     for i in range(demo_length):
         demo["point_cloud"].append(np.load(os.path.join(pc_dir, f"{i}.npy")))
-    pc_arr = np.array(demo["point_cloud"])
-    print(pc_arr.shape)
-    demo["point_cloud"] = pc_arr
+    # pc_arr = np.array(demo["point_cloud"])
+    # print(pc_arr.shape)
+    # demo["point_cloud"] = pc_arr
 
     # dict_keys(['point_cloud', 'state', 'action'])
     for step_idx in tqdm.tqdm(range(demo_length)):

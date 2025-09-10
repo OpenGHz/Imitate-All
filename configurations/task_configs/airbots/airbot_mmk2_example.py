@@ -19,7 +19,7 @@ def policy_maker(config: dict, stage=None):
 
 
 def environment_maker(config: dict):
-    from envs.airbot_com_mmk_env import make_env
+    from envs.airbot_mmk_env import make_env
 
     return make_env(config)
 
@@ -46,14 +46,14 @@ replace_task_name(TASK_NAME, stats_name="dataset_stats.pkl", time_stamp="now")
 
 chunk_size = 25
 joint_num = 17
-components = ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef", "spine", "head"]
+components = ["left_arm", "left_arm_eef", "right_arm", "right_arm_eef", "head", "spine"]
 cameras = ["head_camera"]
 # cameras = ["head_camera", "left_camera", "right_camera"]
 
 TASK_CONFIG_DEFAULT["common"]["camera_names"] = cameras
 TASK_CONFIG_DEFAULT["common"]["state_dim"] = joint_num
 TASK_CONFIG_DEFAULT["common"]["action_dim"] = joint_num
-TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = False
+TASK_CONFIG_DEFAULT["common"]["policy_config"]["temporal_agg"] = True
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["chunk_size"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["num_queries"] = chunk_size
 TASK_CONFIG_DEFAULT["common"]["policy_config"]["kl_weight"] = 10

@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 
 def main(args):
-
     all_config = get_all_config(args, "eval")
     set_seed(all_config["seed"])
     ckpt_names = all_config["ckpt_names"]
@@ -120,7 +119,6 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         for gr_name, gr_cfgs in ensemble.items():
             policies[gr_name] = []
             for index, gr_cfg in enumerate(gr_cfgs):
-
                 policies[gr_name].append(
                     make_policy(
                         gr_cfg["policies"][index]["policy_class"],
@@ -173,7 +171,6 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     policy_sig = inspect.signature(policy).parameters
     prediction_freq = 100000
     for rollout_id in range(max_rollouts):
-
         # evaluation loop
         all_time_actions = torch.zeros(
             [max_timesteps, max_timesteps + num_queries, action_dim]
@@ -184,7 +181,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         qpos_list = []
         action_list = []
         rewards = []
-        coder = AvCoder()
+        time_base = int(1e6)
+        coder = AvCoder(time_base=time_base, async_encode=True)
+        factor = int(1e9 / time_base)
         with torch.inference_mode():
             logger.info("Reset environment...")
             ts = env.reset(sleep_time=1)
@@ -220,7 +219,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                             np.concatenate(
                                 list(ts.observation["images"].values()), axis=1
                             ),
-                            timestamp=time.time_ns(),
+                            timestamp=time.time_ns() // factor,
                         )
                     if showing_images:
                         show_images(ts)
@@ -285,7 +284,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         episode_highest_reward = np.max(rewards)
         highest_rewards.append(episode_highest_reward)
         logger.info(
-            f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward==env_max_reward}"
+            f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward == env_max_reward}"
         )
 
         # saving evaluation results
@@ -315,7 +314,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         for r in range(env_max_reward + 1):
             more_or_equal_r = (np.array(highest_rewards) >= r).sum()
             more_or_equal_r_rate = more_or_equal_r / num_rollouts
-            summary_str += f"Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate*100}%\n"
+            summary_str += f"Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate * 100}%\n"
 
         logger.info(summary_str)
 
@@ -327,7 +326,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 f.write("\n\n")
                 f.write(repr(highest_rewards))
             logger.info(
-                f'Success rate and average return saved to {os.path.join(save_dir, dataset_name + ".txt")}'
+                f"Success rate and average return saved to {os.path.join(save_dir, dataset_name + '.txt')}"
             )
     else:
         success_rate = 0
@@ -481,7 +480,6 @@ def eval_parser(parser: argparse.ArgumentParser = None):
 
 
 if __name__ == "__main__":
-
     parser = basic_parser()
     eval_parser(parser)
 
