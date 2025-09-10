@@ -1,0 +1,24 @@
+_target_: airbot_data_collection.airbot.robots.airbot_mmk.AIRBOTMMK
+
+ip: 192.168.11.200
+components: [left_arm, left_arm_eef, right_arm, right_arm_eef, head, spine]
+cameras:
+  head_camera:
+    camera_type: REALSENSE
+    rgb_camera.color_profile: 640,480,30
+    enable_depth: "false"
+    align_depth.enable: "false"
+    # serial_no: '123456'  # multiple rs-cameras case
+#   left_camera:
+#       camera_type: USB
+#       video_device: /dev/left_camera
+#       image_width: "640"
+#       image_height: "480"
+#       framerate: "25"
+#   right_camera:
+#       video_device: /dev/right_camera
+#       camera_type: USB
+#       image_width: "640"
+#       image_height: "480"
+#       framerate: "25"
+default_action: null
