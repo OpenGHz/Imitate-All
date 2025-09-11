@@ -22,3 +22,4 @@ cameras:
 #       image_height: "480"
 #       framerate: "25"
 default_action: null
+demonstrate: false
