@@ -122,20 +122,6 @@ class Backbone(BackboneBase):
         super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
 
 
-class BackboneYHD(BackboneBase):
-    """YHD backbone with frozen BatchNorm."""
-
-    def __init__(self, cfg, return_interm_layers):
-
-        import hydra
-
-        backbone: MultiImageObsEncoder = hydra.utils.instantiate(cfg.encoder)
-        num_channels = 512
-        train_backbone = False
-        return_interm_layers = True
-        super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
-
-
 class Joiner(nn.Sequential):
     def __init__(self, backbone, position_embedding):
         super().__init__(backbone, position_embedding)
@@ -164,11 +150,3 @@ def build_backbone(args):
     model.num_channels = backbone.num_channels
     return model
 
-
-def build_yhd_backbone(config, args):
-    position_embedding = build_position_encoding(args)
-    return_interm_layers = args.masks
-    backbone = BackboneYHD(config, return_interm_layers)
-    model = Joiner(backbone, position_embedding)
-    model.num_channels = backbone.num_channels
-    return model

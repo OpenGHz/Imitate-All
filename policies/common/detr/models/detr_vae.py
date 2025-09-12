@@ -194,25 +194,6 @@ class DETRVAE(nn.Module):
         return a_hat, is_pad_hat, [mu, logvar]
 
 
-class DETRVAEYHD(DETRVAE):
-    def encode_images(self, image):
-        all_cam_features = []
-        all_cam_pos = []
-
-        for index, names in enumerate(self.camera_names):
-            # print(image[:, cam_id].shape)
-            obs_dict = {
-                "rgb_global": image[:, index],
-                "mask_global": image[:, index + 1],
-            }
-            features, pos = self.backbones[index](obs_dict)
-            # TODO: check if this is correct
-            features = features[0]  # take the last layer feature
-            pos = pos[0]
-            all_cam_features.append(self.input_proj(features))
-            all_cam_pos.append(pos)
-
-
 class CNNMLP(nn.Module):
     def __init__(self, backbones, state_dim, action_dim, camera_names):
         """Initializes the model.
@@ -257,7 +238,6 @@ class CNNMLP(nn.Module):
         env_state: None
         actions: batch, seq, action_dim
         """
-        is_training = actions is not None  # train or val
         bs, _ = qpos.shape
         # Image observation features and position embeddings
         all_cam_features = []
@@ -324,46 +304,6 @@ def build_vae(args):
         action_dim=args.action_dim,
         num_queries=args.num_queries,
         camera_names=args.camera_names,
-    )
-
-    n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print("number of parameters: %.2fM" % (n_parameters / 1e6,))
-
-    return model
-
-
-def build_vae_yhd(config, args):
-
-    import hydra
-
-    from policies.common.detr.encoders.images_hl_dyh.images_hl_dyh import (
-        MultiImageObsEncoder,
-    )
-
-    transformer = build_transformer(args)
-    encoder = build_encoder(args)
-
-    names = args.camera_names
-    num_name = len(names)
-    assert num_name % 2 == 0, f"camera number must be 2*N: {num_name}"
-    grouped_image_names = []
-    for i in range(0, num_name, 2):
-        grouped_image_names.append(names[i], names[i + 1])
-    backbones = []
-    for _ in grouped_image_names:
-        # backbone = build_yhd_backbone(config, args)
-        backbone: MultiImageObsEncoder = hydra.utils.instantiate(config.encoder)
-        backbone.num_channels = 512
-        backbones.append(backbone)
-
-    model = DETRVAEYHD(
-        backbones,
-        transformer,
-        encoder,
-        state_dim=args.state_dim,
-        action_dim=args.action_dim,
-        num_queries=args.num_queries,
-        camera_names=grouped_image_names,
     )
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)

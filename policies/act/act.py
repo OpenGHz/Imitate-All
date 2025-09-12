@@ -5,7 +5,6 @@ from torch.nn import functional as F
 
 from policies.common.detr.main import (
     build_ACT_model,
-    build_ACT_YHD_model,
     build_optimizer,
 )
 from policies.common.loss import kl_divergence
@@ -15,10 +14,7 @@ from policies.common.wrapper import TemporalEnsembling
 class ACTPolicy(nn.Module):
     def __init__(self, args_override, config=None):
         super().__init__()
-        if config is None:
-            model, self._args = build_ACT_model(args_override)
-        else:
-            model, self._args = build_ACT_YHD_model(config, args_override)
+        model, self._args = build_ACT_model(args_override)
         self.model = model  # CVAE decoder
         self.kl_weight = args_override["kl_weight"]
         print(f"KL Weight {self.kl_weight}")
