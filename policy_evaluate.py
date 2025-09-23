@@ -22,8 +22,7 @@ from configurations.task_configs.config_tools.basic_configer import (
 )
 from envs.common_env import CommonEnv, get_image
 from policies.common.maker import make_policy
-from utils.utils import save_eval_results, set_seed
-from airbot_data_collection.common.utils.av_coder import AvCoder
+from utils.utils import save_eval_results, set_seed, AvCoder
 
 
 logging.basicConfig(level=logging.INFO)
@@ -274,10 +273,8 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     # break
             except KeyboardInterrupt:
                 logger.info(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
-                continue
-            else:
-                num_rollouts += 1
 
+        num_rollouts += 1
         rewards = np.array(rewards)
         episode_return = np.sum(rewards[rewards != None])
         episode_returns.append(episode_return)
@@ -303,7 +300,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 save_all=save_all,
                 save_time_actions=save_time_actions,
             )
-            coder.end(f"{os.path.join(save_dir, dataset_name)}.mp4")
+            video_path = f"{os.path.join(save_dir, dataset_name)}.mp4"
+            logger.info(f"Video saved to {video_path}")
+            coder.end(video_path)
 
     if num_rollouts > 0:
         success_rate = np.mean(np.array(highest_rewards) == env_max_reward)

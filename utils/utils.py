@@ -7,32 +7,24 @@ import re
 import subprocess
 import tempfile
 import time
+import cv2
+import h5py
+import numpy as np
+import torch
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
 from threading import Event, Thread
 from typing import Dict, List, Optional, Tuple, Union
-
-import cv2
-import h5py
-import numpy as np
-import torch
-
 from torch.utils.data import DataLoader
-
 from visualize_episodes import save_videos
 from collections import Counter, defaultdict
 from functools import wraps
+from mcap_data_loader.utils.av_coder import AvCoder
+from mcap_data_loader.schemas.airbot_fbs.FloatArray import FloatArray
+from mcap.reader import make_reader
 
-try:
-    from airbot_data_collection.common.utils.av_coder import AvCoder
-    from mcap.reader import make_reader
-    from airbot_type.FloatArray import FloatArray
-except ImportError as e:
-    print(
-        f"Optional dependencies are not available. Some features may be disabled. Error: {e}"
-    )
 
 logger = logging.getLogger(__name__)
 np.random.seed(0)

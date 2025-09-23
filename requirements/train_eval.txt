@@ -19,6 +19,7 @@ mcap
 flatbuffers
 pydantic
 tyro
+mcap-data-loader
 
 # wandb >=0.16.3
 # imageio >=2.34.0
