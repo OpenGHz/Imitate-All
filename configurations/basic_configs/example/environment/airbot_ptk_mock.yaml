@@ -7,14 +7,11 @@ right:
 
 cameras:
   env_camera:
-    _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
+    _target_: airbot_data_collection.airbot.sensors.cameras.mock.MockCamera
     camera_index: 2
-    mock: true
   left_camera:
-    _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
+    _target_: airbot_data_collection.airbot.sensors.cameras.mock.MockCamera
     camera_index: 4
-    mock: true
   right_camera:
-    _target_: airbot_data_collection.airbot.sensors.cameras.usb_cam.USBCamera
+    _target_: airbot_data_collection.airbot.sensors.cameras.mock.MockCamera
     camera_index: 6
-    mock: true

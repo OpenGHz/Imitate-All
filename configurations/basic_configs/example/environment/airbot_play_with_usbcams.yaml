@@ -1,11 +1,17 @@
 /:
   _target_: airbot_data_collection.airbot.robots.airbot_play.AIRBOTPlay
   port: 50051
+  observation:
+    - interfaces:
+        - joint_position
+        - joint_velocity
+        - joint_effort
+        - pose
 
 cameras:
   env_camera:
-    _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
+    _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.V4L2Camera
     camera_index: 2
-  follow_camera:
-    _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.BsonV4L2Camera
-    camera_index: 4
+  # follow_camera:
+  #   _target_: airbot_data_collection.airbot.sensors.cameras.v4l2.V4L2Camera
+  #   camera_index: 4

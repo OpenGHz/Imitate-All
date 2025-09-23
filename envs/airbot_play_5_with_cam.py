@@ -10,7 +10,6 @@ from airbot_data_collection.basis import System, SystemMode
 
 
 class AIRBOTPlayWithCameraEnv:
-
     def __init__(self, config: Dict[str, Union[dict, System]]):
         self.cameras: Dict[str, System] = {}
         self.arms: Dict[str, System] = {}
@@ -22,13 +21,17 @@ class AIRBOTPlayWithCameraEnv:
         print(f"camera names: {self.cameras.keys()}")
         self._reset_actions = {}
         self._all_ins = list(self.arms.items()) + list(self.cameras.items())
+        # self._arm_act_dim = 3
+        self._arm_act_dim = 7
         for name, ins in self._all_ins:
             if not ins.configure():
                 raise RuntimeError(f"Failed to configure {name}.")
 
     def set_reset_position(self, action: np.ndarray):
         for index, key in enumerate(self.arms.keys()):
-            self._reset_actions[key] = action[index * 7 : (index + 1) * 7].tolist()
+            self._reset_actions[key] = action[
+                index * self._arm_act_dim : (index + 1) * self._arm_act_dim
+            ].tolist()
         self.get_logger().info(f"Set reset actions: {pformat(self._reset_actions)}")
 
     def _capture_observation(self) -> dict:
@@ -37,6 +40,7 @@ class AIRBOTPlayWithCameraEnv:
         for name, ins in self._all_ins:
             for key, value in ins.capture_observation().items():
                 obs[f"{name}/{key}"] = value
+        # print(obs.keys())
         return obs
 
     def _get_qpos(self, obs: dict) -> List[float]:
@@ -45,6 +49,9 @@ class AIRBOTPlayWithCameraEnv:
         for group in self.arms:
             qpos.extend(obs[f"{group}/arm/joint_state"]["data"]["position"])
             qpos.extend(obs[f"{group}/eef/joint_state"]["data"]["position"])
+            # qpos.extend(obs[f"{group}/arm/pose"]["data"]["position"])
+            # qpos.extend(obs[f"{group}/arm/joint_state"]["data"]["effort"])
+            # qpos.extend(obs[f"{group}/arm/wrench"]["data"]["force"])
         return qpos
 
     def _get_images(self, obs: dict) -> Dict[str, np.ndarray]:
@@ -82,7 +89,11 @@ class AIRBOTPlayWithCameraEnv:
         get_obs=True,
     ):
         for index, (_key, robot) in enumerate(self.arms.items()):
-            robot.send_action(action[index * 7 : (index + 1) * 7].tolist())
+            robot.send_action(
+                action[
+                    index * self._arm_act_dim : (index + 1) * self._arm_act_dim
+                ].tolist()
+            )
         time.sleep(sleep_time)
         obs = self._get_obs() if get_obs else None
         return obs

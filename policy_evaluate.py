@@ -92,7 +92,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     filter_type = config.get("filter", None)
     ensemble: dict = config.get("ensemble", None)
     save_dir = save_dir if save_dir != "AUTO" else ckpt_dir
-    result_prefix = "result_" + ckpt_name.split(".")[0]
+    result_prefix = "result_" + ckpt_name.split("/")[-1].split(".")[0]
     debug = config.get("debug", False)
     if debug:
         logger.setLevel(logging.DEBUG)
