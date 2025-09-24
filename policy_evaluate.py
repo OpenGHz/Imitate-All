@@ -23,6 +23,7 @@ from configurations.task_configs.config_tools.basic_configer import (
 from envs.common_env import CommonEnv, get_image
 from policies.common.maker import make_policy
 from utils.utils import save_eval_results, set_seed, AvCoder
+from collections import defaultdict
 
 
 logging.basicConfig(level=logging.INFO)
@@ -209,8 +210,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             if hasattr(policy, "reset"):
                 policy.reset()
             try:
+                time_metrics = defaultdict(list)
                 for t in tqdm(range(max_timesteps)):
-                    start_time = time.time()
+                    rollout_start_time = time.perf_counter()
                     if save_dir != "":
                         # image_list.append(ts.observation["images"])
                         # for name, image in ts.observation["images"].items():
@@ -222,6 +224,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         )
                     if showing_images:
                         show_images(ts)
+                    # logger.info(f"save image time: {time.perf_counter() - rollout_start_time}")
                     # pre-process current observations
                     curr_image = get_image(ts, camera_names, image_mode)
                     qpos_numpy = np.array(ts.observation["qpos"])
@@ -232,13 +235,20 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
                     qpos_history[:, t] = qpos
 
-                    # logger.debug(f"observe time: {time.time() - start_time}")
-                    start_time = time.time()
+                    # logger.info(f"preprocess time: {time.perf_counter() - rollout_start_time:.4f}s")
+                    time_metrics["preprocess"].append(
+                        time.perf_counter() - rollout_start_time
+                    )
+                    start_time = time.perf_counter()
                     # wrap policy
                     target_t = t % num_queries
                     if temporal_agg or target_t == 0:
                         # (1, chunk_size, 7) for act
                         all_actions: torch.Tensor = policy(qpos, curr_image)
+                    # logger.info(f"prediction time: {time.perf_counter() - start_time:.4f}s")
+                    time_metrics["prediction"].append(time.perf_counter() - start_time)
+
+                    start_time = time.perf_counter()
                     all_time_actions[[t], t : t + num_queries] = all_actions
                     index = 0 if temporal_agg else target_t
                     raw_action = all_actions[:, index]
@@ -253,8 +263,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         for i, filter in enumerate(filters):
                             action[i] = filter(action[i], time.time())
                     # limit the prediction frequency
-                    time.sleep(max(0, 1 / prediction_freq - (time.time() - start_time)))
-                    # logger.debug(f"prediction time: {time.time() - start_time}")
+                    # time.sleep(max(0, 1 / prediction_freq - (time.time() - start_time)))
                     # step the environment
                     if debug:
                         # dt = 1
@@ -262,8 +271,15 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         ros1_logger.log_1D("joint_action", list(action))
                         for name, image in ts.observation["images"].items():
                             ros1_logger.log_2D("image_" + name, image)
-                    ts: dm_env.TimeStep = env.step(action, sleep_time=dt)
-
+                    # logger.info(f"postprocess time: {time.perf_counter() - start_time:.4f}s")
+                    time_metrics["postprocess"].append(time.perf_counter() - start_time)
+                    time_delta = dt - (time.perf_counter() - rollout_start_time)
+                    sleep_time = max(0, time_delta)
+                    # logger.info(f"fps: {1/(time.perf_counter() - rollout_start_time):.2f}")
+                    # logger.info(f"time_delta: {time_delta}")
+                    # start_time = time.perf_counter()
+                    ts: dm_env.TimeStep = env.step(action, sleep_time=sleep_time)
+                    # logger.info(f"env step time: {time.perf_counter() - start_time}")
                     # for visualization
                     qpos_list.append(qpos_numpy)
                     action_list.append(action)
@@ -273,6 +289,13 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     # break
             except KeyboardInterrupt:
                 logger.info(f"Current roll out: {rollout_id} interrupted by CTRL+C...")
+        if hasattr(env, "time_metrics"):
+            time_metrics.update(env.time_metrics)
+        ave_time_costs = {k: float(np.mean(v)) for k, v in time_metrics.items()}
+        from pprint import pformat
+        logger.info(f"Average time costs: \n{pformat(ave_time_costs)}")
+        logger.info(f"Average FPS: {1/np.sum(list(ave_time_costs.values())):.2f}")
+        time_metrics.clear()
 
         num_rollouts += 1
         rewards = np.array(rewards)

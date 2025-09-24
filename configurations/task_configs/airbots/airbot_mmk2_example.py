@@ -62,8 +62,8 @@ TASK_CONFIG_DEFAULT["common"]["policy_config"]["policy_maker"] = policy_maker
 TASK_CONFIG_DEFAULT["train"]["load_data"]["num_episodes"] = "ALL"
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_train"] = 4
 TASK_CONFIG_DEFAULT["train"]["load_data"]["batch_size_validate"] = 4
-TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = (0, 17)
-TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = (0, 17)
+TASK_CONFIG_DEFAULT["train"]["load_data"]["observation_slice"] = (0, joint_num)
+TASK_CONFIG_DEFAULT["train"]["load_data"]["action_slice"] = (0, joint_num)
 TASK_CONFIG_DEFAULT["train"]["load_data"]["mcap_state_topics"] = [
     f"/mmk/observation/{component}/joint_state/position" for component in components
 ]

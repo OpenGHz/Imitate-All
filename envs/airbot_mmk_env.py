@@ -3,6 +3,7 @@ import dm_env
 import numpy as np
 from robots.common import make_robot_from_yaml
 from airbot_data_collection.airbot.robots.airbot_mmk import AIRBOTMMK, SystemMode
+from collections import defaultdict
 
 
 class AIRBOTMMK2Env:
@@ -10,6 +11,7 @@ class AIRBOTMMK2Env:
         self.robot: AIRBOTMMK = make_robot_from_yaml(config_path)
         assert isinstance(self.robot, AIRBOTMMK)
         assert self.robot.configure(), "Failed to configure robot"
+        self.time_metrics = defaultdict(list)
 
     def set_reset_position(self, reset_position):
         self._reset_position = reset_position
@@ -19,6 +21,7 @@ class AIRBOTMMK2Env:
         self.robot.send_action(self._reset_position)
         time.sleep(sleep_time)
         self.robot.switch_mode(SystemMode.SAMPLING)
+        self.time_metrics.clear()
         return self._get_obs()
 
     def _get_obs(self):
@@ -63,10 +66,17 @@ class AIRBOTMMK2Env:
             for j in range(jn):
                 index = j + jn * i
                 action[index] = np.clip(action[index], *joint_limits[j])
-
+        # print("sending action:", action)
+        start = time.perf_counter()
         self.robot.send_action(action)
-        time.sleep(sleep_time)
+        # print(f"send action time: {time.perf_counter() - start:.4f}s")
+        self.time_metrics["send_action"].append(time.perf_counter() - start)
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+        start = time.perf_counter()
         obs = self._get_obs() if get_obs else None
+        # print(f"get obs time: {time.perf_counter() - start:.4f}s")
+        self.time_metrics["get_obs"].append(time.perf_counter() - start)
         return obs
 
 
