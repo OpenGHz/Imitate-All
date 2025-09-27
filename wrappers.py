@@ -114,9 +114,6 @@ class WrapperBasis(ABC):
         """Set the environment for the topmost wrapper.
         If the subclass needs to take over env, please
         set `self.should_take_over_env = True` in any of __init__ or warm_up.
-        If env is not taken over, the call method should return
-        the output of the wrapped caller, but if it is taken over,
-        it should return the output of env.
         """
         if not self._warmed_up:
             raise RuntimeError("Please warm up first")
@@ -175,14 +172,21 @@ class WrapperBasis(ABC):
         """Hook when `warm_up` is called."""
 
     @abstractmethod
-    def call(self, *args, **kwds):
-        """Call the wrapped callable."""
+    def call(self, *args, **kwds) -> Any:
+        """Call the wrapped callable and return the output."""
 
     @final
     def __call__(self, *args, **kwds):
-        """Call the wrapped callable and update the output chain."""
+        """Call the wrapped callable and update the output chain.
+        If the env is not taken over, this method will return
+        the output of the wrapped caller, and return the last output of env
+        otherwise.
+        """
         output = self.call(*args, **kwds)
         self.output_chain.append(output)
+        if self.taken_over_env:
+            self.env.input(output)
+            return self.last_env_output
         return output
 
     @final
@@ -219,6 +223,19 @@ class WrapperBasis(ABC):
     def taken_over_env(self) -> bool:
         """Whether the wrapper takes over the environment"""
         return self.env is not None
+
+
+class ForwardingWrapper(WrapperBasis):
+    """A wrapper that just forwards the call to the caller"""
+
+    def on_warm_up(self, output: Any):
+        return output
+
+    def on_reset(self):
+        """Do nothing"""
+
+    def call(self, *args, **kwds) -> Any:
+        return self.caller(*args, **kwds)
 
 
 class TakeOverEnvWrapper(WrapperBasis):
@@ -439,13 +456,9 @@ class TemporalEnsemblingWithDropping(WrapperBasis):
         end = max(0, (t - 1) // drop_num if drop_num > 0 else t) + 1
         used_outputs = self._all_time_outputs[start:end, t]
         used_weights = self._weights[: end - start]
-        output = (used_outputs * used_weights).sum(dim=0, keepdim=True)
         # print(used_outputs)
         self._t += 1
-        if self.taken_over_env:
-            self.env.input(output)
-            return self.last_env_output
-        return output
+        return (used_outputs * used_weights).sum(dim=0, keepdim=True)
 
     def on_shutdown(self):
         if self.taken_over_env:
@@ -492,10 +505,33 @@ class MockCaller(CallerBasis):
             return torch.tensor(lis)
 
 
+class PolicyEvaluationCallerConfig(BaseModel):
+    """Configuration for policy evaluation."""
+
+    # max number of evaluation steps per rollout, 0 means no limit
+    max_steps: NonNegativeInt = 0
+    # number of rollouts to evaluate, 0 means infinite
+    num_rollouts: NonNegativeInt = 0
+    # checkpoint path to load the policy from
+    checkpoint_path: str = ""
+
+
+class PolicyEvaluationCaller(CallerBasis):
+    def __init__(self, config: PolicyEvaluationCallerConfig):
+        self.config = config
+
+    def reset(self):
+        """Reset the internal state of the caller, if any."""
+
+    def __call__(self, *args, **kwds) -> Any:
+        """Call the caller with the given inputs."""
+
+
 if __name__ == "__main__":
     import torch
     import logging
     from itertools import count
+    from pprint import pformat
 
     logging.basicConfig(level=logging.INFO)
 
@@ -526,7 +562,8 @@ if __name__ == "__main__":
     # wrap, warm up and reset all the wrappers once
     # using the initial observation from the environment
     init_input = env.output().observation
-    wrapped = caller
+    # wrap by a forwarding wrapper to make a complete output chain
+    wrapped = ForwardingWrapper().wrap(caller)
     for i, wrapper in enumerate(wrappers):
         wrapped = wrapper.wrap(wrapped)
         wrapped.warm_up(init_input)
@@ -534,6 +571,7 @@ if __name__ == "__main__":
         # wrapper will call it when warming up
         for wp in wrappers[: i + 1]:
             wp.reset()
+        WrapperBasis.output_chain = []
     # check that only the topmost wrapper can take over the environment
     # and reset all the other wrappers since they have been called
     # once during warming up the topmost wrapper
@@ -545,13 +583,16 @@ if __name__ == "__main__":
     if not wrapped.should_take_over_env:
         wrapped.get_logger().info("Do not take over the environment")
         wrapped = TakeOverEnvWrapper().wrap(wrapped)
-        wrapped.warm_up()  # actually no need to warm up
+        # wrapped.warm_up()  # actually no need to warm up
+        # WrapperBasis.output_chain = []
     wrapped.get_logger().info("Taking over the environment")
     wrapped.take_over_env(env)
 
     rollouts = 2
     for r in range(rollouts):
-        if input("Press `Enter` to start a new rollout or 'q' to quit...") == "q":
+        if rollouts > 1 and input(
+            "Press `Enter` to start a new rollout or 'q'/`z` to quit..."
+        ) in ("q", "z"):
             break
         # reset the caller
         caller.reset()
@@ -562,15 +603,16 @@ if __name__ == "__main__":
         for step in count():
             env_output = wrapped()
             logger.info(f"rollout: {r}, step: {step}, env_output: {env_output}")
-            logger.info(f"output_chain: {wrapped.output_chain}")
-            wrapped.output_chain.clear()
+            logger.info(f"output_chain: \n{pformat(wrapped.output_chain)}")
             if env_output.terminated:
                 break
+            # clear is O(n) but assigning a empty list is O(1)
+            WrapperBasis.output_chain = []
             # input("Press Enter to take the next step...")
     # shutdown all the wrappers in reversed order
     # i.e. from the topmost to the bottommost, so
     # that the environment is shutdown last
     for wrapper in reversed(wrappers):
         if not wrapper.shutdown():
-            print("Failed to shutdown the wrapper")
-    print("Done.")
+            logger.error("Failed to shutdown the wrapper")
+    logger.info("Done.")
