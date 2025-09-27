@@ -1,8 +1,8 @@
+import numpy as np
 from typing import Callable, Tuple, List, Any, Union, Literal, final
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, PositiveInt, NonNegativeInt
 from logging import getLogger
-import numpy as np
 
 
 class WrapperBasis(ABC):
@@ -91,6 +91,53 @@ class WrapperBasis(ABC):
         else:
             raise TypeError(f"Unsupported type name: {type_name}")
         return size_mb
+
+
+class NormalizationConfig(BaseModel):
+    mean: float = 0.0
+    std: float = 0.0
+    min_std: float = 1e-8
+
+    def model_post_init(self, context):
+        self.std = self.std or self.min_std
+
+
+class NormalizerConfig(BaseModel):
+    """Configuration to normalize the input and denormalize the output"""
+
+    input: NormalizationConfig = NormalizationConfig()
+    output: NormalizationConfig = NormalizationConfig()
+    # if input data is a dict and input_key is not empty, normalize the data[input_key]
+    input_key: str = ""
+
+
+class Normalizer(WrapperBasis):
+    def __init__(self, config: NormalizerConfig):
+        self.config = config
+
+    def normalize_input(self, data: Any) -> Any:
+        if isinstance(data, dict):
+            key = self.config.input_key
+            if not key:
+                raise ValueError("data is a dict, but key is empty")
+            data[key] = self._normalize(data[key])
+            return data
+        return self._normalize(data)
+
+    def _normalize(self, data: Any) -> Any:
+        return (data - self.config.input.mean) / self.config.input.std
+
+    def denormalize_output(self, data: Any) -> Any:
+        return data * self.config.output.std + self.config.output.mean
+
+    def warm_up(self, *args, **kwds):
+        """Do nothing"""
+
+    def on_reset(self):
+        """Do nothing"""
+
+    def call(self, *args, **kwds):
+        return self.denormalize_output(self.caller(self.normalize_input(*args, **kwds)))
 
 
 class FrequencyReductionCallConfig(BaseModel):
@@ -305,12 +352,12 @@ if __name__ == "__main__":
         # TemporalEnsemblingWithDroppingConfig(weights=0.01)
         TemporalEnsemblingWithDroppingConfig(weights=[], drop_num=1)
     )
+    wrappers = [ted]
 
     env = MockEnvironment(MockEnvironmentConfig(output=(0.0,), max_steps=8))
     env.reset()
 
     init_input = env.output().observation
-    wrappers = [ted]
     # wrap and warm up all the wrappers once
     for wrapper in wrappers:
         wrapped = wrapper.wrap(wrapped)
