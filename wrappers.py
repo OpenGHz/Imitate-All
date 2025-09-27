@@ -161,7 +161,6 @@ class WrapperBasis(ABC):
         """Reset the internal state of the wrapper, if any."""
         if not self._warmed_up:
             raise RuntimeError("Please warm up first")
-        self.output_chain.clear()
         if self.taken_over_env:
             self.env.reset()
             self.last_env_output = self.env.output()
@@ -552,7 +551,8 @@ if __name__ == "__main__":
 
     rollouts = 2
     for r in range(rollouts):
-        input("Press Enter to start a new rollout...")
+        if input("Press `Enter` to start a new rollout or 'q' to quit...") == "q":
+            break
         # reset the caller
         caller.reset()
         # reset all the wrappers
@@ -561,7 +561,9 @@ if __name__ == "__main__":
         # step through the environment
         for step in count():
             env_output = wrapped()
-            logger.info(f"rollout: {r}, step: {step}, output: {env_output}")
+            logger.info(f"rollout: {r}, step: {step}, env_output: {env_output}")
+            logger.info(f"output_chain: {wrapped.output_chain}")
+            wrapped.output_chain.clear()
             if env_output.terminated:
                 break
             # input("Press Enter to take the next step...")
