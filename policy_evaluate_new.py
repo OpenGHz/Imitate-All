@@ -150,15 +150,18 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     highest_rewards = []
     num_rollouts = 0
     action_freq = config["fps"]
-    prediction_freq = 10  # TODO:config this
+    dt = 1 / 20
+    prediction_freq = 20  # TODO:config this
     chunk_size = num_queries
     teda = TEDA(
         chunk_size=chunk_size,
         action_dim=action_dim,
         max_timesteps=max_timesteps,
-        dropped_num=TEDA.get_dropped_action_num(
-            action_freq=action_freq, predict_freq=prediction_freq
-        ),
+        # TODO: warm up to auto determine
+        # dropped_num=TEDA.get_dropped_action_num(
+        #     action_freq=action_freq, predict_freq=prediction_freq
+        # ),
+        dropped_num=1,
     )
 
     infer_event = Event()
@@ -180,10 +183,10 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         logger.info("Reset environment...")
         env.reset(sleep_time=1)
         logger.info(f"Current rollout: {rollout_id} for {ckpt_name}.")
-        v = input(f"Press Enter to start evaluation or z and Enter to exit...")
+        v = input("Press Enter to start evaluation or z and Enter to exit...")
         if v == "z":
             return None, None
-        ts = env.reset()
+        env.reset()
 
         def inference():
             global keyboard_interrupt
@@ -197,6 +200,12 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         start_time = time.time()
                         if next_rollout:
                             break
+                        ts = env._get_obs()
+                        # for visualization
+                        qpos = np.array(ts.observation["qpos"])
+                        qpos_history[:, t] = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
+                        qpos_list.append(qpos)
+                        rewards.append(ts.reward)
                         image_list.append(ts.observation["images"])
                         # pre-process current observations
                         curr_image = get_image(ts, camera_names, image_mode)
@@ -213,10 +222,12 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                         all_time_actions[[t], act_step : act_step + chunk_size] = (
                             all_actions
                         )
-
-                        time.sleep(
-                            max(0, 1 / prediction_freq - (time.time() - start_time))
-                        )
+                        # sleep to simulate long inference time
+                        # time_elapsed = (time.time() - start_time)
+                        # time.sleep(
+                        #     max(0, 1 / prediction_freq - time_elapsed)
+                        # )
+                        # print(f"Inference time: {time.time() - start_time}")
                         infer_event.clear()
                 except KeyboardInterrupt:
                     logger.info(
@@ -234,17 +245,22 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             act_step = t
             if keyboard_interrupt:
                 break
+
             if teda.need_infer():
+                start = time.perf_counter()
+                print(f"infer t: {t}, act_step: {act_step}")
                 while infer_event.is_set():
-                    print("wait for last infer")
+                    # print("wait for last infer (you may need to increase the dropped action number if waiting too often)...")
                     logger.debug("last not done")
                     last_not_done.add(t)
+                    # TODO: use dual event to avoid busy wait
                     time.sleep(0.001)
                 infer_event.set()
                 if t == 0:
                     logger.debug("wait for first infer")
                     while infer_event.is_set():
                         time.sleep(0.001)
+                print(f"infer wait time: {time.perf_counter()-start}")
             raw_action = teda.update(all_time_actions)
 
             # post-process predicted action
@@ -255,21 +271,18 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             logger.debug(f"post action: {action}")
 
             # input("Press any key to continue")
-
             if filter_type is not None:  # filt action
                 for i, filter in enumerate(filters):
                     action[i] = filter(action[i], time.time())
 
             # step the environment
-            sleep_time = max(0, dt - (time.time() - start_time))
-            ts = env.step(action, sleep_time=sleep_time, arm_vel=arm_velocity)
-
-            # for visualization
-            qpos = np.array(ts.observation["qpos"])
-            qpos_history[:, t] = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
-            qpos_list.append(qpos)
+            env.step(action, sleep_time=0.0, get_obs=False)
+            time_elapsed = (time.time() - start_time)
+            sleep_time = max(0, dt - time_elapsed)
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            print(f"Action time: {time.time() - start_time}")
             action_list.append(action)
-            rewards.append(ts.reward)
         else:
             # if not interrupted
             num_rollouts += 1
@@ -306,7 +319,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
         infer_event.set()
         logger.debug(f"{last_not_done}")
         logger.debug("exiting current rollout inference")
-        infer_thead.join()
+        # infer_thead.join()
         logger.debug("done")
 
     if num_rollouts > 0:
@@ -455,7 +468,29 @@ if __name__ == "__main__":
     parser.add_argument(
         "-ft", "--filter", action="store", type=str, help="filter_type", required=False
     )
-
+    # yaml config path
+    parser.add_argument(
+        "-cf",
+        "--env_config_path",
+        action="store",
+        type=str,
+        help="env_config_path",
+        required=False,
+    )
+    parser.add_argument(
+        "-show",
+        "--show_images",
+        action="store_true",
+        help="show_images",
+        required=False,
+    )
+    parser.add_argument(
+        "-dbg",
+        "--debug",
+        action="store_true",
+        help="debug",
+        required=False,
+    )
     args = parser.parse_args()
     args_dict = vars(args)
     # TODO: put unknown key-value pairs into args_dict
