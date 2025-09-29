@@ -96,6 +96,13 @@ def get_args_parser():
         action="store_true",
         help="Train segmentation head if the flag is provided",
     )
+    parser.add_argument(
+        "-vm",
+        "--vae_module",
+        default="policies.common.detr.models.detr_vae.DETRVAE",
+        type=str,  # will be overridden
+        help="which VAE module to use",
+    )
     return parser
 
 

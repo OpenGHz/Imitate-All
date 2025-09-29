@@ -410,6 +410,13 @@ def parser_train(parser: argparse.ArgumentParser = None):
         help="time_stamp",
         required=False,
     )
+    parser.add_argument(
+        "-vm",
+        "--vae_module",
+        default="policies.common.detr.models.detr_vae.DETRVAE",
+        type=str,  # will be overridden
+        help="which VAE module to use",
+    )
     # parser.add_argument('--actuator_network_dir', action='store', type=str, help='actuator_network_dir', required=False)
     # parser.add_argument('--history_len', action='store', type=int)
     # parser.add_argument('--future_len', action='store', type=int)

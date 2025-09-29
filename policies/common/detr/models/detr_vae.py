@@ -2,6 +2,7 @@
 """
 DETR model and criterion classes.
 """
+
 import numpy as np
 import torch
 from torch import nn
@@ -287,7 +288,6 @@ def build_encoder(args):
 
 
 def build_vae(args):
-
     transformer = build_transformer(args)
     encoder = build_encoder(args)
 
@@ -296,7 +296,13 @@ def build_vae(args):
         backbone = build_backbone(args)
         backbones.append(backbone)
 
-    model = DETRVAE(
+    from importlib import import_module
+    class_path = getattr(args, "vae_module", "policies.common.detr.models.detr_vae.DETRVAE")
+    vae_module, class_name = class_path.rsplit(".", 1)
+
+    vae_module = import_module(vae_module)
+
+    model = getattr(vae_module, class_name)(
         backbones,
         transformer,
         encoder,
@@ -313,7 +319,6 @@ def build_vae(args):
 
 
 def build_cnnmlp(args):
-
     backbones = []
     for _ in args.camera_names:
         backbone = build_backbone(args)
