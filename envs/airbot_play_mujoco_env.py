@@ -39,9 +39,7 @@ class MujocoEnv(object):
     @staticmethod
     def _process_obs(raw_obs, camera_names: list):
         obs = collections.OrderedDict()
-        # obs["qpos"] = list(raw_obs["jq"])
-        # obs["qpos"] = list(raw_obs["eef_pos"]) + list(raw_obs["end_force"][:3])
-        obs["qpos"] = list(raw_obs["eef_pos"])
+        obs["qpos"] = list(raw_obs["jq"])
         obs["images"] = {}
         for id in camera_names:
             obs["images"][f"cam_{id}"] = raw_obs["img"][id][:, :, ::-1]
