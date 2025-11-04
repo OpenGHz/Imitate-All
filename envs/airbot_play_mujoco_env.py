@@ -6,7 +6,7 @@ from discoverse.robots_env.airbot_play_base import AirbotPlayCfg
 from discoverse.task_base import AirbotPlayTaskBase
 
 
-class MujocoEnv(object):
+class MujocoEnv:
     """
     Mujoco environment for airbot_play
     path: path to the script containing the SimNode class and config (mainly for data collection)
@@ -21,7 +21,7 @@ class MujocoEnv(object):
         # self.exec_node.cam_id = self.exec_node.config.obs_camera_id
         self.reset_position = None
         self._camera_names = self.exec_node.config.obs_rgb_cam_id
-        print("MujocoEnv initialized")
+        print(f"MujocoEnv initialized with cameras: {self._camera_names}")
 
     def set_reset_position(self, reset_position):
         self.reset_position = reset_position
@@ -37,12 +37,12 @@ class MujocoEnv(object):
         return self._process_obs(raw_obs, self._camera_names)
 
     @staticmethod
-    def _process_obs(raw_obs, camera_names: list):
+    def _process_obs(raw_obs: dict, camera_names: list):
         obs = collections.OrderedDict()
-        obs["qpos"] = list(raw_obs["jq"])
+        obs["qpos"] = raw_obs["jq"]
         obs["images"] = {}
         for id in camera_names:
-            obs["images"][f"cam_{id}"] = raw_obs["img"][id][:, :, ::-1]
+            obs["images"][id] = raw_obs["img"][id][:, :, ::-1]
         return dm_env.TimeStep(
             step_type=dm_env.StepType.FIRST,
             reward=0.0,

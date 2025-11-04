@@ -3,7 +3,6 @@ from habitats.common.robot_devices.cameras.utils import prepare_cv2_imshow
 prepare_cv2_imshow()
 
 import argparse
-import inspect
 import logging
 import os
 import pickle
@@ -23,7 +22,7 @@ from configurations.task_configs.config_tools.basic_configer import (
 from envs.common_env import CommonEnv, get_image
 from policies.common.maker import make_policy
 from utils.utils import save_eval_results, set_seed
-from airbot_data_collection.common.utils.av_coder import AvCoder
+from mcap_data_loader.utils.av_coder import AvCoder
 
 
 logging.basicConfig(level=logging.INFO)
@@ -95,6 +94,9 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     save_dir = save_dir if save_dir != "AUTO" else ckpt_dir
     result_prefix = "result_" + ckpt_name.split(".")[0]
     debug = config.get("debug", False)
+    robot_name = config["robot_name"]
+    task_name = config["task_name"]
+    print(f"{robot_name=}")
     if debug:
         logger.setLevel(logging.DEBUG)
         from utils.visualization.ros1_logger import LoggerROS1
@@ -168,8 +170,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
     episode_returns = []
     highest_rewards = []
     num_rollouts = 0
-    policy_sig = inspect.signature(policy).parameters
-    prediction_freq = 100000
+    # max_rollouts = 1
     for rollout_id in range(max_rollouts):
         # evaluation loop
         all_time_actions = torch.zeros(
@@ -214,14 +215,12 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
 
             @dataclass
             class Args:
-                robot: str = "airbot_play_force"
-                # task: str = "peg_in_hole"
-                task: str = "peg_in_big_hole"
+                robot: str = robot_name
+                task: str = task_name
                 inference: bool = True
-                infer_hz: int = 25
-                camera_names: list = field(
-                    default_factory=lambda: ["eye_arm", "eye_side"]
-                )
+                infer_hz: int = config["fps"]
+                camera_names: list = field(default_factory=lambda: camera_names)
+                infer_max_step: int = max_timesteps
                 mjcf: str = None
                 hide_mocap: bool = False
                 record: bool = True
@@ -234,15 +233,15 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                 def policy_call(ts, t):
                     # global all_actions
                     start_time = time.time()
-                    if save_dir != "":
-                        # image_list.append(ts.observation["images"])
-                        # for name, image in ts.observation["images"].items():
-                        coder.encode_frame(
-                            np.concatenate(
-                                list(ts.observation["images"].values()), axis=1
-                            ),
-                            timestamp=time.time_ns() // factor,
-                        )
+                    # if save_dir != "":
+                    #     # image_list.append(ts.observation["images"])
+                    #     # for name, image in ts.observation["images"].items():
+                    #     coder.encode_frame(
+                    #         np.concatenate(
+                    #             list(ts.observation["images"].values()), axis=1
+                    #         ),
+                    #         timestamp=time.time_ns() // factor,
+                    #     )
                     if showing_images:
                         show_images(ts)
                     # pre-process current observations
@@ -253,7 +252,7 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     qpos = pre_process(qpos_numpy)  # normalize qpos
                     # logger.debug(f"pre qpos: {qpos}")
                     qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
-                    qpos_history[:, t] = qpos
+                    # qpos_history[:, t] = qpos
 
                     # logger.debug(f"observe time: {time.time() - start_time}")
                     start_time = time.time()
@@ -294,21 +293,31 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
                     # break
 
                 class MAP(Manipulator):
-                    t = 0
-
                     def policy_function(self):
+                        # if self.t == 0:
+                        # input("Press Enter to start the manipulator...")
                         obs = self.get_observation()
+                        if self.t == 0:
+                            print(f"{self.target_position=}")
+                            print("first obs jq:", obs["jq"])
+                            # print("first obs ext force:", obs["ext_force"])
                         action = policy_call(
                             MujocoEnv._process_obs(obs, self.camera_names), self.t
                         )
-                        print(action)
+                        if self.t == 0:
+                            print("first action:", action)
                         self.t += 1
-                        target_position = action
-                        self.target_position = target_position
+                        self.target_position = action[:3]
                         self.target_quat_wxyz = np.array([-0.707, 0.0, -0.707, 0])
+                        print(f"Step {self.t}, action: {action}")
+
+                    def _reset_policy(self):
+                        policy.reset()
+                        self.target_position = np.zeros(3)
+                        self.t = 0
 
                 mani_node = MAP(Args())
-
+                mani_node._reset_policy()
                 mani_node.run()
 
             except KeyboardInterrupt:
@@ -317,59 +326,59 @@ def eval_bc(config, ckpt_name, env: CommonEnv):
             else:
                 num_rollouts += 1
 
-        rewards = np.array(rewards)
-        episode_return = np.sum(rewards[rewards != None])
-        episode_returns.append(episode_return)
-        episode_highest_reward = np.max(rewards)
-        highest_rewards.append(episode_highest_reward)
-        logger.info(
-            f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward == env_max_reward}"
-        )
+        # rewards = np.array(rewards)
+        # episode_return = np.sum(rewards[rewards is not None])
+        # episode_returns.append(episode_return)
+        # episode_highest_reward = np.max(rewards)
+        # highest_rewards.append(episode_highest_reward)
+        # logger.info(
+        #     f"Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward == env_max_reward}"
+        # )
 
         # saving evaluation results
-        if save_dir != "":
-            dataset_name = f"{result_prefix}_{rollout_id}"
-            save_eval_results(
-                save_dir,
-                dataset_name,
-                rollout_id,
-                image_list,
-                qpos_list,
-                action_list,
-                camera_names,
-                dt,
-                all_time_actions,
-                save_all=save_all,
-                save_time_actions=save_time_actions,
-            )
-            coder.end(f"{os.path.join(save_dir, dataset_name)}.mp4")
+        # if save_dir != "":
+        #     dataset_name = f"{result_prefix}_{rollout_id}"
+        #     save_eval_results(
+        #         save_dir,
+        #         dataset_name,
+        #         rollout_id,
+        #         image_list,
+        #         qpos_list,
+        #         action_list,
+        #         camera_names,
+        #         dt,
+        #         all_time_actions,
+        #         save_all=save_all,
+        #         save_time_actions=save_time_actions,
+        #     )
+        #     coder.end(f"{os.path.join(save_dir, dataset_name)}.mp4")
 
-    if num_rollouts > 0:
-        success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
-        avg_return = np.mean(episode_returns)
-        summary_str = (
-            f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
-        )
-        for r in range(env_max_reward + 1):
-            more_or_equal_r = (np.array(highest_rewards) >= r).sum()
-            more_or_equal_r_rate = more_or_equal_r / num_rollouts
-            summary_str += f"Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate * 100}%\n"
+    # if num_rollouts > 0:
+    #     success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
+    #     avg_return = np.mean(episode_returns)
+    #     summary_str = (
+    #         f"\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n"
+    #     )
+    #     for r in range(env_max_reward + 1):
+    #         more_or_equal_r = (np.array(highest_rewards) >= r).sum()
+    #         more_or_equal_r_rate = more_or_equal_r / num_rollouts
+    #         summary_str += f"Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate * 100}%\n"
 
-        logger.info(summary_str)
+    #     logger.info(summary_str)
 
-        # save success rate to txt
-        if save_dir != "":
-            with open(os.path.join(save_dir, dataset_name + ".txt"), "w") as f:
-                f.write(summary_str)
-                f.write(repr(episode_returns))
-                f.write("\n\n")
-                f.write(repr(highest_rewards))
-            logger.info(
-                f"Success rate and average return saved to {os.path.join(save_dir, dataset_name + '.txt')}"
-            )
-    else:
-        success_rate = 0
-        avg_return = 0
+    # save success rate to txt
+    # if save_dir != "":
+    #     with open(os.path.join(save_dir, dataset_name + ".txt"), "w") as f:
+    #         f.write(summary_str)
+    #         f.write(repr(episode_returns))
+    #         f.write("\n\n")
+    #         f.write(repr(highest_rewards))
+    #     logger.info(
+    #         f"Success rate and average return saved to {os.path.join(save_dir, dataset_name + '.txt')}"
+    #     )
+    # else:
+    success_rate = 0
+    avg_return = 0
     if showing_images:
         cv2.destroyAllWindows()
     return success_rate, avg_return
