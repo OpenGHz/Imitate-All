@@ -1,6 +1,6 @@
-_target_: airbot_data_collection.airbot.robots.airbot_mmk.AIRBOTMMK
+_target_: airbot_ie.robots.airbot_mmk.AIRBOTMMK
 
-ip: 192.168.11.200
+ip: 172.25.11.188
 components: [left_arm, left_arm_eef, right_arm, right_arm_eef, head, spine]
 cameras:
   head_camera:

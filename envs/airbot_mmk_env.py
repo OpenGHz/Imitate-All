@@ -2,7 +2,7 @@ import time
 import dm_env
 import numpy as np
 from robots.common import make_robot_from_yaml
-from airbot_data_collection.airbot.robots.airbot_mmk import AIRBOTMMK, SystemMode
+from airbot_ie.robots.airbot_mmk import AIRBOTMMK, SystemMode
 from collections import defaultdict
 
 
@@ -31,10 +31,10 @@ class AIRBOTMMK2Env:
         raw_obs = self.robot.capture_observation()
         for comp in self.robot.config.components:
             obs["qpos"].extend(
-                raw_obs.pop(f"observation/{comp.value}/joint_state")["data"]["position"]
+                raw_obs[f"observation/{comp.value}/joint_state/position"]["data"]
             )
         for camera in self.robot.config.cameras:
-            image = raw_obs.pop(f"{camera.value}/color/image_raw")["data"]
+            image = raw_obs[f"{camera.value}/color/image_raw"]["data"]
             obs["images"][camera.value] = image
         # print(obs["images"].keys())
         return dm_env.TimeStep(

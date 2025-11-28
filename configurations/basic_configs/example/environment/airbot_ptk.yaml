@@ -1,8 +1,8 @@
 left:
-  _target_: airbot_data_collection.airbot.robots.airbot_play.AIRBOTPlay
+  _target_: airbot_ie.robots.airbot_play.AIRBOTPlay
   port: 50051
 right:
-  _target_: airbot_data_collection.airbot.robots.airbot_play.AIRBOTPlay
+  _target_: airbot_ie.robots.airbot_play.AIRBOTPlay
   port: 50053
 
 cameras:

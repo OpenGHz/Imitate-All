@@ -1,16 +1,16 @@
 /:
-  _target_: airbot_data_collection.airbot.robots.airbot_play.AIRBOTPlay
+  _target_: airbot_ie.robots.airbot_play.AIRBOTPlay
   port: 50051
 
 cameras:
   env_camera:
-    _target_: airbot_data_collection.airbot.sensors.cameras.realsense.RealSense
+    _target_: airbot_data_collection.common.devices.cameras.intelrealsense.IntelRealSenseCamera
     camera_index: 427622274177
     width: 640
     height: 480
     fps: 30  # must be set
   follow_camera:
-    _target_: airbot_data_collection.airbot.sensors.cameras.realsense.RealSense
+    _target_: airbot_data_collection.common.devices.cameras.intelrealsense.IntelRealSenseCamera
     camera_index: 427622274178
     width: 640
     height: 480
