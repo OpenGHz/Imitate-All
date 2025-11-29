@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 
 import dm_env
 import numpy as np
-from airbot_data_collection.basis import System, SystemMode
+from airbot_data_collection.common.systems.basis import System, SystemMode
 
 
 class AIRBOTPlayWithCameraEnv:
@@ -47,11 +47,11 @@ class AIRBOTPlayWithCameraEnv:
         """Get the joint positions of the robot."""
         qpos = []
         for group in self.arms:
-            qpos.extend(obs[f"{group}/arm/joint_state"]["data"]["position"])
-            qpos.extend(obs[f"{group}/eef/joint_state"]["data"]["position"])
-            # qpos.extend(obs[f"{group}/arm/pose"]["data"]["position"])
-            # qpos.extend(obs[f"{group}/arm/joint_state"]["data"]["effort"])
-            # qpos.extend(obs[f"{group}/arm/wrench"]["data"]["force"])
+            qpos.extend(obs[f"{group}/arm/joint_state/position"]["data"])
+            qpos.extend(obs[f"{group}/eef/joint_state/position"]["data"])
+            # qpos.extend(obs[f"{group}/arm/pose/position"]["data"])
+            # qpos.extend(obs[f"{group}/arm/joint_state/effort"]["data"])
+            # qpos.extend(obs[f"{group}/arm/wrench/force"]["data"])
         return qpos
 
     def _get_images(self, obs: dict) -> Dict[str, np.ndarray]:
