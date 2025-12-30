@@ -7,17 +7,17 @@ right:
 
 cameras:
   env_camera:
-    _target_: airbot_data_collection.common.devices.cameras.v4l2.V4L2Camera
+    _target_: airdc.common.devices.cameras.v4l2.V4L2Camera
     camera_index: 2
     width: 640
     height: 480
   left_camera:
-    _target_: airbot_data_collection.common.devices.cameras.v4l2.V4L2Camera
+    _target_: airdc.common.devices.cameras.v4l2.V4L2Camera
     camera_index: 4
     width: 640
     height: 480
   right_camera:
-    _target_: airbot_data_collection.common.devices.cameras.v4l2.V4L2Camera
+    _target_: airdc.common.devices.cameras.v4l2.V4L2Camera
     camera_index: 6
     width: 640
     height: 480

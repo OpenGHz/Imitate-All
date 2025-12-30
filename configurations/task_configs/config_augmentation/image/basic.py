@@ -1,5 +1,6 @@
 from torchvision.transforms import v2
 
+
 color_transforms_1 = v2.Compose(
     [
         v2.ColorJitter(brightness=(0.5, 1.5)),

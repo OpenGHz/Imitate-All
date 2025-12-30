@@ -4,7 +4,7 @@ from typing_extensions import Self
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, PositiveInt, NonNegativeInt
 from logging import getLogger
-from airbot_data_collection.common.utils.event_rpc import (
+from airdc.common.utils.event_rpc import (
     EventRpcManager,
     ConcurrentMode,
     EventRpcServer,

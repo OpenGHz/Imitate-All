@@ -7,11 +7,11 @@ right:
 
 cameras:
   env_camera:
-    _target_: airbot_data_collection.common.devices.cameras.mock.MockCamera
+    _target_: airdc.common.devices.cameras.mock.MockCamera
     camera_index: 2
   left_camera:
-    _target_: airbot_data_collection.common.devices.cameras.mock.MockCamera
+    _target_: airdc.common.devices.cameras.mock.MockCamera
     camera_index: 4
   right_camera:
-    _target_: airbot_data_collection.common.devices.cameras.mock.MockCamera
+    _target_: airdc.common.devices.cameras.mock.MockCamera
     camera_index: 6

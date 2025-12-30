@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 
 import dm_env
 import numpy as np
-from airbot_data_collection.common.systems.basis import System, SystemMode
+from airdc.common.systems.basis import System, SystemMode
 
 
 class AIRBOTPlayWithCameraEnv:
